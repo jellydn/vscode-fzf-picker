@@ -89,6 +89,12 @@ const commands: { [key: string]: Command } = {
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
+	pickFileFromGitStatus: {
+		script: "pick_file_from_git_status",
+		uri: undefined,
+		preRunCallback: undefined,
+		postRunCallback: undefined,
+	},
 };
 
 type WhenCondition = "always" | "never" | "noWorkspaceOnly";
@@ -293,7 +299,7 @@ function setupConfig(context: vscode.ExtensionContext) {
 	const localScript = (x: string) =>
 		vscode.Uri.file(
 			path.join(context.extensionPath, x) +
-				(os.platform() === "win32" ? ".ps1" : ".sh"),
+			(os.platform() === "win32" ? ".ps1" : ".sh"),
 		);
 	commands.findFiles.uri = localScript(commands.findFiles.script);
 	commands.findFilesWithType.uri = localScript(commands.findFiles.script);
@@ -305,6 +311,7 @@ function setupConfig(context: vscode.ExtensionContext) {
 		commands.listSearchLocations.script,
 	);
 	commands.flightCheck.uri = localScript(commands.flightCheck.script);
+	commands.pickFileFromGitStatus.uri = localScript(commands.pickFileFromGitStatus.script)
 }
 
 /** Register the commands we defined with VS Code so users have access to them */
@@ -333,6 +340,12 @@ export function activate(context: vscode.ExtensionContext) {
 
 	registerCommands();
 	reinitialize();
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand("find-it-faster.pickFileFromGitStatus", () => {
+			executeTerminalCommand("pickFileFromGitStatus");
+		})
+	);
 }
 
 /* Called when extension is deactivated by VS Code */
@@ -907,6 +920,9 @@ async function executeTerminalCommand(cmd: string) {
 			commands[CFG.lastCommand].postRunCallback;
 	} else if (cmd.startsWith("find")) {
 		// Keep track of last-run cmd, but we don't want to resume `listSearchLocations` etc
+		CFG.lastCommand = cmd;
+	} else if (cmd === "pickFileFromGitStatus") {
+		// Keep track of last-run cmd
 		CFG.lastCommand = cmd;
 	}
 
