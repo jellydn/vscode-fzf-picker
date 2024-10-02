@@ -734,10 +734,10 @@ function handleCanaryFileChange() {
 		if (err) {
 			// We shouldn't really end up here. Maybe leave the terminal around in this case...
 			vscode.window.showWarningMessage(
-				"Something went wrong but we don't know what... Did you clean out your /tmp folder?",
+				`An error occurred while reading the canary file: ${err.message}`,
 			);
 			logger.warn(
-				"Something went wrong but we don't know what... Did you clean out your /tmp folder?",
+				`An error occurred while reading the canary file: ${err.message}`,
 			);
 		} else {
 			const commandWasSuccess = data.length > 0 && data[0] !== "1";

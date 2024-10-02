@@ -12,7 +12,7 @@ enum LogLevel {
 export class Logger {
 	private outputChannel = window.createOutputChannel("Find It Faster");
 
-	private logLevel: LogLevel = "INFO";
+	private logLevel: LogLevel = LogLevel.INFO;
 
 	public setOutputLevel(logLevel: LogLevel) {
 		this.logLevel = logLevel;
@@ -25,14 +25,14 @@ export class Logger {
 	 */
 	public debug(message: string, data?: unknown): void {
 		if (
-			this.logLevel === "NONE" ||
-			this.logLevel === "INFO" ||
-			this.logLevel === "WARN" ||
-			this.logLevel === "ERROR"
+			this.logLevel === LogLevel.NONE ||
+			this.logLevel === LogLevel.INFO ||
+			this.logLevel === LogLevel.WARN ||
+			this.logLevel === LogLevel.ERROR
 		) {
 			return;
 		}
-		this.logMessage(message, "DEBUG");
+		this.logMessage(message, LogLevel.DEBUG);
 		if (data) {
 			this.logObject(data);
 		}
@@ -45,13 +45,13 @@ export class Logger {
 	 */
 	public info(message: string, data?: unknown): void {
 		if (
-			this.logLevel === "NONE" ||
-			this.logLevel === "WARN" ||
-			this.logLevel === "ERROR"
+			this.logLevel === LogLevel.NONE ||
+			this.logLevel === LogLevel.WARN ||
+			this.logLevel === LogLevel.ERROR
 		) {
 			return;
 		}
-		this.logMessage(message, "INFO");
+		this.logMessage(message, LogLevel.INFO);
 		if (data) {
 			this.logObject(data);
 		}
@@ -63,27 +63,27 @@ export class Logger {
 	 * @param message The message to append to the output channel
 	 */
 	public warn(message: string, data?: unknown): void {
-		if (this.logLevel === "NONE" || this.logLevel === "ERROR") {
+		if (this.logLevel === LogLevel.NONE || this.logLevel === LogLevel.ERROR) {
 			return;
 		}
-		this.logMessage(message, "WARN");
+		this.logMessage(message, LogLevel.WARN);
 		if (data) {
 			this.logObject(data);
 		}
 	}
 
 	public error(message: string, error?: unknown) {
-		if (this.logLevel === "NONE") {
+		if (this.logLevel === LogLevel.NONE) {
 			return;
 		}
-		this.logMessage(message, "ERROR");
+		this.logMessage(message, LogLevel.ERROR);
 		if (typeof error === "string") {
 			// Errors as a string usually only happen with
 			// plugins that don't return the expected error.
 			this.outputChannel.appendLine(error);
 		} else if (error instanceof Error) {
 			if (error?.message) {
-				this.logMessage(error.message, "ERROR");
+				this.logMessage(error.message, LogLevel.ERROR);
 			}
 			if (error?.stack) {
 				this.outputChannel.appendLine(error.stack);
