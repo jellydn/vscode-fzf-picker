@@ -1,7 +1,13 @@
 // Credit to https://github.com/prettier/prettier-vscode/blob/main/src/LoggingService.ts#L5
 import { window } from "vscode";
 
-type LogLevel = "DEBUG" | "INFO" | "WARN" | "ERROR" | "NONE";
+enum LogLevel {
+  DEBUG = "DEBUG",
+  INFO = "INFO",
+  WARN = "WARN",
+  ERROR = "ERROR",
+  NONE = "NONE",
+}
 
 export class Logger {
 	private outputChannel = window.createOutputChannel("Find It Faster");
