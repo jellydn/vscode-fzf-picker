@@ -34,7 +34,8 @@
 		"onCommand:find-it-faster.findFilesWithType",
 		"onCommand:find-it-faster.findWithinFiles",
 		"onCommand:find-it-faster.findWithinFilesWithType",
-		"onCommand:find-it-faster.listSearchLocations"
+		"onCommand:find-it-faster.listSearchLocations",
+		"onCommand:find-it-faster.pickFileFromGitStatus"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -62,6 +63,10 @@
 			{
 				"command": "find-it-faster.resumeSearch",
 				"title": "Find It Faster: resume last search"
+			},
+			{
+				"command": "find-it-faster.pickFileFromGitStatus",
+				"title": "Find It Faster: Pick file from git status"
 			}
 		],
 		"keybindings": [
@@ -79,6 +84,12 @@
 				"command": "find-it-faster.findWithinFilesWithType",
 				"mac": "ctrl+cmd+shift+u",
 				"linux": "ctrl+shift+alt+u"
+			},
+			{
+				"command": "find-it-faster.pickFileFromGitStatus",
+				"mac": "cmd+shift+alt+f",
+				"linux": "ctrl+shift+alt+f",
+				"win": "ctrl+shift+alt+f"
 			}
 		],
 		"configuration": {
@@ -220,6 +231,21 @@
 					"markdownDescription": "Set the path for the shell (terminal type) to be used.",
 					"type": "string",
 					"default": ""
+				},
+				"find-it-faster.pickFileFromGitStatus.showPreview": {
+					"markdownDescription": "Show a preview window when picking a file from git status",
+					"type": "boolean",
+					"default": true
+				},
+				"find-it-faster.pickFileFromGitStatus.previewCommand": {
+					"markdownDescription": "When populated: Used by `fzf` to produce the preview when picking a file from git status. Use `{}` to indicate the filename. Example: `git diff --color=always -- {}`.",
+					"type": "string",
+					"default": ""
+				},
+				"find-it-faster.pickFileFromGitStatus.previewWindowConfig": {
+					"markdownDescription": "When populated: Used by `fzf` to determine position and look of the preview window when picking a file from git status. See the `fzf` documentation. Example: `right:50%:border-left`.",
+					"type": "string",
+					"default": ""
 				}
 			}
 		}
@@ -230,8 +256,8 @@
 		"watch": "tsc -watch -p ./",
 		"pretest": "npm run compile",
 		"test": "node ./out/test/runTest.js",
-		"vscode:package": "vsce package --yarn --githubBranch main",
-		"vscode:publish": "vsce publish --yarn --githubBranch main"
+		"vscode:package": "vsce package --yarn",
+		"vscode:publish": "vsce publish --yarn"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.3",

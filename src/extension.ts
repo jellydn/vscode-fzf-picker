@@ -89,6 +89,12 @@ const commands: { [key: string]: Command } = {
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
+	pickFileFromGitStatus: {
+		script: "pick_file_from_git_status",
+		uri: undefined,
+		preRunCallback: undefined,
+		postRunCallback: undefined,
+	},
 };
 
 type WhenCondition = "always" | "never" | "noWorkspaceOnly";
@@ -305,6 +311,9 @@ function setupConfig(context: vscode.ExtensionContext) {
 		commands.listSearchLocations.script,
 	);
 	commands.flightCheck.uri = localScript(commands.flightCheck.script);
+	commands.pickFileFromGitStatus.uri = localScript(
+		commands.pickFileFromGitStatus.script,
+	);
 }
 
 /** Register the commands we defined with VS Code so users have access to them */
@@ -907,6 +916,9 @@ async function executeTerminalCommand(cmd: string) {
 			commands[CFG.lastCommand].postRunCallback;
 	} else if (cmd.startsWith("find")) {
 		// Keep track of last-run cmd, but we don't want to resume `listSearchLocations` etc
+		CFG.lastCommand = cmd;
+	} else if (cmd === "pickFileFromGitStatus") {
+		// Keep track of last-run cmd
 		CFG.lastCommand = cmd;
 	}
 

@@ -42,17 +42,18 @@ This extension exposes four commands:
 2. Search within files for text and open them. Uses a combination of `fzf`, `rg`, and `bat`.
 3. Like 2., but you can limit the file types that will be searched.
 4. Resume search. Repeats the last run command with the previous query prepopulated.
+5. Pick file from git status. Allows you to select files from the git status output using `fzf`.
 
 If your active text editor has a selection, it will be used as the initial query (you can disable
 this setting).
 
-⬇️ &nbsp;**Find files**  
+⬇️ &nbsp;**Find files**
 ![Find Files](media/find_files.gif)
 
-⬇️ &nbsp;**Find text within files**  
+⬇️ &nbsp;**Find text within files**
 ![Find Within Files](media/find_within_files.gif)
 
-⬇️ &nbsp;**Find text within files, with file type filter**  
+⬇️ &nbsp;**Find text within files, with file type filter**
 ![Find Within Files](media/find_within_files_with_filter.gif)
 
 This extension has also been tested on remote workspaces (e.g. SSH sessions).
@@ -83,7 +84,7 @@ into a VS Code context.
 
 ## Extension Settings
 
-See the settings for this extension in the GUI.  
+See the settings for this extension in the GUI.
 You might want to play with `fzf`, `rg` and `bat` on the command line and read their manuals in
 order to get a better understanding of some of the settings in this extension. It will be worth
 your time.
@@ -151,10 +152,10 @@ command that can show you which paths are currently being indexed.
 ### 🧘 _Can you give focus back to my editor / my problems panel / other?_
 
 ➥ I don't the VS Code API enables me to do this. Shoot me a message if you think I'm mistaken and
-I'll try to make this better.  
- 2023 Update: Added a setting `find-it-faster.general.killTerminalAfterUse`. When true, it will kill
-the extension's terminal which may result in VS Code focusing the previous one. It may help you.  
- 2024 Update: I recommend using `find-it-faster.general.useTerminalInEditor`. This way, the
+I'll try to make this better.
+2023 Update: Added a setting `find-it-faster.general.killTerminalAfterUse`. When true, it will kill
+the extension's terminal which may result in VS Code focusing the previous one. It may help you.
+2024 Update: I recommend using `find-it-faster.general.useTerminalInEditor`. This way, the
 extension window won't interfere with your other terminals, and you get more real estate for
 previewing files.
 
@@ -196,13 +197,25 @@ fi
 
 ➥ Thanks for asking, but no. The amount of work that went into this extension is tiny compared to
 the countless hours that have gone into the command line tools that are leveraged in this
-extension. Please support those tools instead.  
- What I do appreciate is if you'd help others find this extension by spreading the word and/or
+extension. Please support those tools instead.
+What I do appreciate is if you'd help others find this extension by spreading the word and/or
 leaving a rating!
 
 <hr />
 
 ## Release Notes
+
+### 0.1.0
+
+- Added new command: "Pick file from git status"
+  - Allows you to select files from the git status output using `fzf`
+  - New default keybinding:
+    - On macOS: Cmd+Shift+Alt+F
+    - On Linux and Windows: Ctrl+Shift+Alt+F
+- Added new configuration options for "Pick file from git status":
+  - `find-it-faster.pickFileFromGitStatus.showPreview`: Show a preview window when picking a file from git status
+  - `find-it-faster.pickFileFromGitStatus.previewCommand`: Custom command for the preview when picking a file from git status
+  - `find-it-faster.pickFileFromGitStatus.previewWindowConfig`: Custom configuration for the preview window when picking a file from git status
 
 ### 0.0.39
 
@@ -333,8 +346,8 @@ leaving a rating!
 
 ### 0.0.12
 
-- Option to "find within files", but pre-filter by file type.  
-  Exposes a new keyboard shortcut (default: `cmd+shift+ctrl+u` / `ctrl+shift+alt+u`).  
+- Option to "find within files", but pre-filter by file type.
+  Exposes a new keyboard shortcut (default: `cmd+shift+ctrl+u` / `ctrl+shift+alt+u`).
   The selection is stateful; it will be kept across searches such that you can easily re-run a
   search with the same file types. Should add new screen captures, but will do that in 0.0.13.
 
