@@ -217,6 +217,7 @@ leaving a rating!
   - `find-it-faster.pickFileFromGitStatus.showPreview`: Show a preview window when picking a file from git status
   - `find-it-faster.pickFileFromGitStatus.previewCommand`: Custom command for the preview when picking a file from git status
   - `find-it-faster.pickFileFromGitStatus.previewWindowConfig`: Custom configuration for the preview window when picking a file from git status
+  - Add custom logger for the extension
 
 ### 0.0.39
 

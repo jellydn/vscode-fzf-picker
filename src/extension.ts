@@ -14,6 +14,9 @@ import * as os from "node:os";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import * as vscode from "vscode";
+import { Logger } from "./logger";
+
+const logger = new Logger();
 
 // Add this interface definition
 interface PackageJson {
@@ -168,7 +171,7 @@ async function selectTypeFilter() {
 		});
 		qp.onDidAccept(() => {
 			CFG.useTypeFilter = true;
-			console.log(qp.activeItems);
+			logger.info("Using type filter", qp.activeItems);
 			CFG.findWithinFilesFilter.clear(); // reset
 			if (qp.selectedItems.length === 0) {
 				// If there are no active items, use the string that was entered.
@@ -469,6 +472,7 @@ function collectSearchLocations() {
 			vscode.window.showErrorMessage(
 				"Non-file:// uri's not currently supported...",
 			);
+			logger.error("Non-file:// uri's not currently supported...");
 			return "";
 		});
 		locations.push(...dirs);
@@ -525,7 +529,7 @@ function handleWorkspaceFoldersChanges() {
 
 	// Also re-update when anything changes
 	vscode.workspace.onDidChangeWorkspaceFolders((event) => {
-		console.log("workspace folders changed: ", event);
+		logger.info("workspace folders changed: ", event);
 		CFG.searchPaths = collectSearchLocations();
 	});
 }
@@ -552,6 +556,9 @@ function doFlightCheck(): boolean {
 	if (!commands.flightCheck || !commands.flightCheck.uri) {
 		vscode.window.showErrorMessage(
 			"Failed to find flight check script. This is a bug. Please report it.",
+		);
+		logger.error(
+			`Failed to find flight check script at ${commands.flightCheck.uri?.fsPath}. This is a bug. Please report it.`,
 		);
 		return false;
 	}
@@ -603,6 +610,7 @@ function doFlightCheck(): boolean {
 			vscode.window.showErrorMessage(
 				`Failed to activate plugin! Make sure you have the required command line tools installed as outlined in the README. ${errStr}`,
 			);
+			logger.error(`Failed to activate plugin! ${errStr}`);
 		}
 
 		return errStr === "";
@@ -621,7 +629,11 @@ function doFlightCheck(): boolean {
 function reinitialize() {
 	term?.dispose();
 	updateConfigWithUserSettings();
-	// console.log('plugin config:', CFG);
+	logger.info("Plugin initialized with key settings:", {
+		extensionName: CFG.extensionName,
+		searchPaths: CFG.searchPaths,
+		tempDir: CFG.tempDir,
+	});
 	if (!CFG.flightCheckPassed && !CFG.disableStartupChecks) {
 		CFG.flightCheckPassed = doFlightCheck();
 	}
@@ -645,6 +657,7 @@ function reinitialize() {
 		if (eventType === "change") {
 			handleCanaryFileChange();
 		} else if (eventType === "rename") {
+			logger.error("Canary file was renamed! Please reload.");
 			vscode.window.showErrorMessage(
 				`Issue detected with extension ${CFG.extensionName}. You may have to reload it.`,
 			);
@@ -669,9 +682,12 @@ function openFiles(data: string) {
 				file = v.groups.file;
 				lineTmp = v.groups.lineTmp;
 				charTmp = v.groups.charTmp;
-				//vscode.window.showWarningMessage('File: ' + file + "\nlineTmp: " + lineTmp + "\ncharTmp: " + charTmp);
+				logger.warn(`File: ${file}\nlineTmp: ${lineTmp}\ncharTmp: ${charTmp}`);
 			} else {
 				vscode.window.showWarningMessage(
+					`Did not match anything in filename: [${p}] could not open file!`,
+				);
+				logger.warn(
 					`Did not match anything in filename: [${p}] could not open file!`,
 				);
 			}
@@ -718,7 +734,10 @@ function handleCanaryFileChange() {
 		if (err) {
 			// We shouldn't really end up here. Maybe leave the terminal around in this case...
 			vscode.window.showWarningMessage(
-				"Something went wrong but we don't know what... Did you clean out your /tmp folder?",
+				`An error occurred while reading the canary file: ${err.message}`,
+			);
+			logger.warn(
+				`An error occurred while reading the canary file: ${err.message}`,
 			);
 		} else {
 			const commandWasSuccess = data.length > 0 && data[0] !== "1";
@@ -777,7 +796,6 @@ function createTerminal() {
 			: vscode.TerminalLocation.Panel,
 		hideFromUser: !CFG.useTerminalInEditor, // works only for terminal panel, not editor stage
 		env: {
-			/* eslint-disable @typescript-eslint/naming-convention */
 			FIND_IT_FASTER_ACTIVE: "1",
 			HISTCONTROL: "ignoreboth", // bash
 			// HISTORY_IGNORE: '*',        // zsh
@@ -800,7 +818,6 @@ function createTerminal() {
 			EXPLAIN_FILE: path.join(CFG.tempDir, "paths_explain"),
 			BAT_THEME: CFG.batTheme,
 			FUZZ_RG_QUERY: CFG.fuzzRipgrepQuery ? "1" : "0",
-			/* eslint-enable @typescript-eslint/naming-convention */
 		},
 	};
 	// Use provided terminal from settings, otherwise use default terminal profile
@@ -823,7 +840,7 @@ function getCommandString(
 	withTextSelection = true,
 ) {
 	assert(cmd.uri);
-	let ret = "";
+	let result = "";
 	const cmdPath = cmd.uri.fsPath;
 	if (CFG.useEditorSelectionAsQuery && withTextSelection) {
 		const editor = vscode.window.activeTextEditor;
@@ -842,28 +859,29 @@ function getCommandString(
 				//
 				const selectionText = editor.document.getText(selection);
 				fs.writeFileSync(CFG.selectionFile, selectionText);
-				ret += envVarToString("HAS_SELECTION", "1");
+				result += envVarToString("HAS_SELECTION", "1");
 			} else {
-				ret += envVarToString("HAS_SELECTION", "0");
+				result += envVarToString("HAS_SELECTION", "0");
 			}
 		}
 	}
 	// useTypeFilter should only be try if we activated the corresponding command
 	if (CFG.useTypeFilter && CFG.findWithinFilesFilter.size > 0) {
-		ret += envVarToString(
+		result += envVarToString(
 			"TYPE_FILTER",
 			`'${[...CFG.findWithinFilesFilter].reduce((x, y) => `${x}:${y}`)}'`,
 		);
 	}
 	if (cmd.script === "resume_search") {
-		ret += envVarToString("RESUME_SEARCH", "1");
+		result += envVarToString("RESUME_SEARCH", "1");
 	}
-	ret += cmdPath;
+	result += cmdPath;
 	if (withArgs) {
 		const paths = getWorkspaceFoldersAsString();
-		ret += ` ${paths}`;
+		result += ` ${paths}`;
 	}
-	return ret;
+	logger.debug("Get command", result);
+	return result;
 }
 
 function getIgnoreGlobs() {
@@ -901,10 +919,16 @@ async function executeTerminalCommand(cmd: string) {
 			vscode.window.showErrorMessage(
 				"Resume search is not implemented on Windows. Sorry! PRs welcome.",
 			);
+			logger.error(
+				"Resume search is not implemented on Windows. Sorry! PRs welcome.",
+			);
 			return;
 		}
 		if (CFG.lastCommand === "") {
 			vscode.window.showErrorMessage(
+				"Cannot resume the last search because no search was run yet.",
+			);
+			logger.error(
 				"Cannot resume the last search because no search was run yet.",
 			);
 			return;
