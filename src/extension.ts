@@ -299,7 +299,7 @@ function setupConfig(context: vscode.ExtensionContext) {
 	const localScript = (x: string) =>
 		vscode.Uri.file(
 			path.join(context.extensionPath, x) +
-			(os.platform() === "win32" ? ".ps1" : ".sh"),
+				(os.platform() === "win32" ? ".ps1" : ".sh"),
 		);
 	commands.findFiles.uri = localScript(commands.findFiles.script);
 	commands.findFilesWithType.uri = localScript(commands.findFiles.script);
@@ -311,7 +311,9 @@ function setupConfig(context: vscode.ExtensionContext) {
 		commands.listSearchLocations.script,
 	);
 	commands.flightCheck.uri = localScript(commands.flightCheck.script);
-	commands.pickFileFromGitStatus.uri = localScript(commands.pickFileFromGitStatus.script)
+	commands.pickFileFromGitStatus.uri = localScript(
+		commands.pickFileFromGitStatus.script,
+	);
 }
 
 /** Register the commands we defined with VS Code so users have access to them */
@@ -340,12 +342,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 	registerCommands();
 	reinitialize();
-
-	context.subscriptions.push(
-		vscode.commands.registerCommand("find-it-faster.pickFileFromGitStatus", () => {
-			executeTerminalCommand("pickFileFromGitStatus");
-		})
-	);
 }
 
 /* Called when extension is deactivated by VS Code */
