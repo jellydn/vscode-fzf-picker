@@ -98,6 +98,12 @@ const commands: { [key: string]: Command } = {
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
+	findTodoFixme: {
+		script: "find_todo_fixme",
+		uri: undefined,
+		preRunCallback: undefined,
+		postRunCallback: undefined,
+	},
 };
 
 type WhenCondition = "always" | "never" | "noWorkspaceOnly";
@@ -242,6 +248,7 @@ interface Config {
 	restoreFocusTerminal: boolean;
 	useTerminalInEditor: boolean;
 	shellPathForTerminal: string;
+	findTodoFixmeSearchPattern: string;
 }
 const CFG: Config = {
 	extensionName: undefined,
@@ -285,6 +292,7 @@ const CFG: Config = {
 	restoreFocusTerminal: false,
 	useTerminalInEditor: false,
 	shellPathForTerminal: "",
+	findTodoFixmeSearchPattern: "(TODO|FIXME|HACK|FIX):\\s",
 };
 
 /** Ensure that whatever command we expose in package.json actually exists */
@@ -317,6 +325,7 @@ function setupConfig(context: vscode.ExtensionContext) {
 	commands.pickFileFromGitStatus.uri = localScript(
 		commands.pickFileFromGitStatus.script,
 	);
+	commands.findTodoFixme.uri = localScript(commands.findTodoFixme.script);
 }
 
 /** Register the commands we defined with VS Code so users have access to them */
@@ -400,6 +409,7 @@ function updateConfigWithUserSettings() {
 	CFG.restoreFocusTerminal = getCFG("general.restoreFocusTerminal");
 	CFG.useTerminalInEditor = getCFG("general.useTerminalInEditor");
 	CFG.shellPathForTerminal = getCFG("general.shellPathForTerminal");
+	CFG.findTodoFixmeSearchPattern = getCFG("findTodoFixme.searchPattern");
 }
 
 function collectSearchLocations() {
@@ -814,6 +824,7 @@ function createTerminal() {
 			EXPLAIN_FILE: path.join(CFG.tempDir, "paths_explain"),
 			BAT_THEME: CFG.batTheme,
 			FUZZ_RG_QUERY: CFG.fuzzRipgrepQuery ? "1" : "0",
+			FIND_TODO_FIXME_SEARCH_PATTERN: CFG.findTodoFixmeSearchPattern,
 		},
 	};
 	// Use provided terminal from settings, otherwise use default terminal profile
@@ -876,7 +887,7 @@ function getCommandString(
 		const paths = getWorkspaceFoldersAsString();
 		result += ` ${paths}`;
 	}
-	logger.debug("Get command", result);
+	logger.info("Get command", result);
 	return result;
 }
 
