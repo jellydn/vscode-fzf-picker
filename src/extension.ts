@@ -568,7 +568,7 @@ function doFlightCheck(): boolean {
 			"Failed to find flight check script. This is a bug. Please report it.",
 		);
 		logger.error(
-			"Failed to find flight check script. This is a bug. Please report it.",
+			`Failed to find flight check script at ${commands.flightCheck.uri?.fsPath}. This is a bug. Please report it.`,
 		);
 		return false;
 	}
@@ -639,7 +639,11 @@ function doFlightCheck(): boolean {
 function reinitialize() {
 	term?.dispose();
 	updateConfigWithUserSettings();
-	logger.info("Plugin config:", CFG);
+	logger.info("Plugin initialized with key settings:", {
+		extensionName: CFG.extensionName,
+		searchPaths: CFG.searchPaths,
+		tempDir: CFG.tempDir,
+	});
 	if (!CFG.flightCheckPassed && !CFG.disableStartupChecks) {
 		CFG.flightCheckPassed = doFlightCheck();
 	}
@@ -740,7 +744,10 @@ function handleCanaryFileChange() {
 		if (err) {
 			// We shouldn't really end up here. Maybe leave the terminal around in this case...
 			vscode.window.showWarningMessage(
-				"Something went wrong but we don't know what... Did you clean out your /tmp folder?",
+				`An error occurred while reading the canary file: ${err.message}`,
+			);
+			logger.warn(
+				`An error occurred while reading the canary file: ${err.message}`,
 			);
 			logger.warn(
 				"Something went wrong but we don't know what... Did you clean out your /tmp folder?",
