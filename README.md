@@ -214,7 +214,7 @@ leaving a rating!
     - On Linux and Windows: Ctrl+Shift+Alt+F
 - Added new configuration options for "Pick file from git status":
   - `find-it-faster.pickFileFromGitStatus.showPreview`: Show a preview window when picking a file from git status
-  - `find-it-faster.pickFileFromGitStatus.previewCommand`: Custom command for preview when picking a file from git status
+  - `find-it-faster.pickFileFromGitStatus.previewCommand`: Custom command for the preview when picking a file from git status
   - `find-it-faster.pickFileFromGitStatus.previewWindowConfig`: Custom configuration for the preview window when picking a file from git status
 
 ### 0.0.39
