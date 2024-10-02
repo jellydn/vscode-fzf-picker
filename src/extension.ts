@@ -558,7 +558,7 @@ function doFlightCheck(): boolean {
 			"Failed to find flight check script. This is a bug. Please report it.",
 		);
 		logger.error(
-			"Failed to find flight check script. This is a bug. Please report it.",
+			`Failed to find flight check script at ${commands.flightCheck.uri?.fsPath}. This is a bug. Please report it.`,
 		);
 		return false;
 	}
