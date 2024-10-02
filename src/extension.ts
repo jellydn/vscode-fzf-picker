@@ -629,7 +629,11 @@ function doFlightCheck(): boolean {
 function reinitialize() {
 	term?.dispose();
 	updateConfigWithUserSettings();
-	logger.info("Plugin config:", CFG);
+	logger.info("Plugin initialized with key settings:", {
+		extensionName: CFG.extensionName,
+		searchPaths: CFG.searchPaths,
+		tempDir: CFG.tempDir,
+	});
 	if (!CFG.flightCheckPassed && !CFG.disableStartupChecks) {
 		CFG.flightCheckPassed = doFlightCheck();
 	}
