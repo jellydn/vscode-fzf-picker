@@ -205,6 +205,18 @@ leaving a rating!
 
 ## Release Notes
 
+### 0.1.0
+
+- Added new command: "Pick file from git status"
+  - Allows you to select files from the git status output using `fzf`
+  - New default keybinding:
+    - On macOS: Cmd+Shift+Alt+F
+    - On Linux and Windows: Ctrl+Shift+Alt+F
+- Added new configuration options for "Pick file from git status":
+  - `find-it-faster.pickFileFromGitStatus.showPreview`: Show a preview window when picking a file from git status
+  - `find-it-faster.pickFileFromGitStatus.previewCommand`: Custom command for preview when picking a file from git status
+  - `find-it-faster.pickFileFromGitStatus.previewWindowConfig`: Custom configuration for the preview window when picking a file from git status
+
 ### 0.0.39
 
 - Add option to set a shell path to enable running with a non-default shell

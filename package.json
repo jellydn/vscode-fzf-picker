@@ -86,6 +86,12 @@
 				"command": "find-it-faster.findWithinFilesWithType",
 				"mac": "ctrl+cmd+shift+u",
 				"linux": "ctrl+shift+alt+u"
+			},
+			{
+				"command": "find-it-faster.pickFileFromGitStatus",
+				"mac": "cmd+shift+alt+f",
+				"linux": "ctrl+shift+alt+f",
+				"win": "ctrl+shift+alt+f"
 			}
 		],
 		"configuration": {
