@@ -7,6 +7,10 @@ $PREVIEW_COMMAND = if ($Env:PICK_FILE_FROM_GIT_STATUS_PREVIEW_COMMAND) { $Env:PI
 $PREVIEW_WINDOW = if ($Env:PICK_FILE_FROM_GIT_STATUS_PREVIEW_WINDOW_CONFIG) { $Env:PICK_FILE_FROM_GIT_STATUS_PREVIEW_WINDOW_CONFIG } else { 'right:50%:border-left' }
 $CANARY_FILE = if ($Env:CANARY_FILE) { $Env:CANARY_FILE } else { "$Env:TEMP\canaryFile" }
 
+# Change to the root directory of the git repository
+$repo_root = git rev-parse --show-toplevel
+Set-Location $repo_root
+
 $git_status = git status --porcelain
 
 if ([string]::IsNullOrWhiteSpace($git_status)) {
@@ -27,5 +31,7 @@ if ([string]::IsNullOrWhiteSpace($selected_file)) {
     "1" | Out-File -FilePath $CANARY_FILE -Encoding UTF8
     exit 1
 } else {
-    $selected_file | Out-File -FilePath $CANARY_FILE -Encoding UTF8
+    # Use the full path of the selected file
+    $full_path = Join-Path $repo_root $selected_file
+    $full_path | Out-File -FilePath $CANARY_FILE -Encoding UTF8
 }

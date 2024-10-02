@@ -8,6 +8,9 @@ PREVIEW_COMMAND=${PICK_FILE_FROM_GIT_STATUS_PREVIEW_COMMAND:-'git diff --color=a
 PREVIEW_WINDOW=${PICK_FILE_FROM_GIT_STATUS_PREVIEW_WINDOW_CONFIG:-'right:50%:border-left'}
 CANARY_FILE=${CANARY_FILE:-'/tmp/canaryFile'}
 
+# Change to the root directory of the git repository
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
 git_status=$(git status --porcelain)
 
 if [[ -z "$git_status" ]]; then
@@ -31,5 +34,7 @@ if [[ -z "$selected_file" ]]; then
     echo "1" > "$CANARY_FILE"
     exit 1
 else
-    echo "$selected_file" > "$CANARY_FILE"
+    # Use the full path of the selected file
+    full_path="$(git rev-parse --show-toplevel)/$selected_file"
+    echo "$full_path" > "$CANARY_FILE"
 fi
