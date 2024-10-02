@@ -1,10 +1,10 @@
 {
 	"name": "find-it-faster",
 	"displayName": "FindItFaster",
-	"publisher": "TomRijndorp",
+	"publisher": "jellydn",
 	"icon": "media/icon.png",
 	"repository": {
-		"url": "https://github.com/TomRijndorp/vscode-finditfaster"
+		"url": "https://github.com/jellydn/vscode-finditfaster"
 	},
 	"description": "Find it, but faster! Leveraging fzf and rg.",
 	"keywords": [
