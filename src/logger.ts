@@ -2,11 +2,11 @@
 import { window } from "vscode";
 
 enum LogLevel {
-  DEBUG = "DEBUG",
-  INFO = "INFO",
-  WARN = "WARN",
-  ERROR = "ERROR",
-  NONE = "NONE",
+	DEBUG = "DEBUG",
+	INFO = "INFO",
+	WARN = "WARN",
+	ERROR = "ERROR",
+	NONE = "NONE",
 }
 
 export class Logger {
