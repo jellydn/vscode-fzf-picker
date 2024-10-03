@@ -72,12 +72,13 @@ if [[ -z "$SELECTED" ]]; then
 else
     # Process each selected item
     while IFS= read -r line; do
-        IFS=: read -ra VAL <<< "$line"
-        FILENAME=${VAL[0]}:${VAL[1]}:${VAL[2]}
+        FILENAME=$(echo "$line" | cut -d':' -f1)
+        LINE_NUMBER=$(echo "$line" | cut -d':' -f2)
+        COLUMN_NUMBER=$(echo "$line" | cut -d':' -f3)
         if [[ -n "$SINGLE_DIR_ROOT" ]]; then
-            echo "$SINGLE_DIR_ROOT/$FILENAME" >> "$CANARY_FILE"
+            echo "$SINGLE_DIR_ROOT/$FILENAME:$LINE_NUMBER:$COLUMN_NUMBER" >> "$CANARY_FILE"
         else
-            echo "$FILENAME" >> "$CANARY_FILE"
+            echo "$FILENAME:$LINE_NUMBER:$COLUMN_NUMBER" >> "$CANARY_FILE"
         fi
     done <<< "$SELECTED"
 fi
