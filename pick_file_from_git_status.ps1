@@ -1,3 +1,4 @@
+# TODO: Need to make sure this works on Windows
 $ErrorActionPreference = "Stop"
 
 . "$Env:EXTENSION_PATH\shared.ps1"
