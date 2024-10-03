@@ -16,6 +16,7 @@ Default key bindings:
 - `cmd+shift+u` / `ctrl+shift+u` to search for text within files,
 - `cmd+shift+ctrl+u` / `ctrl+shift+alt+u` to search for text within files with type pre-filtering.
 - `cmd+shift+alt+f` / `ctrl+shift+alt+f` to pick a file from git status.
+- `cmd+shift+alt+t` / `ctrl+shift+alt+t` to find TODO/FIXME comments.
 
 You can change these using VS Code's keyboard shortcuts.
 
@@ -37,13 +38,14 @@ This plugin is useful if you deal with very large projects with lots of files (w
 search functionality quite slow), or when you simply love using `fzf` and `rg` and would like to
 bring those tools inside VS Code, similar to how the excellent `fzf.vim` plugin works for Vim.
 
-This extension exposes four commands:
+This extension exposes five commands:
 
 1. Search for files and open them. Uses a combination of `fzf`, `rg`, and `bat`.
 2. Search within files for text and open them. Uses a combination of `fzf`, `rg`, and `bat`.
 3. Like 2., but you can limit the file types that will be searched.
 4. Resume search. Repeats the last run command with the previous query prepopulated.
 5. Pick file from git status. Allows you to select files from the git status output using `fzf`.
+6. Find TODO/FIXME comments. Searches for TODO and FIXME comments in your project using `fzf` and `rg`.
 
 If your active text editor has a selection, it will be used as the initial query (you can disable
 this setting).
@@ -84,6 +86,40 @@ into a VS Code context.
 <hr />
 
 ## Extension Settings
+
+This extension contributes the following settings:
+
+- `find-it-faster.general.useTerminalInEditor`: Whether to use the editor panel for the extension window. Default is `false`.
+- `find-it-faster.general.killTerminalAfterUse`: Whether to kill the extension's terminal after each use. Default is `false`.
+- `find-it-faster.general.restorePreviousTerminal`: Whether to restore the previously active terminal after each use. Default is `false`.
+- `find-it-faster.general.shellPath`: Path to the shell to use for running the extension. Default is an empty string, which means the default shell will be used.
+- `find-it-faster.general.useTextSelection`: Whether to use the text selection as the initial query. Default is `true`.
+- `find-it-faster.general.fuzzyMatchOnSpace`: Whether to fuzzy match on space bar in "search within files" function. Default is `false`.
+- `find-it-faster.general.searchPath`: Search path configuration. Default is an empty object.
+- `find-it-faster.general.searchPath.includeProcessWorkingDirectory`: Whether to include the process working directory in the search path. Default is `false`.
+- `find-it-faster.general.searchPath.includeWorkspaceFolders`: Whether to include the workspace folders in the search path. Default is `true`.
+- `find-it-faster.general.searchPath.additionalPaths`: Additional search paths to include. Default is an empty array.
+- `find-it-faster.general.searchPath.excludeGitDirectory`: Whether to exclude the .git directory from the search path. Default is `true`.
+- `find-it-faster.general.searchPath.excludeGitIgnore`: Whether to exclude paths specified in .gitignore files from the search path. Default is `true`.
+- `find-it-faster.general.searchPath.excludeVscode`: Whether to exclude paths specified in the search.exclude setting from the search path. Default is `true`.
+- `find-it-faster.general.checks`: Checks configuration. Default is an empty object.
+- `find-it-faster.general.checks.checkFzf`: Whether to check for the presence of fzf. Default is `true`.
+- `find-it-faster.general.checks.checkRg`: Whether to check for the presence of rg. Default is `true`.
+- `find-it-faster.general.checks.checkBat`: Whether to check for the presence of bat. Default is `true`.
+- `find-it-faster.general.checks.checkSed`: Whether to check for the presence of sed. Default is `true`.
+- `find-it-faster.findFiles.previewEnabled`: Whether to enable preview in "find files" function. Default is `true`.
+- `find-it-faster.findFiles.previewCommand`: Custom command for the preview in "find files" function. Default is an empty string.
+- `find-it-faster.findFiles.previewWindowConfig`: Custom configuration for the preview window in "find files" function. Default is an empty string.
+- `find-it-faster.findWithinFiles.previewEnabled`: Whether to enable preview in "find within files" function. Default is `true`.
+- `find-it-faster.findWithinFiles.previewCommand`: Custom command for the preview in "find within files" function. Default is an empty string.
+- `find-it-faster.findWithinFiles.previewWindowConfig`: Custom configuration for the preview window in "find within files" function. Default is an empty string.
+- `find-it-faster.findWithinFilesWithFilter.previewEnabled`: Whether to enable preview in "find within files (with type filter)" function. Default is `true`.
+- `find-it-faster.findWithinFilesWithFilter.previewCommand`: Custom command for the preview in "find within files (with type filter)" function. Default is an empty string.
+- `find-it-faster.findWithinFilesWithFilter.previewWindowConfig`: Custom configuration for the preview window in "find within files (with type filter)" function. Default is an empty string.
+- `find-it-faster.pickFileFromGitStatus.showPreview`: Show a preview window when picking a file from git status. Default is `true`.
+- `find-it-faster.pickFileFromGitStatus.previewCommand`: Custom command for the preview when picking a file from git status. Default is an empty string.
+- `find-it-faster.pickFileFromGitStatus.previewWindowConfig`: Custom configuration for the preview window when picking a file from git status. Default is an empty string.
+- `find-it-faster.findTodoFixme.searchPattern`: Regular expression pattern for searching TODO/FIXME/HACK comments. Matches keywords followed by a colon and optional space. Default is `(TODO|FIXME|HACK|FIX):\s`.
 
 See the settings for this extension in the GUI.
 You might want to play with `fzf`, `rg` and `bat` on the command line and read their manuals in
@@ -205,6 +241,16 @@ leaving a rating!
 <hr />
 
 ## Release Notes
+
+### 0.2.0
+
+- Added new "Find TODO/FIXME comments" feature
+  - Searches for TODO, FIXME, HACK, and FIX comments in your project
+  - Uses `fzf` and `rg` for fast and interactive searching
+  - Supports both Unix-based systems (macOS, Linux) and Windows
+  - Customizable search pattern through settings
+  - Preview window support for quick code inspection
+- Improved Windows support for all features
 
 ### 0.1.0
 

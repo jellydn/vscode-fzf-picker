@@ -98,6 +98,12 @@ const commands: { [key: string]: Command } = {
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
+	findTodoFixme: {
+		script: "find_todo_fixme",
+		uri: undefined,
+		preRunCallback: undefined,
+		postRunCallback: undefined,
+	},
 };
 
 type WhenCondition = "always" | "never" | "noWorkspaceOnly";
@@ -242,6 +248,7 @@ interface Config {
 	restoreFocusTerminal: boolean;
 	useTerminalInEditor: boolean;
 	shellPathForTerminal: string;
+	findTodoFixmeSearchPattern: string;
 }
 const CFG: Config = {
 	extensionName: undefined,
@@ -285,6 +292,7 @@ const CFG: Config = {
 	restoreFocusTerminal: false,
 	useTerminalInEditor: false,
 	shellPathForTerminal: "",
+	findTodoFixmeSearchPattern: "(TODO|FIXME|HACK|FIX):\\s",
 };
 
 /** Ensure that whatever command we expose in package.json actually exists */
@@ -317,6 +325,7 @@ function setupConfig(context: vscode.ExtensionContext) {
 	commands.pickFileFromGitStatus.uri = localScript(
 		commands.pickFileFromGitStatus.script,
 	);
+	commands.findTodoFixme.uri = localScript(commands.findTodoFixme.script);
 }
 
 /** Register the commands we defined with VS Code so users have access to them */
@@ -400,6 +409,7 @@ function updateConfigWithUserSettings() {
 	CFG.restoreFocusTerminal = getCFG("general.restoreFocusTerminal");
 	CFG.useTerminalInEditor = getCFG("general.useTerminalInEditor");
 	CFG.shellPathForTerminal = getCFG("general.shellPathForTerminal");
+	CFG.findTodoFixmeSearchPattern = getCFG("findTodoFixme.searchPattern");
 }
 
 function collectSearchLocations() {
@@ -668,6 +678,7 @@ function reinitialize() {
 
 /** Interpreting the terminal output and turning them into a vscode command */
 function openFiles(data: string) {
+	logger.info("Opening files", data);
 	const filePaths = data.split("\n").filter((s) => s !== "");
 	assert(filePaths.length > 0);
 	for (const p of filePaths) {
@@ -738,6 +749,9 @@ function handleCanaryFileChange() {
 			);
 			logger.warn(
 				`An error occurred while reading the canary file: ${err.message}`,
+			);
+			logger.warn(
+				"Something went wrong but we don't know what... Did you clean out your /tmp folder?",
 			);
 		} else {
 			const commandWasSuccess = data.length > 0 && data[0] !== "1";
@@ -818,6 +832,7 @@ function createTerminal() {
 			EXPLAIN_FILE: path.join(CFG.tempDir, "paths_explain"),
 			BAT_THEME: CFG.batTheme,
 			FUZZ_RG_QUERY: CFG.fuzzRipgrepQuery ? "1" : "0",
+			FIND_TODO_FIXME_SEARCH_PATTERN: CFG.findTodoFixmeSearchPattern,
 		},
 	};
 	// Use provided terminal from settings, otherwise use default terminal profile
@@ -842,7 +857,14 @@ function getCommandString(
 	assert(cmd.uri);
 	let result = "";
 	const cmdPath = cmd.uri.fsPath;
-	if (CFG.useEditorSelectionAsQuery && withTextSelection) {
+
+	if (
+		cmd.script === "pick_file_from_git_status" ||
+		cmd.script === "find_todo_fixme"
+	) {
+		// Always set HAS_SELECTION to 0 for these specific commands
+		result += envVarToString("HAS_SELECTION", "0");
+	} else if (CFG.useEditorSelectionAsQuery && withTextSelection) {
 		const editor = vscode.window.activeTextEditor;
 		if (editor) {
 			const selection = editor.selection;
@@ -880,7 +902,7 @@ function getCommandString(
 		const paths = getWorkspaceFoldersAsString();
 		result += ` ${paths}`;
 	}
-	logger.debug("Get command", result);
+	logger.info("Get command", result);
 	return result;
 }
 

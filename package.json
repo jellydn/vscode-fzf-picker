@@ -24,7 +24,7 @@
 		"search",
 		"within"
 	],
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"engines": {
 		"vscode": "^1.90.0"
 	},
@@ -67,6 +67,10 @@
 			{
 				"command": "find-it-faster.pickFileFromGitStatus",
 				"title": "Find It Faster: Pick file from git status"
+			},
+			{
+				"command": "find-it-faster.findTodoFixme",
+				"title": "Find It Faster: Find TODO/FIXME comments"
 			}
 		],
 		"keybindings": [
@@ -90,6 +94,12 @@
 				"mac": "cmd+shift+alt+f",
 				"linux": "ctrl+shift+alt+f",
 				"win": "ctrl+shift+alt+f"
+			},
+			{
+				"command": "find-it-faster.findTodoFixme",
+				"mac": "cmd+shift+alt+t",
+				"linux": "ctrl+shift+alt+t",
+				"win": "ctrl+shift+alt+t"
 			}
 		],
 		"configuration": {
@@ -246,6 +256,26 @@
 					"markdownDescription": "When populated: Used by `fzf` to determine position and look of the preview window when picking a file from git status. See the `fzf` documentation. Example: `right:50%:border-left`.",
 					"type": "string",
 					"default": ""
+				},
+				"find-it-faster.findTodoFixme.previewEnabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enable preview for TODO/FIXME search results"
+				},
+				"find-it-faster.findTodoFixme.previewCommand": {
+					"type": "string",
+					"default": "bat --decorations=always --color=always {1} --highlight-line {2} --style=header,grid",
+					"description": "Preview command for TODO/FIXME search results"
+				},
+				"find-it-faster.findTodoFixme.previewWindowConfig": {
+					"type": "string",
+					"default": "right:border-left:50%:+{2}+3/3:~3",
+					"description": "Preview window configuration for TODO/FIXME search results"
+				},
+				"find-it-faster.findTodoFixme.searchPattern": {
+					"type": "string",
+					"default": "(TODO|FIXME|HACK|FIX):\\s",
+					"description": "Regular expression pattern for searching TODO/FIXME/HACK comments. Matches keywords followed by a colon and optional space."
 				}
 			}
 		}
