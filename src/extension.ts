@@ -678,6 +678,7 @@ function reinitialize() {
 
 /** Interpreting the terminal output and turning them into a vscode command */
 function openFiles(data: string) {
+	logger.info("Opening files", data);
 	const filePaths = data.split("\n").filter((s) => s !== "");
 	assert(filePaths.length > 0);
 	for (const p of filePaths) {
@@ -856,7 +857,14 @@ function getCommandString(
 	assert(cmd.uri);
 	let result = "";
 	const cmdPath = cmd.uri.fsPath;
-	if (CFG.useEditorSelectionAsQuery && withTextSelection) {
+
+	if (
+		cmd.script === "pick_file_from_git_status" ||
+		cmd.script === "find_todo_fixme"
+	) {
+		// Always set HAS_SELECTION to 0 for these specific commands
+		result += envVarToString("HAS_SELECTION", "0");
+	} else if (CFG.useEditorSelectionAsQuery && withTextSelection) {
 		const editor = vscode.window.activeTextEditor;
 		if (editor) {
 			const selection = editor.selection;
