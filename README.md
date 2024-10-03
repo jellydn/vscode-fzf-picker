@@ -59,11 +59,15 @@ this setting).
 ⬇️ &nbsp;**Find text within files, with file type filter**
 ![Find Within Files](media/find_within_files_with_filter.gif)
 
+⬇️ &nbsp;**Pick file from git status**
+[![Pick file from git status command](https://i.gyazo.com/22c49d0ffdade4ba52d2cbf79c64990c.gif)](https://gyazo.com/22c49d0ffdade4ba52d2cbf79c64990c)
+
+⬇️ &nbsp;**Find TODO/FIXME on comments code**
+[![Find TODO FIXME](https://i.gyazo.com/d73a096b2bb48d1c8baee692097a5427.gif)](https://gyazo.com/d73a096b2bb48d1c8baee692097a5427)
+
 This extension has also been tested on remote workspaces (e.g. SSH sessions).
 
 <hr />
-
-<a name="requirements"></a>
 
 ## Requirements
 
