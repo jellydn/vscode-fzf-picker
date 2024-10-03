@@ -45,21 +45,27 @@ if ($PREVIEW_ENABLED -eq "1") {
 $RG_PREFIX_STR = $RG_PREFIX -join ' '
 $FZF_CMD = "$RG_PREFIX_STR '$SEARCH_PATTERN' $($PATHS -join ' ')"
 
+# Run the initial search and store results in a temporary file
+$TEMP_RESULTS = New-TemporaryFile
+Invoke-Expression $FZF_CMD | Out-File -FilePath $TEMP_RESULTS -Encoding utf8
+
 # Check if there are any TODO/FIXME comments
-$result = Invoke-Expression $FZF_CMD
-if ([string]::IsNullOrWhiteSpace($result)) {
+if ((Get-Item $TEMP_RESULTS).length -eq 0) {
     Write-Host "No TODO/FIXME comments found in the project."
     "1" | Out-File -FilePath $env:CANARY_FILE -Encoding UTF8
+    Remove-Item $TEMP_RESULTS
     exit 1
 }
 
 # Use fzf to select multiple TODO/FIXME comments
-$selected = $result | fzf --ansi `
+$selected = Get-Content $TEMP_RESULTS | fzf --ansi `
     --multi `
     --cycle `
     --delimiter : `
-    --bind "change:reload:Start-Sleep -Milliseconds 100; $FZF_CMD | rg -i {q} || echo ''" `
+    --bind "change:reload:Start-Sleep -Milliseconds 100; Get-Content $TEMP_RESULTS | rg -i {q} || echo ''" `
     @PREVIEW_STR
+
+Remove-Item $TEMP_RESULTS
 
 if ([string]::IsNullOrWhiteSpace($selected)) {
     Write-Host "Canceled"

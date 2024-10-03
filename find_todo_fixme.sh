@@ -48,21 +48,27 @@ fi
 RG_PREFIX_STR=$(array_join "${RG_PREFIX+"${RG_PREFIX[@]}"}")
 FZF_CMD="${RG_PREFIX+"${RG_PREFIX[@]}"} '$SEARCH_PATTERN' $(array_join "${PATHS[@]+"${PATHS[@]}"}")"
 
+# Run the initial search and store results in a temporary file
+TEMP_RESULTS=$(mktemp)
+eval "$FZF_CMD" > "$TEMP_RESULTS"
+
 # Check if there are any TODO/FIXME comments
-if ! eval "$FZF_CMD" | grep -q .; then
+if [ ! -s "$TEMP_RESULTS" ]; then
     echo "No TODO/FIXME comments found in the project."
     echo "1" > "$CANARY_FILE"
+    rm "$TEMP_RESULTS"
     exit 1
 fi
 
 # Use fzf to select multiple TODO/FIXME comments
-SELECTED=$(FZF_DEFAULT_COMMAND="$FZF_CMD" \
-  fzf --ansi \
-      --multi \
-      --cycle \
-      --delimiter : \
-      --bind "change:reload:sleep 0.1; $FZF_CMD | rg -i {q} || true" \
-      ${PREVIEW_STR[@]+"${PREVIEW_STR[@]}"})
+SELECTED=$(fzf --ansi \
+    --multi \
+    --cycle \
+    --delimiter : \
+    --bind "change:reload:sleep 0.1; cat $TEMP_RESULTS | rg -i {q} || true" \
+    ${PREVIEW_STR[@]+"${PREVIEW_STR[@]}"} < "$TEMP_RESULTS")
+
+rm "$TEMP_RESULTS"
 
 if [[ -z "$SELECTED" ]]; then
     echo canceled
