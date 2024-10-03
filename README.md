@@ -16,7 +16,7 @@ Default key bindings:
 - `cmd+shift+u` / `ctrl+shift+u` to search for text within files,
 - `cmd+shift+ctrl+u` / `ctrl+shift+alt+u` to search for text within files with type pre-filtering.
 - `cmd+shift+alt+f` / `ctrl+shift+alt+f` to pick a file from git status.
-- `cmd+shift+t` / `ctrl+shift+t` to find TODO/FIXME comments.
+- `cmd+shift+alt+t` / `ctrl+shift+alt+t` to find TODO/FIXME comments.
 
 You can change these using VS Code's keyboard shortcuts.
 
