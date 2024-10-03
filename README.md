@@ -38,6 +38,43 @@ The extension provides five main commands:
 4. Pick file from git status
 5. Find TODO/FIXME comments
 
+## Demo
+
+<details>
+<summary>Search files</summary>
+
+![Search Files Demo](https://raw.githubusercontent.com/jellydn/vscode-finditfaster/main/media/find_files.gif)
+
+</details>
+
+<details>
+<summary>Search within files</summary>
+
+![Search Within Files Demo](https://raw.githubusercontent.com/jellydn/vscode-finditfaster/main/media/find_within_files.gif)
+
+</details>
+
+<details>
+<summary>Search within files with type pre-filtering</summary>
+
+![Search Within Files with Filter Demo](https://raw.githubusercontent.com/jellydn/vscode-finditfaster/main/media/find_within_files_with_filter.gif)
+
+</details>
+
+<details>
+<summary>Pick file from git status</summary>
+
+![Pick File from Git Status Demo](https://i.gyazo.com/22c49d0ffdade4ba52d2cbf79c64990c.gif)
+
+</details>
+
+<details>
+<summary>Find TODO/FIXME comments</summary>
+
+![Find TODO/FIXME Demo](https://i.gyazo.com/d73a096b2bb48d1c8baee692097a5427.gif)
+
+</details>
+
 ## Requirements
 
 Ensure you can run `fzf`, `rg`, `bat`, and `sed` directly in your terminal. If those work, this plugin will work as expected.
