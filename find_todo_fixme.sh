@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -uo pipefail  # No -e to support write to canary file after cancel
+set -euo pipefail
 
 . "$EXTENSION_PATH/shared.sh"
 
@@ -16,7 +16,6 @@ fi
 SEARCH_PATTERN=${FIND_TODO_FIXME_SEARCH_PATTERN:-'(TODO|FIXME|HACK|FIX):\s'}
 
 # Set up the ripgrep command
-# shellcheck disable=SC2207
 RG_PREFIX=(rg
     --column
     --hidden
@@ -31,9 +30,6 @@ RG_PREFIX=(rg
     --glob "'!**/.git/'"
     $(array_join "${GLOBS[@]+"${GLOBS[@]}"}")
 )
-if [[ ${#TYPE_FILTER_ARR[@]} -gt 0 ]]; then
-    RG_PREFIX+=("$(printf "%s " "${TYPE_FILTER_ARR[@]}")")
-fi
 RG_PREFIX+=(" 2> /dev/null")
 
 PREVIEW_ENABLED=${FIND_TODO_FIXME_PREVIEW_ENABLED:-1}
@@ -45,7 +41,6 @@ if [[ "$PREVIEW_ENABLED" -eq 1 ]]; then
     PREVIEW_STR=(--preview "$PREVIEW_COMMAND" --preview-window "$PREVIEW_WINDOW")
 fi
 
-RG_PREFIX_STR=$(array_join "${RG_PREFIX+"${RG_PREFIX[@]}"}")
 FZF_CMD="${RG_PREFIX+"${RG_PREFIX[@]}"} '$SEARCH_PATTERN' $(array_join "${PATHS[@]+"${PATHS[@]}"}")"
 
 # Run the initial search and store results in a temporary file
@@ -65,7 +60,7 @@ SELECTED=$(fzf --ansi \
     --multi \
     --cycle \
     --delimiter : \
-    --bind "change:reload:sleep 0.1; cat $TEMP_RESULTS | rg -i {q} || true" \
+    --bind "change:reload:sleep 0.1; cat $TEMP_RESULTS | rg -i '{q}' || true" \
     ${PREVIEW_STR[@]+"${PREVIEW_STR[@]}"} < "$TEMP_RESULTS")
 
 rm "$TEMP_RESULTS"

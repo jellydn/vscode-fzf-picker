@@ -29,9 +29,6 @@ $RG_PREFIX = @(
     "--glob", "!**/.git/"
 )
 $RG_PREFIX += $GLOBS
-if ($TYPE_FILTER_ARR.Count -gt 0) {
-    $RG_PREFIX += $TYPE_FILTER_ARR
-}
 
 $PREVIEW_ENABLED = if ($env:FIND_TODO_FIXME_PREVIEW_ENABLED) { $env:FIND_TODO_FIXME_PREVIEW_ENABLED } else { "1" }
 $PREVIEW_COMMAND = if ($env:FIND_TODO_FIXME_PREVIEW_COMMAND) { $env:FIND_TODO_FIXME_PREVIEW_COMMAND } else { 'bat --decorations=always --color=always {1} --highlight-line {2} --style=header,grid' }
@@ -62,7 +59,7 @@ $selected = Get-Content $TEMP_RESULTS | fzf --ansi `
     --multi `
     --cycle `
     --delimiter : `
-    --bind "change:reload:Start-Sleep -Milliseconds 100; Get-Content $TEMP_RESULTS | rg -i {q} || echo ''" `
+    --bind "change:reload:Start-Sleep -Milliseconds 100; Get-Content $TEMP_RESULTS | rg -i '{q}' || echo ''" `
     @PREVIEW_STR
 
 Remove-Item $TEMP_RESULTS
