@@ -1063,6 +1063,7 @@ async function chooseCustomTask(): Promise<boolean> {
 				return true;
 			} catch (error) {
 				logger.error("Failed to execute custom task", error);
+				vscode.window.showErrorMessage(`Failed to execute custom task: ${error.message}`);
 				return false;
 			}
 		}
