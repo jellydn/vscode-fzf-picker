@@ -14,6 +14,7 @@ async function findFiles(paths: string[]): Promise<string[]> {
 		const lastQueryFile = process.env.LAST_QUERY_FILE || "";
 		const selectionFile = process.env.SELECTION_FILE || "";
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
+		const fileTypes = process.env.TYPE_FILTER || "";
 
 		// Navigate to the first path if it's the only one
 		let singleDirRoot = "";
@@ -45,9 +46,17 @@ async function findFiles(paths: string[]): Promise<string[]> {
 			useGitignore ? "" : "--no-ignore",
 			"--glob",
 			"!**/.git/",
-		].concat(paths);
-
+		];
+		if (fileTypes) {
+			// Split file type `:` and add to rgArgs
+			const fileTypesArray = fileTypes.split(":");
+			for (const fileType of fileTypesArray) {
+				rgArgs.push("--type", fileType);
+			}
+		}
+		rgArgs.push(...paths);
 		const rg = spawn("rg", rgArgs.filter(Boolean));
+
 		const fzfArgs = [
 			"--cycle",
 			"--multi",

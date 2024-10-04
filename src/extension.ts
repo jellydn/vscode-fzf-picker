@@ -22,10 +22,8 @@ import { join, sep } from "node:path";
 import * as vscode from "vscode";
 
 import { CFG, PathOrigin } from "./config";
-import { Logger } from "./logger";
+import { logger } from "./logger";
 import { getIgnoreGlobs, getIgnoreString } from "./utils";
-
-const logger = new Logger();
 
 interface PackageJson {
 	name: string;
@@ -61,8 +59,22 @@ const commands: { [key: string]: Command } = {
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
+	findFilesJs: {
+		script: "find_files_js",
+		uri: undefined,
+		preRunCallback: undefined,
+		postRunCallback: undefined,
+	},
 	findFilesWithType: {
 		script: "find_files",
+		uri: undefined,
+		preRunCallback: selectTypeFilter,
+		postRunCallback: () => {
+			CFG.useTypeFilter = false;
+		},
+	},
+	findFilesWithTypeJs: {
+		script: "find_files_js",
 		uri: undefined,
 		preRunCallback: selectTypeFilter,
 		postRunCallback: () => {
@@ -119,12 +131,6 @@ const commands: { [key: string]: Command } = {
 		preRunCallback: chooseCustomTask,
 		postRunCallback: undefined,
 		isCustomTask: true,
-	},
-	findFilesJs: {
-		script: "find_files_js",
-		uri: undefined,
-		preRunCallback: undefined,
-		postRunCallback: undefined,
 	},
 };
 
@@ -721,11 +727,10 @@ function handleTerminalFocusRestore(commandWasSuccess: boolean) {
 
 function createTerminal() {
 	const terminalOptions: vscode.TerminalOptions = {
-		name: "F️indItFaster",
 		location: CFG.useTerminalInEditor
 			? vscode.TerminalLocation.Editor
 			: vscode.TerminalLocation.Panel,
-		hideFromUser: !CFG.useTerminalInEditor, // works only for terminal panel, not editor stage
+		hideFromUser: false,
 		env: {
 			FIND_IT_FASTER_ACTIVE: "1",
 			HISTCONTROL: "ignoreboth", // bash
@@ -871,21 +876,23 @@ async function executeTerminalCommand(cmd: string) {
 		cbResult = await cb();
 	}
 
-	if (cmd === "findFilesJs") {
-		logger.info(`Executing ${cmd} command`);
-		await executeCommand("findFiles");
-		return;
+	logger.info(`Executing ${cmd} command`);
+	if (!term || term.exitStatus !== undefined) {
+		createTerminal();
 	}
-
 	if (cbResult === true && !commands[cmd].isCustomTask) {
-		term.sendText(getCommandString(commands[cmd]));
+		if (cmd.includes("Js")) {
+			await executeCommand("findFiles", false, cmd === "findFilesWithTypeJs");
+		} else {
+			term.sendText(getCommandString(commands[cmd]));
+			term.show();
+		}
 		if (CFG.showMaximizedTerminal) {
 			vscode.commands.executeCommand("workbench.action.toggleMaximizedPanel");
 		}
 		if (CFG.restoreFocusTerminal) {
 			previousActiveTerminal = vscode.window.activeTerminal ?? null;
 		}
-		term.show();
 		const postRunCallback = commands[cmd].postRunCallback;
 		if (postRunCallback !== undefined) {
 			postRunCallback();
@@ -949,26 +956,47 @@ async function chooseCustomTask(): Promise<boolean> {
 	return false;
 }
 
-async function executeCommand(name: string) {
+async function executeCommand(
+	name: string,
+	withTextSelection: boolean,
+	hasFilter: boolean,
+) {
 	const workspaceFolders = vscode.workspace.workspaceFolders;
 	if (!workspaceFolders) {
 		vscode.window.showErrorMessage("No workspace folder open");
 		return;
 	}
-
 	const rootPath = workspaceFolders[0].uri.fsPath;
-
-	// Create a new terminal if it doesn't exist
-	if (!term || term.exitStatus !== undefined) {
-		createTerminal();
-	}
 
 	// Get the path to the commands.js file
 	const commandsJsPath = join(CFG.extensionPath, "out", "commands.js");
 
+	let envVars = "";
+
+	if (CFG.useEditorSelectionAsQuery && withTextSelection) {
+		const editor = vscode.window.activeTextEditor;
+		if (editor) {
+			const selection = editor.selection;
+			if (!selection.isEmpty) {
+				const selectionText = editor.document.getText(selection);
+				writeFileSync(CFG.selectionFile, selectionText);
+				envVars += envVarToString("HAS_SELECTION", "1");
+			} else {
+				envVars += envVarToString("HAS_SELECTION", "0");
+			}
+		}
+	}
+	// useTypeFilter should only be try if we activated the corresponding command
+	if (hasFilter && CFG.findWithinFilesFilter.size > 0) {
+		envVars += envVarToString(
+			"TYPE_FILTER",
+			`'${[...CFG.findWithinFilesFilter].reduce((x, y) => `${x}:${y}`)}'`,
+		);
+	}
+
 	// Construct the command to run
 	logger.info(`Executing ${name} command`);
-	const command = `node "${commandsJsPath}" "${name}" "${rootPath}"`;
+	const command = `${envVars} node "${commandsJsPath}" "${name}" "${rootPath}"`;
 
 	// Send the command to the terminal
 	term.sendText(command);
@@ -981,12 +1009,5 @@ async function executeCommand(name: string) {
 	watcher.onDidChange(() => {
 		handleCanaryFileChange();
 		watcher.dispose(); // Dispose the watcher after handling the change
-
-		// Clear the terminal output after a short delay
-		setTimeout(() => {
-			if (term) {
-				term.sendText("clear", true);
-			}
-		}, 100); // Adjust this delay if needed
 	});
 }
