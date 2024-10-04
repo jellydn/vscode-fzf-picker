@@ -2,6 +2,12 @@
 
 All notable changes to the "FindItFaster" extension will be documented in this file.
 
+## [0.3.0]
+
+- Added new "Custom Tasks" feature
+  - Supports task configuration through settings
+  - Executes selected tasks and displays output in VS Code
+
 ## [0.2.0]
 
 - Added new "Find TODO/FIXME comments" feature

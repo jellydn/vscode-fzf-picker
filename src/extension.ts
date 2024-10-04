@@ -1,7 +1,6 @@
 /**
- * TODO:
+ * TODO: Should move this to README or ROADMAP
  * [ ] Show relative paths whenever possible
- *     - This might be tricky. I could figure out the common base path of all dirs we search, I guess?
  *
  * Feature options:
  * [ ] Buffer of open files / show currently open files / always show at bottom => workspace.textDocuments is a bit curious / borked
@@ -13,12 +12,12 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
+
 import * as vscode from "vscode";
 import { Logger } from "./logger";
 
 const logger = new Logger();
 
-// Add this interface definition
 interface PackageJson {
 	name: string;
 	contributes: {
@@ -44,10 +43,11 @@ interface Command {
 	uri: vscode.Uri | undefined;
 	preRunCallback: undefined | (() => boolean | Promise<boolean>);
 	postRunCallback: undefined | (() => void);
+	isCustomTask?: boolean;
 }
 const commands: { [key: string]: Command } = {
 	findFiles: {
-		script: "find_files", // we append a platform-specific extension later
+		script: "find_files",
 		uri: undefined,
 		preRunCallback: undefined,
 		postRunCallback: undefined,
@@ -103,6 +103,13 @@ const commands: { [key: string]: Command } = {
 		uri: undefined,
 		preRunCallback: undefined,
 		postRunCallback: undefined,
+	},
+	runCustomTask: {
+		script: "run_custom_task",
+		uri: undefined,
+		preRunCallback: chooseCustomTask,
+		postRunCallback: undefined,
+		isCustomTask: true,
 	},
 };
 
@@ -249,6 +256,7 @@ interface Config {
 	useTerminalInEditor: boolean;
 	shellPathForTerminal: string;
 	findTodoFixmeSearchPattern: string;
+	customTasks: CustomTask[];
 }
 const CFG: Config = {
 	extensionName: undefined,
@@ -293,6 +301,12 @@ const CFG: Config = {
 	useTerminalInEditor: false,
 	shellPathForTerminal: "",
 	findTodoFixmeSearchPattern: "(TODO|FIXME|HACK|FIX):\\s",
+	customTasks: [
+		{
+			name: "zoxide",
+			command: "code $(zoxide query --interactive)",
+		},
+	],
 };
 
 /** Ensure that whatever command we expose in package.json actually exists */
@@ -410,6 +424,7 @@ function updateConfigWithUserSettings() {
 	CFG.useTerminalInEditor = getCFG("general.useTerminalInEditor");
 	CFG.shellPathForTerminal = getCFG("general.shellPathForTerminal");
 	CFG.findTodoFixmeSearchPattern = getCFG("findTodoFixme.searchPattern");
+	CFG.customTasks = getCFG("customTasks");
 }
 
 function collectSearchLocations() {
@@ -984,7 +999,7 @@ async function executeTerminalCommand(cmd: string) {
 	if (cb !== undefined) {
 		cbResult = await cb();
 	}
-	if (cbResult === true) {
+	if (cbResult === true && !commands[cmd].isCustomTask) {
 		term.sendText(getCommandString(commands[cmd]));
 		if (CFG.showMaximizedTerminal) {
 			vscode.commands.executeCommand("workbench.action.toggleMaximizedPanel");
@@ -1005,4 +1020,56 @@ function envVarToString(name: string, value: string) {
 	return os.platform() === "win32"
 		? `$Env:${name}=${value}; `
 		: `${name}=${value} `;
+}
+
+interface CustomTask {
+	name: string;
+	command: string;
+}
+
+async function executeCustomTask(task: CustomTask): Promise<void> {
+	if (!term || term.exitStatus !== undefined) {
+		createTerminal();
+	}
+
+	logger.info(`Executing custom task: ${task.command}`);
+	term.sendText(task.command);
+	term.show();
+}
+
+async function chooseCustomTask(): Promise<boolean> {
+	const customTasks = CFG.customTasks;
+	if (customTasks.length === 0) {
+		vscode.window.showWarningMessage(
+			"No custom tasks defined. Add some in the settings.",
+		);
+		return false;
+	}
+
+	const taskItems = customTasks.map((task) => ({
+		label: task.name,
+		description: task.command,
+	}));
+
+	const selectedTask = await vscode.window.showQuickPick(taskItems, {
+		placeHolder: "Choose a custom task to run",
+	});
+
+	if (selectedTask) {
+		const task = customTasks.find((t) => t.name === selectedTask.label);
+		if (task) {
+			try {
+				await executeCustomTask(task);
+				return true;
+			} catch (error) {
+				logger.error("Failed to execute custom task", error);
+				vscode.window.showErrorMessage(
+					`Failed to execute custom task: ${error.message}`,
+				);
+				return false;
+			}
+		}
+	}
+
+	return false;
 }
