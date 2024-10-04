@@ -20,7 +20,6 @@ import {
 import { platform, tmpdir } from "node:os";
 import { join, sep } from "node:path";
 import * as vscode from "vscode";
-import { workspace } from "vscode";
 
 import { CFG, PathOrigin } from "./config";
 import { Logger } from "./logger";
@@ -978,7 +977,7 @@ async function executeCommand(name: string) {
 	term.show();
 
 	// Set up a file watcher for the canary file
-	const watcher = workspace.createFileSystemWatcher(CFG.canaryFile);
+	const watcher = vscode.workspace.createFileSystemWatcher(CFG.canaryFile);
 	watcher.onDidChange(() => {
 		handleCanaryFileChange();
 		watcher.dispose(); // Dispose the watcher after handling the change

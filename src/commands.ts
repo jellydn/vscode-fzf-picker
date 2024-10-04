@@ -1,6 +1,5 @@
 import { spawn } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
-import * as path from "node:path";
 
 async function findFiles(paths: string[]): Promise<string[]> {
 	return new Promise((resolve, reject) => {
@@ -15,6 +14,15 @@ async function findFiles(paths: string[]): Promise<string[]> {
 		const lastQueryFile = process.env.LAST_QUERY_FILE || "";
 		const selectionFile = process.env.SELECTION_FILE || "";
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
+
+		// Navigate to the first path if it's the only one
+		let singleDirRoot = "";
+		if (paths.length === 1) {
+			singleDirRoot = paths[0];
+			// biome-ignore lint: it's okay as the path is already set
+			paths = [];
+			process.chdir(singleDirRoot);
+		}
 
 		let query = "";
 		if (resumeSearch && lastQueryFile) {
@@ -71,7 +79,14 @@ async function findFiles(paths: string[]): Promise<string[]> {
 
 		fzf.on("close", (code) => {
 			if (code === 0) {
-				resolve(output.trim().split("\n"));
+				let selectedFiles = output.trim().split("\n");
+				if (singleDirRoot) {
+					// Prepend the single directory root to each selected file
+					selectedFiles = selectedFiles.map(
+						(file) => `${singleDirRoot}/${file}`,
+					);
+				}
+				resolve(selectedFiles);
 			} else {
 				reject(new Error("File selection canceled"));
 			}
