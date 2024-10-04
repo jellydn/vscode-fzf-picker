@@ -45,16 +45,8 @@
 				"title": "Find It Faster: search file"
 			},
 			{
-				"command": "find-it-faster.findFilesJs",
-				"title": "Find It Faster: search file (JavaScript - Experimental)"
-			},
-			{
 				"command": "find-it-faster.findFilesWithType",
 				"title": "Find It Faster: search file (with type filter)"
-			},
-			{
-				"command": "find-it-faster.findFilesWithTypeJs",
-				"title": "Find It Faster: search file (with type filter) (JavaScript - Experimental)"
 			},
 			{
 				"command": "find-it-faster.findWithinFiles",

@@ -59,22 +59,8 @@ const commands: { [key: string]: Command } = {
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
-	findFilesJs: {
-		script: "find_files_js",
-		uri: undefined,
-		preRunCallback: undefined,
-		postRunCallback: undefined,
-	},
 	findFilesWithType: {
 		script: "find_files",
-		uri: undefined,
-		preRunCallback: selectTypeFilter,
-		postRunCallback: () => {
-			CFG.useTypeFilter = false;
-		},
-	},
-	findFilesWithTypeJs: {
-		script: "find_files_js",
 		uri: undefined,
 		preRunCallback: selectTypeFilter,
 		postRunCallback: () => {
@@ -243,8 +229,6 @@ function setupConfig(context: vscode.ExtensionContext) {
 			join(context.extensionPath, x) +
 				(platform() === "win32" ? ".ps1" : ".sh"),
 		);
-	commands.findFiles.uri = localScript(commands.findFiles.script);
-	commands.findFilesWithType.uri = localScript(commands.findFiles.script);
 	commands.findWithinFiles.uri = localScript(commands.findWithinFiles.script);
 	commands.findWithinFilesWithType.uri = localScript(
 		commands.findWithinFiles.script,
@@ -881,8 +865,8 @@ async function executeTerminalCommand(cmd: string) {
 		createTerminal();
 	}
 	if (cbResult === true && !commands[cmd].isCustomTask) {
-		if (cmd.includes("Js")) {
-			await executeCommand("findFiles", false, cmd === "findFilesWithTypeJs");
+		if (cmd.includes("findFiles")) {
+			await executeCommand("findFiles", false, cmd === "findFilesWithType");
 		} else {
 			term.sendText(getCommandString(commands[cmd]));
 			term.show();
