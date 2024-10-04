@@ -24,7 +24,7 @@
 		"search",
 		"within"
 	],
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"engines": {
 		"vscode": "^1.90.0"
 	},
@@ -71,6 +71,10 @@
 			{
 				"command": "find-it-faster.findTodoFixme",
 				"title": "Find It Faster: Find TODO/FIXME comments"
+			},
+			{
+				"command": "find-it-faster.runCustomTask",
+				"title": "Find It Faster: Run Custom Task"
 			}
 		],
 		"keybindings": [
@@ -276,6 +280,30 @@
 					"type": "string",
 					"default": "(TODO|FIXME|HACK|FIX):\\s",
 					"description": "Regular expression pattern for searching TODO/FIXME/HACK comments. Matches keywords followed by a colon and optional space."
+				},
+				"find-it-faster.customTasks": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"name": {
+								"type": "string",
+								"description": "Name of the custom task"
+							},
+							"command": {
+								"type": "string",
+								"description": "Command to execute for the custom task"
+							}
+						},
+						"required": ["name", "command"]
+					},
+					"default": [
+						{
+							"name": "zoxide",
+							"command": "code $(zoxide query --interactive)"
+						}
+					],
+					"description": "Custom tasks that can be executed by the extension"
 				}
 			}
 		}
