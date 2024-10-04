@@ -6,15 +6,25 @@
  * [ ] Buffer of open files / show currently open files / always show at bottom => workspace.textDocuments is a bit curious / borked
  */
 
-import * as assert from "node:assert";
-import * as cp from "node:child_process";
-import * as fs from "node:fs";
-import * as os from "node:os";
-import { tmpdir } from "node:os";
-import * as path from "node:path";
-
+import assert from "node:assert";
+import { execFileSync, execSync } from "node:child_process";
+import {
+	existsSync,
+	mkdtempSync,
+	readFile,
+	readFileSync,
+	rmSync,
+	watch,
+	writeFileSync,
+} from "node:fs";
+import { platform, tmpdir } from "node:os";
+import { join, sep } from "node:path";
 import * as vscode from "vscode";
+import { workspace } from "vscode";
+
+import { CFG, PathOrigin } from "./config";
 import { Logger } from "./logger";
+import { getIgnoreGlobs, getIgnoreString } from "./utils";
 
 const logger = new Logger();
 
@@ -111,17 +121,16 @@ const commands: { [key: string]: Command } = {
 		postRunCallback: undefined,
 		isCustomTask: true,
 	},
+	findFilesJs: {
+		script: "find_files_js",
+		uri: undefined,
+		preRunCallback: undefined,
+		postRunCallback: undefined,
+	},
 };
 
-type WhenCondition = "always" | "never" | "noWorkspaceOnly";
-enum PathOrigin {
-	cwd = 1 << 0,
-	workspace = 1 << 1,
-	settings = 1 << 2,
-}
-
 function getTypeOptions() {
-	const result = cp.execSync("rg --type-list").toString();
+	const result = execSync("rg --type-list").toString();
 	return result
 		.split("\n")
 		.map((line) => {
@@ -212,103 +221,6 @@ async function selectTypeFilter() {
 	});
 }
 
-/** Global variable cesspool erm, I mean, Configuration Data Structure! It does the job for now. */
-interface Config {
-	extensionName: string | undefined;
-	searchPaths: string[];
-	searchPathsOrigins: { [key: string]: PathOrigin };
-	disableStartupChecks: boolean;
-	useEditorSelectionAsQuery: boolean;
-	useGitIgnoreExcludes: boolean;
-	useWorkspaceSearchExcludes: boolean;
-	findFilesPreviewEnabled: boolean;
-	findFilesPreviewCommand: string;
-	findFilesPreviewWindowConfig: string;
-	findWithinFilesPreviewEnabled: boolean;
-	findWithinFilesPreviewCommand: string;
-	findWithinFilesPreviewWindowConfig: string;
-	findWithinFilesFilter: Set<string>;
-	workspaceSettings: {
-		folders: string[];
-	};
-	canaryFile: string;
-	selectionFile: string;
-	lastQueryFile: string;
-	lastPosFile: string;
-	hideTerminalAfterSuccess: boolean;
-	hideTerminalAfterFail: boolean;
-	clearTerminalAfterUse: boolean;
-	showMaximizedTerminal: boolean;
-	flightCheckPassed: boolean;
-	additionalSearchLocations: string[];
-	additionalSearchLocationsWhen: WhenCondition;
-	searchCurrentWorkingDirectory: WhenCondition;
-	searchWorkspaceFolders: boolean;
-	extensionPath: string;
-	tempDir: string;
-	useTypeFilter: boolean;
-	lastCommand: string;
-	batTheme: string;
-	openFileInPreviewEditor: boolean;
-	killTerminalAfterUse: boolean;
-	fuzzRipgrepQuery: boolean;
-	restoreFocusTerminal: boolean;
-	useTerminalInEditor: boolean;
-	shellPathForTerminal: string;
-	findTodoFixmeSearchPattern: string;
-	customTasks: CustomTask[];
-}
-const CFG: Config = {
-	extensionName: undefined,
-	searchPaths: [],
-	searchPathsOrigins: {},
-	disableStartupChecks: false,
-	useEditorSelectionAsQuery: true,
-	useGitIgnoreExcludes: true,
-	useWorkspaceSearchExcludes: true,
-	findFilesPreviewEnabled: true,
-	findFilesPreviewCommand: "",
-	findFilesPreviewWindowConfig: "",
-	findWithinFilesPreviewEnabled: true,
-	findWithinFilesPreviewCommand: "",
-	findWithinFilesPreviewWindowConfig: "",
-	findWithinFilesFilter: new Set(),
-	workspaceSettings: {
-		folders: [],
-	},
-	canaryFile: "",
-	selectionFile: "",
-	lastQueryFile: "",
-	lastPosFile: "",
-	hideTerminalAfterSuccess: false,
-	hideTerminalAfterFail: false,
-	clearTerminalAfterUse: false,
-	showMaximizedTerminal: false,
-	flightCheckPassed: false,
-	additionalSearchLocations: [],
-	additionalSearchLocationsWhen: "never",
-	searchCurrentWorkingDirectory: "never",
-	searchWorkspaceFolders: true,
-	extensionPath: "",
-	tempDir: "",
-	useTypeFilter: false,
-	lastCommand: "",
-	batTheme: "",
-	openFileInPreviewEditor: false,
-	killTerminalAfterUse: false,
-	fuzzRipgrepQuery: false,
-	restoreFocusTerminal: false,
-	useTerminalInEditor: false,
-	shellPathForTerminal: "",
-	findTodoFixmeSearchPattern: "(TODO|FIXME|HACK|FIX):\\s",
-	customTasks: [
-		{
-			name: "zoxide",
-			command: "code $(zoxide query --interactive)",
-		},
-	],
-};
-
 /** Ensure that whatever command we expose in package.json actually exists */
 function checkExposedFunctions() {
 	for (const x of PACKAGE.contributes.commands) {
@@ -323,8 +235,8 @@ function setupConfig(context: vscode.ExtensionContext) {
 	assert(CFG.extensionName);
 	const localScript = (x: string) =>
 		vscode.Uri.file(
-			path.join(context.extensionPath, x) +
-				(os.platform() === "win32" ? ".ps1" : ".sh"),
+			join(context.extensionPath, x) +
+				(platform() === "win32" ? ".ps1" : ".sh"),
 		);
 	commands.findFiles.uri = localScript(commands.findFiles.script);
 	commands.findFilesWithType.uri = localScript(commands.findFiles.script);
@@ -354,11 +266,11 @@ function registerCommands() {
 /** Entry point called by VS Code */
 export function activate(context: vscode.ExtensionContext) {
 	CFG.extensionPath = context.extensionPath;
-	const local = (x: string) => vscode.Uri.file(path.join(CFG.extensionPath, x));
+	const local = (x: string) => vscode.Uri.file(join(CFG.extensionPath, x));
 
 	// Load our package.json
 	PACKAGE = JSON.parse(
-		fs.readFileSync(local("package.json").fsPath, "utf-8"),
+		readFileSync(local("package.json").fsPath, "utf-8"),
 	) as PackageJson;
 	setupConfig(context);
 	checkExposedFunctions();
@@ -373,13 +285,13 @@ export function activate(context: vscode.ExtensionContext) {
 /* Called when extension is deactivated by VS Code */
 export function deactivate() {
 	term?.dispose();
-	fs.rmSync(CFG.canaryFile, { force: true });
-	fs.rmSync(CFG.selectionFile, { force: true });
-	if (fs.existsSync(CFG.lastQueryFile)) {
-		fs.rmSync(CFG.lastQueryFile, { force: true });
+	rmSync(CFG.canaryFile, { force: true });
+	rmSync(CFG.selectionFile, { force: true });
+	if (existsSync(CFG.lastQueryFile)) {
+		rmSync(CFG.lastQueryFile, { force: true });
 	}
-	if (fs.existsSync(CFG.lastPosFile)) {
-		fs.rmSync(CFG.lastPosFile, { force: true });
+	if (existsSync(CFG.lastPosFile)) {
+		rmSync(CFG.lastPosFile, { force: true });
 	}
 }
 
@@ -489,7 +401,7 @@ function collectSearchLocations() {
 		const dirs = vscode.workspace.workspaceFolders.map((x) => {
 			const uri = decodeURIComponent(x.uri.toString());
 			if (uri.substring(0, 7) === "file://") {
-				if (os.platform() === "win32") {
+				if (platform() === "win32") {
 					return uri.substring(8).replace(/\//g, "\\").replace(/%3A/g, ":");
 				}
 				return uri.substring(7);
@@ -542,9 +454,9 @@ function explainSearchLocations(useColor = false) {
 }
 
 function writePathOriginsFile() {
-	fs.writeFileSync(
-		path.join(CFG.tempDir, "paths_explain"),
-		explainSearchLocations(os.platform() !== "win32"),
+	writeFileSync(
+		join(CFG.tempDir, "paths_explain"),
+		explainSearchLocations(platform() !== "win32"),
 	);
 	return true;
 }
@@ -592,23 +504,21 @@ function doFlightCheck(): boolean {
 		let errStr = "";
 		const kvs: Record<string, unknown> = {};
 		let out = "";
-		if (os.platform() === "win32") {
-			out = cp
-				.execFileSync(
-					"powershell.exe",
-					[
-						"-ExecutionPolicy",
-						"Bypass",
-						"-File",
-						`"${commands.flightCheck.uri.fsPath}"`,
-					],
-					{ shell: true },
-				)
-				.toString("utf-8");
+		if (platform() === "win32") {
+			out = execFileSync(
+				"powershell.exe",
+				[
+					"-ExecutionPolicy",
+					"Bypass",
+					"-File",
+					`"${commands.flightCheck.uri.fsPath}"`,
+				],
+				{ shell: true },
+			).toString("utf-8");
 		} else {
-			out = cp
-				.execFileSync(commands.flightCheck.uri.fsPath, { shell: true })
-				.toString("utf-8");
+			out = execFileSync(commands.flightCheck.uri.fsPath, {
+				shell: true,
+			}).toString("utf-8");
 		}
 		out.split("\n").map((x) => {
 			const maybeKV = parseKeyValue(x);
@@ -626,7 +536,7 @@ function doFlightCheck(): boolean {
 			errStr += "rg not found on your PATH. ";
 		}
 		if (
-			os.platform() !== "win32" &&
+			platform() !== "win32" &&
 			(kvs.sed === undefined || kvs.sed === "not installed")
 		) {
 			errStr += "sed not found on your PATH. ";
@@ -672,13 +582,13 @@ function reinitialize() {
 	// It also means the command was completed so we can do stuff like
 	// optionally hiding the terminal.
 	//
-	CFG.tempDir = fs.mkdtempSync(`${tmpdir()}${path.sep}${CFG.extensionName}-`);
-	CFG.canaryFile = path.join(CFG.tempDir, "snitch");
-	CFG.selectionFile = path.join(CFG.tempDir, "selection");
-	CFG.lastQueryFile = path.join(CFG.tempDir, "last_query");
-	CFG.lastPosFile = path.join(CFG.tempDir, "last_position");
-	fs.writeFileSync(CFG.canaryFile, "");
-	fs.watch(CFG.canaryFile, (eventType) => {
+	CFG.tempDir = mkdtempSync(`${tmpdir()}${sep}${CFG.extensionName}-`);
+	CFG.canaryFile = join(CFG.tempDir, "snitch");
+	CFG.selectionFile = join(CFG.tempDir, "selection");
+	CFG.lastQueryFile = join(CFG.tempDir, "last_query");
+	CFG.lastPosFile = join(CFG.tempDir, "last_position");
+	writeFileSync(CFG.canaryFile, "");
+	watch(CFG.canaryFile, (eventType) => {
 		if (eventType === "change") {
 			handleCanaryFileChange();
 		} else if (eventType === "rename") {
@@ -693,14 +603,12 @@ function reinitialize() {
 
 /** Interpreting the terminal output and turning them into a vscode command */
 function openFiles(data: string) {
-	logger.info("Opening files", data);
 	const filePaths = data.split("\n").filter((s) => s !== "");
-	assert(filePaths.length > 0);
+	if (filePaths.length === 0) return;
+
 	for (const p of filePaths) {
 		let [file, lineTmp, charTmp] = p.split(":", 3);
-		// TODO: We might want to just do this the RE way on all platforms?
-		//       On Windows at least the c: makes the split approach problematic.
-		if (os.platform() === "win32") {
+		if (platform() === "win32") {
 			const re =
 				/^\s*(?<file>([a-zA-Z][:])?[^:]+)([:](?<lineTmp>\d+))?\s*([:](?<charTmp>\d+))?.*/;
 			const v = p.match(re);
@@ -708,18 +616,13 @@ function openFiles(data: string) {
 				file = v.groups.file;
 				lineTmp = v.groups.lineTmp;
 				charTmp = v.groups.charTmp;
-				logger.warn(`File: ${file}\nlineTmp: ${lineTmp}\ncharTmp: ${charTmp}`);
 			} else {
 				vscode.window.showWarningMessage(
 					`Did not match anything in filename: [${p}] could not open file!`,
 				);
-				logger.warn(
-					`Did not match anything in filename: [${p}] could not open file!`,
-				);
+				continue;
 			}
 		}
-		// On windows we sometimes get extra characters that confound
-		// the file lookup.
 		file = file.trim();
 		let selection = undefined;
 		if (lineTmp !== undefined) {
@@ -728,9 +631,9 @@ function openFiles(data: string) {
 				char = Number.parseInt(charTmp) - 1; // 1 based in rg, 0 based in VS Code
 			}
 			const line = Number.parseInt(lineTmp) - 1; // 1 based in rg, 0 based in VS Code
-			assert(line >= 0);
-			assert(char >= 0);
-			selection = new vscode.Range(line, char, line, char);
+			if (line >= 0 && char >= 0) {
+				selection = new vscode.Range(line, char, line, char);
+			}
 		}
 		vscode.window.showTextDocument(vscode.Uri.file(file), {
 			preview: CFG.openFileInPreviewEditor,
@@ -742,7 +645,7 @@ function openFiles(data: string) {
 /** Logic of what to do when the user completed a command invocation on the terminal */
 function handleCanaryFileChange() {
 	if (CFG.clearTerminalAfterUse) {
-		term.sendText("clear");
+		term?.sendText("clear");
 	}
 
 	if (CFG.killTerminalAfterUse) {
@@ -756,7 +659,7 @@ function handleCanaryFileChange() {
 		setTimeout(() => term.dispose(), 100);
 	}
 
-	fs.readFile(CFG.canaryFile, { encoding: "utf-8" }, (err, data) => {
+	readFile(CFG.canaryFile, { encoding: "utf-8" }, (err, data) => {
 		if (err) {
 			// We shouldn't really end up here. Maybe leave the terminal around in this case...
 			vscode.window.showWarningMessage(
@@ -844,7 +747,7 @@ function createTerminal() {
 			SELECTION_FILE: CFG.selectionFile,
 			LAST_QUERY_FILE: CFG.lastQueryFile,
 			LAST_POS_FILE: CFG.lastPosFile,
-			EXPLAIN_FILE: path.join(CFG.tempDir, "paths_explain"),
+			EXPLAIN_FILE: join(CFG.tempDir, "paths_explain"),
 			BAT_THEME: CFG.batTheme,
 			FUZZ_RG_QUERY: CFG.fuzzRipgrepQuery ? "1" : "0",
 			FIND_TODO_FIXME_SEARCH_PATTERN: CFG.findTodoFixmeSearchPattern,
@@ -895,7 +798,7 @@ function getCommandString(
 				// used the selection.
 				//
 				const selectionText = editor.document.getText(selection);
-				fs.writeFileSync(CFG.selectionFile, selectionText);
+				writeFileSync(CFG.selectionFile, selectionText);
 				result += envVarToString("HAS_SELECTION", "1");
 			} else {
 				result += envVarToString("HAS_SELECTION", "0");
@@ -921,27 +824,6 @@ function getCommandString(
 	return result;
 }
 
-function getIgnoreGlobs() {
-	const exclude = vscode.workspace.getConfiguration("search.exclude"); // doesn't work though the docs say it should?
-	const globs: string[] = [];
-	for (const [k, v] of Object.entries(exclude)) {
-		// Messy proxy object stuff
-		if (typeof v === "function") {
-			return;
-		}
-		if (v) {
-			globs.push(`!${k}`);
-		}
-	}
-	return globs;
-}
-
-function getIgnoreString() {
-	const globs = getIgnoreGlobs();
-	// We separate by colons so we can have spaces in the globs
-	return globs?.reduce((x, y) => `${x}${y}:`, "") ?? "";
-}
-
 async function executeTerminalCommand(cmd: string) {
 	getIgnoreGlobs();
 	if (!CFG.flightCheckPassed && !CFG.disableStartupChecks) {
@@ -952,7 +834,7 @@ async function executeTerminalCommand(cmd: string) {
 
 	if (cmd === "resumeSearch") {
 		// Run the last-run command again
-		if (os.platform() === "win32") {
+		if (platform() === "win32") {
 			vscode.window.showErrorMessage(
 				"Resume search is not implemented on Windows. Sorry! PRs welcome.",
 			);
@@ -983,22 +865,19 @@ async function executeTerminalCommand(cmd: string) {
 		CFG.lastCommand = cmd;
 	}
 
-	if (!term || term.exitStatus !== undefined) {
-		createTerminal();
-		if (os.platform() !== "win32") {
-			term.sendText("bash");
-			term.sendText(
-				'export PS1="::: Terminal allocated for FindItFaster. Do not use. ::: "; clear',
-			);
-		}
-	}
-
 	assert(cmd in commands);
 	const cb = commands[cmd].preRunCallback;
 	let cbResult = true;
 	if (cb !== undefined) {
 		cbResult = await cb();
 	}
+
+	if (cmd === "findFilesJs") {
+		logger.info(`Executing ${cmd} command`);
+		await executeCommand("findFiles");
+		return;
+	}
+
 	if (cbResult === true && !commands[cmd].isCustomTask) {
 		term.sendText(getCommandString(commands[cmd]));
 		if (CFG.showMaximizedTerminal) {
@@ -1017,7 +896,7 @@ async function executeTerminalCommand(cmd: string) {
 
 function envVarToString(name: string, value: string) {
 	// Note we add a space afterwards
-	return os.platform() === "win32"
+	return platform() === "win32"
 		? `$Env:${name}=${value}; `
 		: `${name}=${value} `;
 }
@@ -1069,4 +948,46 @@ async function chooseCustomTask(): Promise<boolean> {
 	}
 
 	return false;
+}
+
+async function executeCommand(name: string) {
+	const workspaceFolders = vscode.workspace.workspaceFolders;
+	if (!workspaceFolders) {
+		vscode.window.showErrorMessage("No workspace folder open");
+		return;
+	}
+
+	const rootPath = workspaceFolders[0].uri.fsPath;
+
+	// Create a new terminal if it doesn't exist
+	if (!term || term.exitStatus !== undefined) {
+		createTerminal();
+	}
+
+	// Get the path to the commands.js file
+	const commandsJsPath = join(CFG.extensionPath, "out", "commands.js");
+
+	// Construct the command to run
+	logger.info(`Executing ${name} command`);
+	const command = `node "${commandsJsPath}" "${name}" "${rootPath}"`;
+
+	// Send the command to the terminal
+	term.sendText(command);
+
+	// Show the terminal
+	term.show();
+
+	// Set up a file watcher for the canary file
+	const watcher = workspace.createFileSystemWatcher(CFG.canaryFile);
+	watcher.onDidChange(() => {
+		handleCanaryFileChange();
+		watcher.dispose(); // Dispose the watcher after handling the change
+
+		// Clear the terminal output after a short delay
+		setTimeout(() => {
+			if (term) {
+				term.sendText("clear", true);
+			}
+		}, 100); // Adjust this delay if needed
+	});
 }

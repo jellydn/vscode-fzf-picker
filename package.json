@@ -24,7 +24,7 @@
 		"search",
 		"within"
 	],
-	"version": "0.3.0",
+	"version": "0.4.0",
 	"engines": {
 		"vscode": "^1.90.0"
 	},
@@ -43,6 +43,10 @@
 			{
 				"command": "find-it-faster.findFiles",
 				"title": "Find It Faster: search file"
+			},
+			{
+				"command": "find-it-faster.findFilesJs",
+				"title": "Find It Faster: search file (JavaScript - Experimental)"
 			},
 			{
 				"command": "find-it-faster.findFilesWithType",
@@ -309,10 +313,11 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc --noEmitOnError --strict -p ./",
+		"vscode:prepublish": "npm run build",
+		"build": "tsup --external vscode",
+		"build:tsc": "tsc -p ./",
 		"watch": "tsc -watch -p ./",
-		"pretest": "npm run compile",
+		"pretest": "npm run build",
 		"test": "node ./out/test/runTest.js",
 		"vscode:package": "vsce package --yarn",
 		"vscode:publish": "vsce publish --yarn"
@@ -325,9 +330,17 @@
 		"@types/vscode": "^1.90.0",
 		"glob": "^7.1.7",
 		"mocha": "^10.7.3",
+		"tsup": "^8.3.0",
 		"typescript": "^5.6.2",
 		"vsce": "^2.15.0",
 		"vscode-test": "^1.6.1"
 	},
-	"packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+	"packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+	"tsup": {
+		"entry": ["src/*.ts"],
+		"splitting": false,
+		"sourcemap": true,
+		"clean": true,
+		"outDir": "out"
+	}
 }

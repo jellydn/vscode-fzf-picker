@@ -113,3 +113,5 @@ export class Logger {
 		this.outputChannel.appendLine(`["${logLevel}" - ${title}] ${message}`);
 	}
 }
+
+export const logger = new Logger();
