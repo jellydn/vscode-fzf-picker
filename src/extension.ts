@@ -25,6 +25,8 @@ import { CFG, PathOrigin } from "./config";
 import { logger } from "./logger";
 import { getIgnoreGlobs, getIgnoreString } from "./utils";
 
+const TERMINAL_NAME = "Find it Faster";
+
 interface PackageJson {
 	name: string;
 	contributes: {
@@ -229,18 +231,10 @@ function setupConfig(context: vscode.ExtensionContext) {
 			join(context.extensionPath, x) +
 				(platform() === "win32" ? ".ps1" : ".sh"),
 		);
-	commands.findWithinFiles.uri = localScript(commands.findWithinFiles.script);
-	commands.findWithinFilesWithType.uri = localScript(
-		commands.findWithinFiles.script,
-	);
 	commands.listSearchLocations.uri = localScript(
 		commands.listSearchLocations.script,
 	);
 	commands.flightCheck.uri = localScript(commands.flightCheck.script);
-	commands.pickFileFromGitStatus.uri = localScript(
-		commands.pickFileFromGitStatus.script,
-	);
-	commands.findTodoFixme.uri = localScript(commands.findTodoFixme.script);
 }
 
 /** Register the commands we defined with VS Code so users have access to them */
@@ -252,7 +246,10 @@ function registerCommands() {
 	});
 }
 
-/** Entry point called by VS Code */
+/**
+ * Entry point called by VS Code when the extension is activated
+ * @param context - The extension context provided by VS Code
+ */
 export function activate(context: vscode.ExtensionContext) {
 	CFG.extensionPath = context.extensionPath;
 	const local = (x: string) => vscode.Uri.file(join(CFG.extensionPath, x));
@@ -271,7 +268,9 @@ export function activate(context: vscode.ExtensionContext) {
 	reinitialize();
 }
 
-/* Called when extension is deactivated by VS Code */
+/**
+ * Called when the extension is deactivated by VS Code
+ */
 export function deactivate() {
 	term?.dispose();
 	rmSync(CFG.canaryFile, { force: true });
@@ -284,7 +283,9 @@ export function deactivate() {
 	}
 }
 
-/** Map settings from the user-configurable settings to our internal data structure */
+/**
+ * Map settings from the user-configurable settings to our internal data structure
+ */
 function updateConfigWithUserSettings() {
 	function getCFG<T>(key: string) {
 		const userCfg = vscode.workspace.getConfiguration();
@@ -328,6 +329,10 @@ function updateConfigWithUserSettings() {
 	CFG.customTasks = getCFG("customTasks");
 }
 
+/**
+ * Collect search locations based on the current configuration
+ * @returns An array of search locations
+ */
 function collectSearchLocations() {
 	const locations: string[] = [];
 	// searchPathsOrigins is for diagnostics only
@@ -410,7 +415,11 @@ function collectSearchLocations() {
 	return locations;
 }
 
-/** Produce a human-readable string explaining where the search paths come from */
+/**
+ * Produce a human-readable string explaining where the search paths come from
+ * @param useColor - Whether to use color in the output
+ * @returns A formatted string explaining search locations
+ */
 function explainSearchLocations(useColor = false) {
 	const listDirs = (which: PathOrigin) => {
 		let str = "";
@@ -442,6 +451,10 @@ function explainSearchLocations(useColor = false) {
 	return ret;
 }
 
+/**
+ * Write the path origins to a file
+ * @returns true if the operation was successful
+ */
 function writePathOriginsFile() {
 	writeFileSync(
 		join(CFG.tempDir, "paths_explain"),
@@ -473,7 +486,10 @@ function handleWorkspaceSettingsChanges() {
 	});
 }
 
-/** Check seat belts are on. Also, check terminal commands are on PATH */
+/**
+ * Check if all required command-line tools are installed
+ * @returns true if all checks pass, false otherwise
+ */
 function doFlightCheck(): boolean {
 	const parseKeyValue = (line: string) => {
 		return line.split(": ", 2);
@@ -547,8 +563,8 @@ function doFlightCheck(): boolean {
 }
 
 /**
- * All the logic that's the same between starting the plugin and re-starting
- * after user settings change
+ * Initialize or reinitialize the extension
+ * @returns true if initialization was successful, false otherwise
  */
 function reinitialize() {
 	term?.dispose();
@@ -590,7 +606,10 @@ function reinitialize() {
 	return true;
 }
 
-/** Interpreting the terminal output and turning them into a vscode command */
+/**
+ * Open files in VS Code based on the terminal output
+ * @param data - String containing file paths and line numbers
+ */
 function openFiles(data: string) {
 	const filePaths = data.split("\n").filter((s) => s !== "");
 	if (filePaths.length === 0) return;
@@ -631,7 +650,9 @@ function openFiles(data: string) {
 	}
 }
 
-/** Logic of what to do when the user completed a command invocation on the terminal */
+/**
+ * Handle changes to the canary file
+ */
 function handleCanaryFileChange() {
 	if (CFG.clearTerminalAfterUse) {
 		term?.sendText("clear");
@@ -684,6 +705,10 @@ function handleCanaryFileChange() {
 	});
 }
 
+/**
+ * Handle terminal focus restoration after command execution
+ * @param commandWasSuccess - Whether the command execution was successful
+ */
 function handleTerminalFocusRestore(commandWasSuccess: boolean) {
 	const shouldHideTerminal =
 		(commandWasSuccess && CFG.hideTerminalAfterSuccess) ||
@@ -709,8 +734,21 @@ function handleTerminalFocusRestore(commandWasSuccess: boolean) {
 	previousActiveTerminal?.show();
 }
 
-function createTerminal() {
+/**
+ * Get an existing terminal or create a new one
+ * @returns A VS Code terminal instance
+ */
+function getOrCreateTerminal() {
+	const existingTerminal = vscode.window.terminals.find(
+		(t) => t.name === TERMINAL_NAME,
+	);
+
+	if (existingTerminal) {
+		return existingTerminal;
+	}
+
 	const terminalOptions: vscode.TerminalOptions = {
+		name: TERMINAL_NAME,
 		location: CFG.useTerminalInEditor
 			? vscode.TerminalLocation.Editor
 			: vscode.TerminalLocation.Panel,
@@ -746,15 +784,16 @@ function createTerminal() {
 		terminalOptions.shellPath = CFG.shellPathForTerminal;
 	}
 
-	term = vscode.window.createTerminal(terminalOptions);
+	return vscode.window.createTerminal(terminalOptions);
 }
 
-function getWorkspaceFoldersAsString() {
-	// For bash invocation. Need to wrap in quotes so spaces within paths don't
-	// split the path into two strings.
-	return CFG.searchPaths.reduce((x, y) => `${x} '${y}'`, "");
-}
-
+/**
+ * Get the command string for a given command
+ * @param cmd - The command object
+ * @param withArgs - Whether to include arguments
+ * @param withTextSelection - Whether to include text selection
+ * @returns The formatted command string
+ */
 function getCommandString(
 	cmd: Command,
 	withArgs = true,
@@ -805,13 +844,17 @@ function getCommandString(
 	}
 	result += cmdPath;
 	if (withArgs) {
-		const paths = getWorkspaceFoldersAsString();
+		const paths = CFG.searchPaths.reduce((x, y) => `${x} '${y}'`, "");
 		result += ` ${paths}`;
 	}
 	logger.info("Get command", result);
 	return result;
 }
 
+/**
+ * Execute a terminal command
+ * @param cmd - The command to execute
+ */
 async function executeTerminalCommand(cmd: string) {
 	getIgnoreGlobs();
 	if (!CFG.flightCheckPassed && !CFG.disableStartupChecks) {
@@ -861,12 +904,20 @@ async function executeTerminalCommand(cmd: string) {
 	}
 
 	logger.info(`Executing ${cmd} command`);
-	if (!term || term.exitStatus !== undefined) {
-		createTerminal();
-	}
+	term = getOrCreateTerminal();
 	if (cbResult === true && !commands[cmd].isCustomTask) {
 		if (cmd.includes("findFiles")) {
 			await executeCommand("findFiles", false, cmd === "findFilesWithType");
+		} else if (cmd.includes("findWithinFiles")) {
+			await executeCommand(
+				"findWithinFiles",
+				true,
+				cmd === "findWithinFilesWithType",
+			);
+		} else if (cmd.includes("Todo")) {
+			await executeCommand("todo", false, false);
+		} else if (cmd.includes("Git")) {
+			await executeCommand("gitStatus", false, false);
 		} else {
 			term.sendText(getCommandString(commands[cmd]));
 			term.show();
@@ -884,6 +935,12 @@ async function executeTerminalCommand(cmd: string) {
 	}
 }
 
+/**
+ * Convert an environment variable to a string
+ * @param name - The name of the environment variable
+ * @param value - The value of the environment variable
+ * @returns A formatted string representation of the environment variable
+ */
 function envVarToString(name: string, value: string) {
 	// Note we add a space afterwards
 	return platform() === "win32"
@@ -896,16 +953,22 @@ interface CustomTask {
 	command: string;
 }
 
+/**
+ * Execute a custom task
+ * @param task - The custom task to execute
+ */
 async function executeCustomTask(task: CustomTask): Promise<void> {
-	if (!term || term.exitStatus !== undefined) {
-		createTerminal();
-	}
+	term = getOrCreateTerminal();
 
 	logger.info(`Executing custom task: ${task.command}`);
 	term.sendText(task.command);
 	term.show();
 }
 
+/**
+ * Present a quick pick menu for the user to choose a custom task
+ * @returns A promise that resolves to true if a task was chosen and executed, false otherwise
+ */
 async function chooseCustomTask(): Promise<boolean> {
 	const customTasks = CFG.customTasks;
 	if (customTasks.length === 0) {
@@ -940,6 +1003,12 @@ async function chooseCustomTask(): Promise<boolean> {
 	return false;
 }
 
+/**
+ * Execute a command with the given name
+ * @param name - The name of the command to execute
+ * @param withTextSelection - Whether to include text selection
+ * @param hasFilter - Whether the command has a filter
+ */
 async function executeCommand(
 	name: string,
 	withTextSelection: boolean,
@@ -957,7 +1026,7 @@ async function executeCommand(
 
 	let envVars = "";
 
-	if (CFG.useEditorSelectionAsQuery && withTextSelection) {
+	if (withTextSelection) {
 		const editor = vscode.window.activeTextEditor;
 		if (editor) {
 			const selection = editor.selection;
@@ -970,7 +1039,7 @@ async function executeCommand(
 			}
 		}
 	}
-	// useTypeFilter should only be try if we activated the corresponding command
+
 	if (hasFilter && CFG.findWithinFilesFilter.size > 0) {
 		envVars += envVarToString(
 			"TYPE_FILTER",
@@ -978,11 +1047,11 @@ async function executeCommand(
 		);
 	}
 
-	// Construct the command to run
 	logger.info(`Executing ${name} command`);
 	const command = `${envVars} node "${commandsJsPath}" "${name}" "${rootPath}"`;
 
-	// Send the command to the terminal
+	// Get or create the terminal and send the command
+	term = getOrCreateTerminal();
 	term.sendText(command);
 
 	// Show the terminal
