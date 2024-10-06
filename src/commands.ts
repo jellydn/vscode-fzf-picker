@@ -111,24 +111,54 @@ async function findFiles(paths: string[]): Promise<string[]> {
 	});
 }
 
+async function findWithinFiles(paths: string[]): Promise<string[]> {
+	// TODO: Implement this
+	return [];
+}
+
+async function pickFilesFromGitStatus(): Promise<string[]> {
+	// TODO: Implement this
+	return [];
+}
+
+async function findTodoFixme(paths: string[]): Promise<string[]> {
+	// TODO: Implement this
+	return [];
+}
+
 if (require.main === module) {
 	const command = process.argv[2];
 	const args = process.argv.slice(3);
 
-	if (command === "findFiles") {
-		findFiles(args)
-			.then((files) => {
-				// Write the selected files to the canary file
-				const canaryFile = process.env.CANARY_FILE || "/tmp/canaryFile";
-				writeFileSync(canaryFile, files.join("\n"));
-				console.log("Files selected. Check the canary file.");
-			})
-			.catch((error) => {
-				console.error("Error:", error);
-				process.exit(1);
-			});
-	} else {
-		console.error("Unknown command");
-		process.exit(1);
+	const executeCommand = async (
+		func: (args: string[]) => Promise<string[]>,
+	) => {
+		try {
+			const files = await func(args);
+			const canaryFile = process.env.CANARY_FILE || "/tmp/canaryFile";
+			writeFileSync(canaryFile, files.join("\n"));
+			console.log("Files selected. Check the canary file.");
+		} catch (error) {
+			console.error("Error:", error);
+			process.exit(1);
+		}
+	};
+
+	switch (command) {
+		case "findFiles":
+			executeCommand(findFiles);
+			break;
+		case "findWithinFiles":
+			executeCommand(findWithinFiles);
+			break;
+		case "gitStatus":
+			executeCommand(pickFilesFromGitStatus);
+			break;
+		case "todo":
+			executeCommand(findTodoFixme);
+			break;
+		default:
+			console.error("Unknown command");
+			process.exit(1);
 	}
 }
