@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 
-async function findFiles(paths: string[]): Promise<string[]> {
+export async function findFiles(paths: string[]): Promise<string[]> {
 	return new Promise((resolve, reject) => {
 		const previewEnabled = process.env.FIND_FILES_PREVIEW_ENABLED === "1";
 		const previewCommand =
