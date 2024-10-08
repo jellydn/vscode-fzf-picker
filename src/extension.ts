@@ -48,7 +48,8 @@ let isExtensionChangedTerminal = false;
 // because only then we'll know the actual paths.
 //
 interface Command {
-	script: string;
+	script?: string;
+	command?: string;
 	uri: vscode.Uri | undefined;
 	preRunCallback: undefined | (() => boolean | Promise<boolean>);
 	postRunCallback: undefined | (() => void);
@@ -56,13 +57,13 @@ interface Command {
 }
 const commands: { [key: string]: Command } = {
 	findFiles: {
-		script: "find_files",
+		command: "findFiles",
 		uri: undefined,
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
 	findFilesWithType: {
-		script: "find_files",
+		command: "findFiles",
 		uri: undefined,
 		preRunCallback: selectTypeFilter,
 		postRunCallback: () => {
@@ -70,13 +71,13 @@ const commands: { [key: string]: Command } = {
 		},
 	},
 	findWithinFiles: {
-		script: "find_within_files",
+		command: "findWithinFiles",
 		uri: undefined,
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
 	findWithinFilesWithType: {
-		script: "find_within_files",
+		command: "findWithinFiles",
 		uri: undefined,
 		preRunCallback: selectTypeFilter,
 		postRunCallback: () => {
@@ -96,25 +97,25 @@ const commands: { [key: string]: Command } = {
 		postRunCallback: undefined,
 	},
 	resumeSearch: {
-		script: "resume_search", // Dummy. We will set the uri from the last-run script. But we will use this value to check whether we are resuming.
+		command: "resumeSearch", // Dummy. We will set the uri from the last-run script. But we will use this value to check whether we are resuming.
 		uri: undefined,
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
 	pickFileFromGitStatus: {
-		script: "pick_file_from_git_status",
+		command: "pickFileFromGitStatus",
 		uri: undefined,
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
 	findTodoFixme: {
-		script: "find_todo_fixme",
+		command: "findTodoFixme",
 		uri: undefined,
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
 	runCustomTask: {
-		script: "run_custom_task",
+		command: "runCustomTask",
 		uri: undefined,
 		preRunCallback: chooseCustomTask,
 		postRunCallback: undefined,
@@ -231,10 +232,15 @@ function setupConfig(context: vscode.ExtensionContext) {
 			join(context.extensionPath, x) +
 				(platform() === "win32" ? ".ps1" : ".sh"),
 		);
-	commands.listSearchLocations.uri = localScript(
-		commands.listSearchLocations.script,
-	);
-	commands.flightCheck.uri = localScript(commands.flightCheck.script);
+
+	if (commands.listSearchLocations.script) {
+		commands.listSearchLocations.uri = localScript(
+			commands.listSearchLocations.script,
+		);
+	}
+	if (commands.flightCheck.script) {
+		commands.flightCheck.uri = localScript(commands.flightCheck.script);
+	}
 }
 
 /** Register the commands we defined with VS Code so users have access to them */
@@ -804,8 +810,8 @@ function getCommandString(
 	const cmdPath = cmd.uri.fsPath;
 
 	if (
-		cmd.script === "pick_file_from_git_status" ||
-		cmd.script === "find_todo_fixme"
+		cmd.command === "pickFileFromGitStatus" ||
+		cmd.command === "findTodoFixme"
 	) {
 		// Always set HAS_SELECTION to 0 for these specific commands
 		result += envVarToString("HAS_SELECTION", "0");
@@ -839,7 +845,7 @@ function getCommandString(
 			`'${[...CFG.findWithinFilesFilter].reduce((x, y) => `${x}:${y}`)}'`,
 		);
 	}
-	if (cmd.script === "resume_search") {
+	if (cmd.command === "resumeSearch") {
 		result += envVarToString("RESUME_SEARCH", "1");
 	}
 	result += cmdPath;
