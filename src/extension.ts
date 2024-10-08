@@ -1034,6 +1034,11 @@ async function executeCommand(
 				const selectionText = editor.document.getText(selection);
 				writeFileSync(CFG.selectionFile, selectionText);
 				envVars += envVarToString("HAS_SELECTION", "1");
+				// Add the selected text as an environment variable
+				envVars += envVarToString(
+					"SELECTED_TEXT",
+					`"${selectionText.replace(/"/g, '\\"')}"`,
+				);
 			} else {
 				envVars += envVarToString("HAS_SELECTION", "0");
 			}

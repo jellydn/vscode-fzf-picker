@@ -2,7 +2,7 @@ import * as childProcess from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { findFiles } from "./commands";
+import { findFiles, liveGrep } from "./commands";
 
 vi.mock("node:child_process");
 vi.mock("node:fs");
@@ -224,6 +224,69 @@ describe("findFiles", () => {
 
 		await expect(findFiles([testDir])).rejects.toThrow(
 			"File selection canceled",
+		);
+	});
+});
+
+describe("liveGrep", () => {
+	beforeEach(() => {
+		vi.resetAllMocks();
+	});
+
+	afterEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("should search within files successfully", async () => {
+		const mockSpawn = vi.spyOn(childProcess, "spawn");
+		const mockRg = {
+			stdout: { pipe: vi.fn() },
+			on: vi.fn(),
+			kill: vi.fn(),
+		};
+		const mockFzf = {
+			stdin: { end: vi.fn() },
+			stdout: {
+				on: vi.fn().mockImplementation((event, callback) => {
+					if (event === "data") {
+						callback(
+							"file1.txt:10:5:matched line\nfile2.txt:20:3:another match",
+						);
+					}
+				}),
+			},
+			on: vi.fn().mockImplementation((event, callback) => {
+				if (event === "close") {
+					callback(0);
+				}
+			}),
+		};
+
+		mockSpawn.mockImplementation((command) => {
+			if (command === "rg")
+				return mockRg as unknown as childProcess.ChildProcess;
+			if (command === "fzf")
+				return mockFzf as unknown as childProcess.ChildProcess;
+			return {} as childProcess.ChildProcess;
+		});
+
+		const result = await liveGrep([process.cwd()], "searchText");
+
+		expect(result).toEqual([
+			`${process.cwd()}/file1.txt:10:5`,
+			`${process.cwd()}/file2.txt:20:3`,
+		]);
+		expect(mockSpawn).toHaveBeenCalledTimes(2);
+	});
+
+	it("should handle errors", async () => {
+		const mockSpawn = vi.spyOn(childProcess, "spawn");
+		mockSpawn.mockImplementation(() => {
+			throw new Error("Command failed");
+		});
+
+		await expect(liveGrep([process.cwd()], "searchText")).rejects.toThrow(
+			"Command failed",
 		);
 	});
 });
