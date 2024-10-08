@@ -103,13 +103,13 @@ const commands: { [key: string]: Command } = {
 		postRunCallback: undefined,
 	},
 	pickFileFromGitStatus: {
-		command: "pickFileFromGitStatus",
+		command: "gitStatus",
 		uri: undefined,
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
 	findTodoFixme: {
-		command: "findTodoFixme",
+		command: "todo",
 		uri: undefined,
 		preRunCallback: undefined,
 		postRunCallback: undefined,
@@ -809,10 +809,7 @@ function getCommandString(
 	let result = "";
 	const cmdPath = cmd.uri.fsPath;
 
-	if (
-		cmd.command === "pickFileFromGitStatus" ||
-		cmd.command === "findTodoFixme"
-	) {
+	if (cmd.command === "gitStatus" || cmd.command === "todo") {
 		// Always set HAS_SELECTION to 0 for these specific commands
 		result += envVarToString("HAS_SELECTION", "0");
 	} else if (CFG.useEditorSelectionAsQuery && withTextSelection) {
