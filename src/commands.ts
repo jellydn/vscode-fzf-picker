@@ -1,5 +1,5 @@
 import { execSync, spawn } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import * as path from "node:path";
 
 /**
@@ -38,7 +38,7 @@ export async function findFiles(paths: string[]): Promise<string[]> {
 		}
 
 		let query = "";
-		if (resumeSearch && lastQueryFile) {
+		if (resumeSearch && lastQueryFile && existsSync(lastQueryFile)) {
 			try {
 				query = readFileSync(lastQueryFile, "utf-8").trim();
 			} catch (error) {
@@ -107,6 +107,10 @@ export async function findFiles(paths: string[]): Promise<string[]> {
 						(file) => `${singleDirRoot}/${file}`,
 					);
 				}
+				// After successful file selection, save the query for future resume
+				if (lastQueryFile) {
+					writeFileSync(lastQueryFile, query);
+				}
 				resolve(selectedFiles);
 			} else {
 				reject(new Error("File selection canceled"));
@@ -128,7 +132,10 @@ export async function findFiles(paths: string[]): Promise<string[]> {
  * @param paths - An array of file paths to search within.
  * @returns A promise that resolves to an array of selected file paths with line and column numbers.
  */
-export async function liveGrep(paths: string[]): Promise<string[]> {
+export async function liveGrep(
+	paths: string[],
+	initialQuery?: string,
+): Promise<string[]> {
 	return new Promise((resolve, reject) => {
 		const previewCommand =
 			process.env.FIND_WITHIN_FILES_PREVIEW_COMMAND ||
@@ -139,6 +146,8 @@ export async function liveGrep(paths: string[]): Promise<string[]> {
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
 		const fileTypes = process.env.TYPE_FILTER || "";
 		const fuzzRgQuery = process.env.FUZZ_RG_QUERY === "1";
+		const resumeSearch = process.env.RESUME_SEARCH === "1";
+		const lastQueryFile = process.env.LAST_QUERY_FILE || "";
 
 		// Navigate to the first path if it's the only one
 		let singleDirRoot = "";
@@ -147,6 +156,15 @@ export async function liveGrep(paths: string[]): Promise<string[]> {
 			process.chdir(singleDirRoot);
 			// biome-ignore lint: it's okay as the path is already set
 			paths = [];
+		}
+
+		let query = initialQuery;
+		if (resumeSearch && lastQueryFile && existsSync(lastQueryFile)) {
+			try {
+				query = readFileSync(lastQueryFile, "utf-8").trim();
+			} catch (error) {
+				console.error("Error reading last query file:", error);
+			}
 		}
 
 		const rgArgs = [
@@ -202,6 +220,10 @@ export async function liveGrep(paths: string[]): Promise<string[]> {
 						(file) =>
 							`${singleDirRoot}/${file.split(":")[0]}:${file.split(":")[1]}:${file.split(":")[2]}`,
 					);
+				}
+				// After successful search, save the query for future resume
+				if (lastQueryFile) {
+					writeFileSync(lastQueryFile, query || "");
 				}
 				resolve(selectedFiles);
 			} else {
@@ -406,10 +428,10 @@ if (require.main === module) {
 		case "findWithinFiles":
 			executeCommand(liveGrep);
 			break;
-		case "gitStatus":
+		case "pickFileFromGitStatus":
 			executeCommand(pickFilesFromGitStatus);
 			break;
-		case "todo":
+		case "findTodoFixme":
 			executeCommand(findTodoFixme);
 			break;
 		default:

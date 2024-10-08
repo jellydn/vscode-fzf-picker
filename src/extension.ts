@@ -103,13 +103,13 @@ const commands: { [key: string]: Command } = {
 		postRunCallback: undefined,
 	},
 	pickFileFromGitStatus: {
-		command: "gitStatus",
+		command: "pickFileFromGitStatus",
 		uri: undefined,
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
 	findTodoFixme: {
-		command: "todo",
+		command: "findTodoFixme",
 		uri: undefined,
 		preRunCallback: undefined,
 		postRunCallback: undefined,
@@ -809,7 +809,10 @@ function getCommandString(
 	let result = "";
 	const cmdPath = cmd.uri.fsPath;
 
-	if (cmd.command === "gitStatus" || cmd.command === "todo") {
+	if (
+		cmd.command === "findTodoFixme" ||
+		cmd.command === "pickFileFromGitStatus"
+	) {
 		// Always set HAS_SELECTION to 0 for these specific commands
 		result += envVarToString("HAS_SELECTION", "0");
 	} else if (CFG.useEditorSelectionAsQuery && withTextSelection) {
@@ -868,15 +871,6 @@ async function executeTerminalCommand(cmd: string) {
 
 	if (cmd === "resumeSearch") {
 		// Run the last-run command again
-		if (platform() === "win32") {
-			vscode.window.showErrorMessage(
-				"Resume search is not implemented on Windows. Sorry! PRs welcome.",
-			);
-			logger.error(
-				"Resume search is not implemented on Windows. Sorry! PRs welcome.",
-			);
-			return;
-		}
 		if (CFG.lastCommand === "") {
 			vscode.window.showErrorMessage(
 				"Cannot resume the last search because no search was run yet.",
@@ -886,12 +880,16 @@ async function executeTerminalCommand(cmd: string) {
 			);
 			return;
 		}
-		commands.resumeSearch.uri = commands[CFG.lastCommand].uri;
-		commands.resumeSearch.preRunCallback =
-			commands[CFG.lastCommand].preRunCallback;
-		commands.resumeSearch.postRunCallback =
-			commands[CFG.lastCommand].postRunCallback;
-	} else if (cmd.startsWith("find")) {
+		await executeCommand({
+			name: CFG.lastCommand,
+			withTextSelection: true,
+			hasFilter: CFG.lastCommand.includes("WithType"),
+			isResumeSearch: true,
+		});
+		return;
+	}
+
+	if (cmd.startsWith("find")) {
 		// Keep track of last-run cmd, but we don't want to resume `listSearchLocations` etc
 		CFG.lastCommand = cmd;
 	} else if (cmd === "pickFileFromGitStatus") {
@@ -909,22 +907,41 @@ async function executeTerminalCommand(cmd: string) {
 	logger.info(`Executing ${cmd} command`);
 	term = getOrCreateTerminal();
 	if (cbResult === true && !commands[cmd].isCustomTask) {
-		if (cmd.includes("findFiles")) {
-			await executeCommand("findFiles", false, cmd === "findFilesWithType");
-		} else if (cmd.includes("findWithinFiles")) {
-			await executeCommand(
-				"findWithinFiles",
-				true,
-				cmd === "findWithinFilesWithType",
-			);
-		} else if (cmd.includes("Todo")) {
-			await executeCommand("todo", false, false);
-		} else if (cmd.includes("Git")) {
-			await executeCommand("gitStatus", false, false);
-		} else {
-			term.sendText(getCommandString(commands[cmd]));
-			term.show();
+		switch (cmd) {
+			case "findFiles":
+				await executeCommand({
+					name: "findFiles",
+					withTextSelection: false,
+					hasFilter: false,
+				});
+				break;
+			case "findWithinFiles":
+				await executeCommand({
+					name: "findWithinFiles",
+					withTextSelection: true,
+					hasFilter: true,
+				});
+				break;
+			case "findTodoFixme":
+				await executeCommand({
+					name: "findTodoFixme",
+					withTextSelection: false,
+					hasFilter: false,
+				});
+				break;
+			case "pickFileFromGitStatus":
+				await executeCommand({
+					name: "pickFileFromGitStatus",
+					withTextSelection: false,
+					hasFilter: false,
+				});
+				break;
+			default:
+				term.sendText(getCommandString(commands[cmd]));
+				term.show();
+				break;
 		}
+
 		if (CFG.showMaximizedTerminal) {
 			vscode.commands.executeCommand("workbench.action.toggleMaximizedPanel");
 		}
@@ -1012,11 +1029,17 @@ async function chooseCustomTask(): Promise<boolean> {
  * @param withTextSelection - Whether to include text selection
  * @param hasFilter - Whether the command has a filter
  */
-async function executeCommand(
-	name: string,
-	withTextSelection: boolean,
-	hasFilter: boolean,
-) {
+async function executeCommand({
+	name,
+	withTextSelection,
+	hasFilter,
+	isResumeSearch = false,
+}: {
+	name: string;
+	withTextSelection: boolean;
+	hasFilter: boolean;
+	isResumeSearch?: boolean;
+}) {
 	const workspaceFolders = vscode.workspace.workspaceFolders;
 	if (!workspaceFolders) {
 		vscode.window.showErrorMessage("No workspace folder open");
@@ -1053,6 +1076,10 @@ async function executeCommand(
 			"TYPE_FILTER",
 			`'${[...CFG.findWithinFilesFilter].reduce((x, y) => `${x}:${y}`)}'`,
 		);
+	}
+
+	if (isResumeSearch) {
+		envVars += envVarToString("RESUME_SEARCH", "1");
 	}
 
 	logger.info(`Executing ${name} command`);
