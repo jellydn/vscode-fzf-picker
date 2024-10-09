@@ -347,7 +347,6 @@ export async function findTodoFixme(
  * @returns A promise that resolves to an array of selected file paths.
  */
 async function pickFilesFromGitStatus(): Promise<string[]> {
-	// FIXME: Ignore deleted files
 	return new Promise((resolve, reject) => {
 		const previewEnabled =
 			process.env.PICK_FILE_FROM_GIT_STATUS_PREVIEW_ENABLED !== "0";
@@ -391,10 +390,11 @@ async function pickFilesFromGitStatus(): Promise<string[]> {
 				stdio: ["pipe", "pipe", process.stderr],
 			});
 
-			// Prepare git status for fzf input
+			// Prepare git status for fzf input and exclude deleted files
 			const fzfInput = gitStatus
 				.split("\n")
 				.filter(Boolean)
+				.filter((line) => !line.startsWith("D ") && !line.startsWith(" D"))
 				.map((line) => line.slice(3))
 				.join("\n");
 
