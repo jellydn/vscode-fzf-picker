@@ -1,5 +1,5 @@
 import { exec, execSync, spawn } from "node:child_process";
-import * as fs from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import * as path from "node:path";
 
 let lastQueryFile: string;
@@ -92,7 +92,7 @@ export async function findFiles(
 				resolve(selectedFiles);
 				// Save the query for future resume
 				if (lastQuery !== null) {
-					fs.writeFileSync(lastQueryFile, lastQuery);
+					writeFileSync(lastQueryFile, lastQuery);
 				}
 			} else {
 				reject(new Error("File selection canceled"));
@@ -221,7 +221,7 @@ export async function liveGrep(
 							`${singleDirRoot}/${file.split(":")[0]}:${file.split(":")[1]}:${file.split(":")[2]}`,
 					);
 				}
-				fs.writeFileSync(lastQueryFile, lastQuery);
+				writeFileSync(lastQueryFile, lastQuery);
 				resolve(selectedFiles);
 			} else {
 				reject(new Error("Search canceled"));
@@ -446,8 +446,8 @@ if (require.main === module) {
 		try {
 			const isResumeSearch = process.env.HAS_RESUME === "1";
 			let initialQuery = "";
-			if (isResumeSearch && fs.existsSync(lastQueryFile)) {
-				initialQuery = fs.readFileSync(lastQueryFile, "utf-8").trim();
+			if (isResumeSearch && existsSync(lastQueryFile)) {
+				initialQuery = readFileSync(lastQueryFile, "utf-8").trim();
 			} else if (process.env.SELECTED_TEXT) {
 				initialQuery = process.env.SELECTED_TEXT;
 			}
@@ -472,7 +472,16 @@ if (require.main === module) {
 			});
 
 			Promise.all(openPromises).catch(console.error);
-			console.log("Done");
+
+			const pidFilePath = path.join(
+				process.env.EXTENSION_PATH || process.cwd(),
+				"out",
+				process.env.PID_FILE_NAME || "",
+			);
+			// Update the PID file to 0 so the extension knows the command is done
+			if (existsSync(pidFilePath)) {
+				writeFileSync(pidFilePath, "0");
+			}
 			process.exit(0);
 		} catch (error) {
 			console.error("Error:", error);

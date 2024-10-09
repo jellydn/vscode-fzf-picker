@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { execSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, unlinkSync, watch, writeFileSync } from "node:fs";
 import { platform } from "node:os";
 import { join } from "node:path";
 import * as vscode from "vscode";
@@ -412,6 +412,7 @@ function getOrCreateTerminal() {
 	const terminalOptions: vscode.TerminalOptions = {
 		name: TERMINAL_NAME,
 		hideFromUser: false,
+		location: vscode.TerminalLocation.Editor,
 		env: {
 			EXTENSION_PATH: CFG.extensionPath,
 			// TODO: Support those settings on commands.ts
@@ -684,6 +685,13 @@ async function executeCommand({
 		envVars += envVarToString("HAS_RESUME", "1");
 	}
 
+	// Add PID_FILE to the environment variable so we hide the terminal when the file is deleted (watch file)
+	const pidFileName = Date.now().toString();
+	envVars += envVarToString("PID_FILE_NAME", pidFileName);
+	// Write the PID to a file so we can kill the server later
+	const pidFilePath = join(CFG.extensionPath, "out", pidFileName);
+	writeFileSync(pidFilePath, process.pid.toString());
+
 	logger.info(`Executing ${name} command`);
 	const command = `${envVars} node "${commandsJsPath}" "${name}" "${rootPath}"`;
 
@@ -693,4 +701,13 @@ async function executeCommand({
 
 	// Show the terminal
 	currentTerminal.show();
+
+	// Hide the terminal after the command is executed when file has been deleted (watch file)
+	logger.info("Watching for file", pidFilePath);
+	watch(pidFilePath, (e) => {
+		logger.info("File changed", e);
+		unlinkSync(pidFilePath);
+		currentTerminal.hide();
+		currentTerminal.dispose();
+	});
 }
