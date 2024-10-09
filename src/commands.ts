@@ -418,21 +418,27 @@ if (require.main === module) {
 		try {
 			const files = await func(args, process.env.SELECTED_TEXT);
 			const openCommand = process.env.OPEN_COMMAND_CLI || "code";
-			for (const filePath of files) {
-				const { file, selection } = openFiles(filePath);
-				exec(
-					`${openCommand} ${selection ? `${file}:${selection.start.line}` : file}`,
-					(error, stdout, stderr) => {
-						if (error) {
-							console.error(`Error opening file: ${error}`);
-							return;
-						}
-						console.log(stdout);
-					},
-				);
-			}
+			const openPromises = files.map((filePath) => {
+				return new Promise<void>((resolve, reject) => {
+					const { file, selection } = openFiles(filePath);
+					exec(
+						`${openCommand} ${selection ? `${file}:${selection.start.line}` : file}`,
+						(error, stdout: string) => {
+							if (error) {
+								console.error("Error opening file", error);
+								reject(error);
+							} else {
+								console.log(stdout);
+								resolve();
+							}
+						},
+					);
+				});
+			});
+
+			Promise.all(openPromises).catch(console.error);
 			console.log("Done");
-			// TODO: Close terminal after all files are opened
+			process.exit(0);
 		} catch (error) {
 			console.error("Error:", error);
 			process.exit(1);
