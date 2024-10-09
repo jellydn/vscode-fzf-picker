@@ -242,6 +242,7 @@ export async function liveGrep(
  */
 export async function findTodoFixme(
 	paths: string[],
+	// TODO: Support initialQuery for resume search
 	initialQuery?: string,
 ): Promise<string[]> {
 	return new Promise((resolve, reject) => {
@@ -270,13 +271,7 @@ export async function findTodoFixme(
 
 		rgArgs.push(...paths);
 
-		// Create a string of all rgArgs, properly escaped
-		const rgArgsString = rgArgs
-			.filter(Boolean)
-			.map((arg) => `'${arg.replace(/'/g, "'\\''")}'`)
-			.join(" ");
-
-		const searchCommand = `rg ${rgArgsString} || true`;
+		const rg = spawn("rg", rgArgs.filter(Boolean));
 
 		const previewCommand =
 			process.env.FIND_TODO_FIXME_PREVIEW_COMMAND ||
@@ -293,30 +288,13 @@ export async function findTodoFixme(
 			previewCommand,
 			"--preview-window",
 			previewWindow,
-			"--query",
-			initialQuery || "",
-			"--print-query",
-			"--bind",
-			`change:reload:${searchCommand}`,
 		];
-
-		if (initialQuery) {
-			fzfArgs.push("--bind", `start:reload:${searchCommand}`);
-		}
 
 		const fzf = spawn("fzf", fzfArgs, {
 			stdio: ["pipe", "pipe", process.stderr],
 		});
 
-		// If there's an initial query, perform the search immediately
-		if (initialQuery) {
-			const initialSearch = spawn("sh", ["-c", searchCommand]);
-			initialSearch.stdout.pipe(fzf.stdin);
-			initialSearch.stderr.pipe(process.stderr);
-		} else {
-			const rg = spawn("rg", rgArgs.filter(Boolean));
-			rg.stdout.pipe(fzf.stdin);
-		}
+		rg.stdout.pipe(fzf.stdin);
 
 		let output = "";
 		fzf.stdout.on("data", (data) => {
@@ -325,18 +303,10 @@ export async function findTodoFixme(
 
 		fzf.on("close", (code) => {
 			if (code === 0) {
-				const lines = output.trim().split("\n");
-				const lastQuery = lines[0]; // The first line is the query
-				const selectedFiles = lines.slice(1); // The rest are selected files
-				fs.writeFileSync(lastQueryFile, lastQuery);
-				resolve(selectedFiles);
+				resolve(output.trim().split("\n"));
 			} else {
 				reject(new Error("Search canceled"));
 			}
-		});
-
-		fzf.on("error", (error) => {
-			reject(new Error(`Failed to start fzf: ${error.message}`));
 		});
 	});
 }
