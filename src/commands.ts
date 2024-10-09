@@ -171,6 +171,7 @@ export async function liveGrep(
 
 		const fzfArgs = [
 			"--ansi",
+			"--multi",
 			"--delimiter",
 			":",
 			"--preview",
@@ -282,6 +283,7 @@ export async function findTodoFixme(
 
 		const fzfArgs = [
 			"--ansi",
+			"--multi",
 			"--delimiter",
 			":",
 			"--preview",
