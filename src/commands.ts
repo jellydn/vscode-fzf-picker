@@ -158,7 +158,7 @@ export async function liveGrep(
 			paths = [];
 		}
 
-		let query = initialQuery;
+		let query = initialQuery || "";
 		if (resumeSearch && lastQueryFile && existsSync(lastQueryFile)) {
 			try {
 				query = readFileSync(lastQueryFile, "utf-8").trim();
@@ -189,6 +189,8 @@ export async function liveGrep(
 
 		const rg = spawn("rg", rgArgs.filter(Boolean));
 
+		const searchCommand = `rg --column --line-number --no-heading --color=always --smart-case ${fuzzRgQuery ? "-e" : ""} {q} ${paths.join(" ")} || true`;
+
 		const fzfArgs = [
 			"--ansi",
 			"--delimiter",
@@ -197,15 +199,31 @@ export async function liveGrep(
 			previewCommand,
 			"--preview-window",
 			previewWindow,
+			"--query",
+			query,
 			"--bind",
-			`change:reload:rg --column --line-number --no-heading --color=always --smart-case ${fuzzRgQuery ? "-e" : ""} {q} ${paths.join(" ")} || true`,
+			`change:reload:${searchCommand}`,
 		];
+
+		if (initialQuery) {
+			fzfArgs.push("--bind", `start:reload:${searchCommand}`);
+		}
 
 		const fzf = spawn("fzf", fzfArgs, {
 			stdio: ["pipe", "pipe", process.stderr],
 		});
 
-		rg.stdout.pipe(fzf.stdin);
+		// If there's an initial query, perform the search immediately
+		if (initialQuery) {
+			const initialSearch = spawn("sh", [
+				"-c",
+				searchCommand.replace("{q}", query),
+			]);
+			initialSearch.stdout.pipe(fzf.stdin);
+			initialSearch.stderr.pipe(process.stderr);
+		} else {
+			rg.stdout.pipe(fzf.stdin);
+		}
 
 		let output = "";
 		fzf.stdout.on("data", (data) => {

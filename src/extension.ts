@@ -964,8 +964,8 @@ async function executeTerminalCommand(cmd: string) {
 function envVarToString(name: string, value: string) {
 	// Note we add a space afterwards
 	return platform() === "win32"
-		? `$Env:${name}=${value}; `
-		: `${name}=${value} `;
+		? ` $Env:${name}=${value}; `
+		: ` ${name}=${value} `;
 }
 
 interface CustomTask {
@@ -979,6 +979,7 @@ interface CustomTask {
  */
 async function executeCustomTask(task: CustomTask): Promise<void> {
 	term = getOrCreateTerminal();
+	// FIXME: It's show empty if terminal is not focused or not created yet. Let's fix it.
 
 	logger.info(`Executing custom task: ${task.command}`);
 	term.sendText(task.command);
@@ -1059,14 +1060,11 @@ async function executeCommand({
 			if (!selection.isEmpty) {
 				const selectionText = editor.document.getText(selection);
 				writeFileSync(CFG.selectionFile, selectionText);
-				envVars += envVarToString("HAS_SELECTION", "1");
 				// Add the selected text as an environment variable
 				envVars += envVarToString(
 					"SELECTED_TEXT",
 					`"${selectionText.replace(/"/g, '\\"')}"`,
 				);
-			} else {
-				envVars += envVarToString("HAS_SELECTION", "0");
 			}
 		}
 	}
