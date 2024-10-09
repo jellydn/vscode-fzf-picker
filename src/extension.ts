@@ -578,17 +578,19 @@ async function executeTerminalCommand(cmd: string) {
 	if (cbResult === true) {
 		switch (cmd) {
 			case "findFiles":
+			case "findFilesWithType":
 				await executeCommand({
 					name: "findFiles",
 					withTextSelection: false,
-					hasFilter: false,
+					hasFilter: cmd === "findFilesWithType",
 				});
 				break;
 			case "findWithinFiles":
+			case "findWithinFilesWithType":
 				await executeCommand({
 					name: "findWithinFiles",
 					withTextSelection: true,
-					hasFilter: true,
+					hasFilter: cmd === "findWithinFilesWithType",
 				});
 				break;
 			case "findTodoFixme":
