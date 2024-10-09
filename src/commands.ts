@@ -1,15 +1,9 @@
-import { execSync, spawn } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { exec, execSync, spawn } from "node:child_process";
 import * as path from "node:path";
 
 /**
  * Runs `rg` to search for files and pipes the output to `fzf` to select files.
  * If only one path is provided, it will be used as the working directory.
- * If the `RESUME_SEARCH` environment variable is set, it will resume the last search.
- * If the `HAS_SELECTION` environment variable is set, it will use the selection file.
- * If the `USE_GITIGNORE` environment variable is not set to "0", it will use `.gitignore` files.
- * If the `TYPE_FILTER` environment variable is set, it will filter by file type.
- * If the `FIND_FILES_PREVIEW_ENABLED` environment variable is set to "1", it will enable preview.
  * @param paths The paths to search.
  * @returns A promise that resolves with the selected files.
  */
@@ -21,10 +15,6 @@ export async function findFiles(paths: string[]): Promise<string[]> {
 			"bat --decorations=always --color=always --plain {}";
 		const previewWindow =
 			process.env.FIND_FILES_PREVIEW_WINDOW_CONFIG || "right:50%:border-left";
-		const hasSelection = process.env.HAS_SELECTION === "1";
-		const resumeSearch = process.env.RESUME_SEARCH === "1";
-		const lastQueryFile = process.env.LAST_QUERY_FILE || "";
-		const selectionFile = process.env.SELECTION_FILE || "";
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
 		const fileTypes = process.env.TYPE_FILTER || "";
 
@@ -37,20 +27,8 @@ export async function findFiles(paths: string[]): Promise<string[]> {
 			process.chdir(singleDirRoot);
 		}
 
-		let query = "";
-		if (resumeSearch && lastQueryFile && existsSync(lastQueryFile)) {
-			try {
-				query = readFileSync(lastQueryFile, "utf-8").trim();
-			} catch (error) {
-				console.error("Error reading last query file:", error);
-			}
-		} else if (hasSelection && selectionFile) {
-			try {
-				query = readFileSync(selectionFile, "utf-8").trim();
-			} catch (error) {
-				console.error("Error reading selection file:", error);
-			}
-		}
+		// TODO: Implement resume search with last query file
+		const query = "";
 
 		const rgArgs = [
 			"--files",
@@ -69,14 +47,7 @@ export async function findFiles(paths: string[]): Promise<string[]> {
 		rgArgs.push(...paths);
 		const rg = spawn("rg", rgArgs.filter(Boolean));
 
-		const fzfArgs = [
-			"--cycle",
-			"--multi",
-			"--history",
-			lastQueryFile,
-			"--query",
-			query,
-		];
+		const fzfArgs = ["--cycle", "--multi", "--query", query];
 
 		if (previewEnabled) {
 			fzfArgs.push(
@@ -107,10 +78,7 @@ export async function findFiles(paths: string[]): Promise<string[]> {
 						(file) => `${singleDirRoot}/${file}`,
 					);
 				}
-				// After successful file selection, save the query for future resume
-				if (lastQueryFile) {
-					writeFileSync(lastQueryFile, query);
-				}
+				// TODO: After successful file selection, save the query for future resume
 				resolve(selectedFiles);
 			} else {
 				reject(new Error("File selection canceled"));
@@ -146,8 +114,6 @@ export async function liveGrep(
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
 		const fileTypes = process.env.TYPE_FILTER || "";
 		const fuzzRgQuery = process.env.FUZZ_RG_QUERY === "1";
-		const resumeSearch = process.env.RESUME_SEARCH === "1";
-		const lastQueryFile = process.env.LAST_QUERY_FILE || "";
 
 		// Navigate to the first path if it's the only one
 		let singleDirRoot = "";
@@ -158,14 +124,7 @@ export async function liveGrep(
 			paths = [];
 		}
 
-		let query = initialQuery || "";
-		if (resumeSearch && lastQueryFile && existsSync(lastQueryFile)) {
-			try {
-				query = readFileSync(lastQueryFile, "utf-8").trim();
-			} catch (error) {
-				console.error("Error reading last query file:", error);
-			}
-		}
+		const query = initialQuery || "";
 
 		const rgArgs = [
 			"--column",
@@ -239,10 +198,7 @@ export async function liveGrep(
 							`${singleDirRoot}/${file.split(":")[0]}:${file.split(":")[1]}:${file.split(":")[2]}`,
 					);
 				}
-				// After successful search, save the query for future resume
-				if (lastQueryFile) {
-					writeFileSync(lastQueryFile, query || "");
-				}
+				// TODO: After successful search, save the query for future resume
 				resolve(selectedFiles);
 			} else {
 				reject(new Error("Search canceled"));
@@ -421,6 +377,37 @@ async function pickFilesFromGitStatus(): Promise<string[]> {
 	});
 }
 
+export function openFiles(filePath: string) {
+	let [file, lineTmp, charTmp] = filePath.split(":", 3);
+
+	file = file.trim();
+	let selection = undefined;
+	if (lineTmp !== undefined) {
+		let char = 0;
+		if (charTmp !== undefined) {
+			char = Number.parseInt(charTmp);
+		}
+		const line = Number.parseInt(lineTmp);
+		if (line >= 0 && char >= 0) {
+			selection = {
+				start: {
+					line,
+					character: char,
+				},
+				end: {
+					line,
+					character: char,
+				},
+			};
+		}
+	}
+
+	return {
+		file,
+		selection,
+	};
+}
+
 if (require.main === module) {
 	const command = process.argv[2];
 	const args = process.argv.slice(3);
@@ -430,9 +417,22 @@ if (require.main === module) {
 	) => {
 		try {
 			const files = await func(args, process.env.SELECTED_TEXT);
-			const canaryFile = process.env.CANARY_FILE || "/tmp/canaryFile";
-			writeFileSync(canaryFile, files.join("\n"));
-			console.log("Files selected. Check the canary file.");
+			const openCommand = process.env.OPEN_COMMAND_CLI || "code";
+			for (const filePath of files) {
+				const { file, selection } = openFiles(filePath);
+				exec(
+					`${openCommand} ${selection ? `${file}:${selection.start.line}` : file}`,
+					(error, stdout, stderr) => {
+						if (error) {
+							console.error(`Error opening file: ${error}`);
+							return;
+						}
+						console.log(stdout);
+					},
+				);
+			}
+			console.log("Done");
+			// TODO: Close terminal after all files are opened
 		} catch (error) {
 			console.error("Error:", error);
 			process.exit(1);

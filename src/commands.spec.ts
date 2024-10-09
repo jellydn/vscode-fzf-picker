@@ -241,6 +241,7 @@ describe("liveGrep", () => {
 		const mockSpawn = vi.spyOn(childProcess, "spawn");
 		const mockRg = {
 			stdout: { pipe: vi.fn() },
+			stderr: { pipe: vi.fn() },
 			on: vi.fn(),
 			kill: vi.fn(),
 		};
@@ -270,7 +271,7 @@ describe("liveGrep", () => {
 			return {} as childProcess.ChildProcess;
 		});
 
-		const result = await liveGrep([process.cwd()], "searchText");
+		const result = await liveGrep([process.cwd()], "");
 
 		expect(result).toEqual([
 			`${process.cwd()}/file1.txt:10:5`,

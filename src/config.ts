@@ -15,7 +15,6 @@ export interface Config {
 	extensionName: string | undefined;
 	searchPaths: string[];
 	searchPathsOrigins: { [key: string]: PathOrigin };
-	disableStartupChecks: boolean;
 	useEditorSelectionAsQuery: boolean;
 	useGitIgnoreExcludes: boolean;
 	useWorkspaceSearchExcludes: boolean;
@@ -29,10 +28,6 @@ export interface Config {
 	workspaceSettings: {
 		folders: string[];
 	};
-	canaryFile: string;
-	selectionFile: string;
-	lastQueryFile: string;
-	lastPosFile: string;
 	hideTerminalAfterSuccess: boolean;
 	hideTerminalAfterFail: boolean;
 	clearTerminalAfterUse: boolean;
@@ -49,19 +44,19 @@ export interface Config {
 	batTheme: string;
 	openFileInPreviewEditor: boolean;
 	killTerminalAfterUse: boolean;
-	fuzzRipgrepQuery: boolean;
+	fuzzRgQuery: boolean;
 	restoreFocusTerminal: boolean;
 	useTerminalInEditor: boolean;
 	shellPathForTerminal: string;
 	findTodoFixmeSearchPattern: string;
 	customTasks: CustomTask[];
+	openCommand: string;
 }
 
 export const CFG: Config = {
 	extensionName: undefined,
 	searchPaths: [],
 	searchPathsOrigins: {},
-	disableStartupChecks: false,
 	useEditorSelectionAsQuery: true,
 	useGitIgnoreExcludes: true,
 	useWorkspaceSearchExcludes: true,
@@ -75,10 +70,6 @@ export const CFG: Config = {
 	workspaceSettings: {
 		folders: [],
 	},
-	canaryFile: "",
-	selectionFile: "",
-	lastQueryFile: "",
-	lastPosFile: "",
 	hideTerminalAfterSuccess: false,
 	hideTerminalAfterFail: false,
 	clearTerminalAfterUse: false,
@@ -95,7 +86,7 @@ export const CFG: Config = {
 	batTheme: "",
 	openFileInPreviewEditor: false,
 	killTerminalAfterUse: false,
-	fuzzRipgrepQuery: false,
+	fuzzRgQuery: false,
 	restoreFocusTerminal: false,
 	useTerminalInEditor: false,
 	shellPathForTerminal: "",
@@ -106,4 +97,5 @@ export const CFG: Config = {
 			command: "code $(zoxide query --interactive)",
 		},
 	],
+	openCommand: "code -g",
 };
