@@ -270,11 +270,6 @@ function updateConfigWithUserSettings() {
 		"general.searchCurrentWorkingDirectory",
 	);
 	CFG.searchWorkspaceFolders = getCFG("general.searchWorkspaceFolders");
-	CFG.hideTerminalAfterSuccess = getCFG("general.hideTerminalAfterSuccess");
-	CFG.hideTerminalAfterFail = getCFG("general.hideTerminalAfterFail");
-	CFG.clearTerminalAfterUse = getCFG("general.clearTerminalAfterUse");
-	CFG.killTerminalAfterUse = getCFG("general.killTerminalAfterUse");
-	CFG.showMaximizedTerminal = getCFG("general.showMaximizedTerminal");
 	CFG.batTheme = getCFG("general.batTheme");
 	CFG.openCommand = getCFG("general.openCommand");
 	CFG.openFileInPreviewEditor = getCFG("general.openFileInPreviewEditor");
@@ -287,9 +282,6 @@ function updateConfigWithUserSettings() {
 		"findWithinFiles.previewWindowConfig",
 	);
 	CFG.fuzzRgQuery = getCFG("findWithinFiles.fuzzRipgrepQuery");
-	CFG.restoreFocusTerminal = getCFG("general.restoreFocusTerminal");
-	CFG.useTerminalInEditor = getCFG("general.useTerminalInEditor");
-	CFG.shellPathForTerminal = getCFG("general.shellPathForTerminal");
 	CFG.findTodoFixmeSearchPattern = getCFG("findTodoFixme.searchPattern");
 	CFG.customTasks = getCFG("customTasks");
 }
@@ -479,9 +471,6 @@ function getOrCreateTerminal() {
 
 	const terminalOptions: vscode.TerminalOptions = {
 		name: TERMINAL_NAME,
-		location: CFG.useTerminalInEditor
-			? vscode.TerminalLocation.Editor
-			: vscode.TerminalLocation.Panel,
 		hideFromUser: false,
 		env: {
 			EXTENSION_PATH: CFG.extensionPath,
@@ -502,10 +491,6 @@ function getOrCreateTerminal() {
 			OPEN_COMMAND_CLI: CFG.openCommand,
 		},
 	};
-	// Use provided terminal from settings, otherwise use default terminal profile
-	if (CFG.shellPathForTerminal !== "") {
-		terminalOptions.shellPath = CFG.shellPathForTerminal;
-	}
 
 	return vscode.window.createTerminal(terminalOptions);
 }
@@ -624,10 +609,6 @@ async function executeTerminalCommand(cmd: string) {
 				currentTerminal.sendText(getCommandString(commands[cmd]));
 				currentTerminal.show();
 				break;
-		}
-
-		if (CFG.showMaximizedTerminal) {
-			vscode.commands.executeCommand("workbench.action.toggleMaximizedPanel");
 		}
 
 		const postRunCallback = commands[cmd].postRunCallback;

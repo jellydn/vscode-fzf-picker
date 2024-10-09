@@ -1,7 +1,4 @@
-import { platform } from "node:os";
-import { Range, Uri, window, workspace } from "vscode";
-
-import { CFG } from "./config";
+import { workspace } from "vscode";
 
 /**
  * Given the `search.exclude` configuration object, returns the globs that VS Code uses to exclude files

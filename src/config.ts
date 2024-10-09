@@ -28,11 +28,6 @@ export interface Config {
 	workspaceSettings: {
 		folders: string[];
 	};
-	hideTerminalAfterSuccess: boolean;
-	hideTerminalAfterFail: boolean;
-	clearTerminalAfterUse: boolean;
-	showMaximizedTerminal: boolean;
-	flightCheckPassed: boolean;
 	additionalSearchLocations: string[];
 	additionalSearchLocationsWhen: WhenCondition;
 	searchCurrentWorkingDirectory: WhenCondition;
@@ -43,11 +38,7 @@ export interface Config {
 	lastCommand: string;
 	batTheme: string;
 	openFileInPreviewEditor: boolean;
-	killTerminalAfterUse: boolean;
 	fuzzRgQuery: boolean;
-	restoreFocusTerminal: boolean;
-	useTerminalInEditor: boolean;
-	shellPathForTerminal: string;
 	findTodoFixmeSearchPattern: string;
 	customTasks: CustomTask[];
 	openCommand: string;
@@ -70,11 +61,6 @@ export const CFG: Config = {
 	workspaceSettings: {
 		folders: [],
 	},
-	hideTerminalAfterSuccess: false,
-	hideTerminalAfterFail: false,
-	clearTerminalAfterUse: false,
-	showMaximizedTerminal: false,
-	flightCheckPassed: false,
 	additionalSearchLocations: [],
 	additionalSearchLocationsWhen: "never",
 	searchCurrentWorkingDirectory: "never",
@@ -85,11 +71,7 @@ export const CFG: Config = {
 	lastCommand: "",
 	batTheme: "",
 	openFileInPreviewEditor: false,
-	killTerminalAfterUse: false,
 	fuzzRgQuery: false,
-	restoreFocusTerminal: false,
-	useTerminalInEditor: false,
-	shellPathForTerminal: "",
 	findTodoFixmeSearchPattern: "(TODO|FIXME|HACK|FIX):\\s",
 	customTasks: [
 		{
