@@ -146,9 +146,13 @@ export async function liveGrep(
 
 		rgArgs.push(...paths);
 
-		const rg = spawn("rg", rgArgs.filter(Boolean));
+		// Create a string of all rgArgs, properly escaped
+		const rgArgsString = rgArgs
+			.filter(Boolean)
+			.map((arg) => `'${arg.replace(/'/g, "'\\''")}'`)
+			.join(" ");
 
-		const searchCommand = `rg --column --line-number --no-heading --color=always --smart-case ${fuzzRgQuery ? "-e" : ""} {q} ${paths.join(" ")} || true`;
+		const searchCommand = `rg ${rgArgsString} ${fuzzRgQuery ? "-e" : ""} {q} || true`;
 
 		const fzfArgs = [
 			"--ansi",
@@ -181,6 +185,7 @@ export async function liveGrep(
 			initialSearch.stdout.pipe(fzf.stdin);
 			initialSearch.stderr.pipe(process.stderr);
 		} else {
+			const rg = spawn("rg", rgArgs.filter(Boolean));
 			rg.stdout.pipe(fzf.stdin);
 		}
 
@@ -203,10 +208,6 @@ export async function liveGrep(
 			} else {
 				reject(new Error("Search canceled"));
 			}
-		});
-
-		rg.on("error", (error) => {
-			reject(new Error(`Failed to start rg: ${error.message}`));
 		});
 
 		fzf.on("error", (error) => {
@@ -423,7 +424,7 @@ if (require.main === module) {
 					const { file, selection } = openFiles(filePath);
 					exec(
 						`${openCommand} ${selection ? `${file}:${selection.start.line}` : file}`,
-						(error, stdout: string) => {
+						(error: Error | null, stdout: string) => {
 							if (error) {
 								console.error("Error opening file", error);
 								reject(error);
