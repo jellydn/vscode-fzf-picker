@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { execSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { platform } from "node:os";
 import { join } from "node:path";
 import * as vscode from "vscode";
@@ -59,12 +59,6 @@ const commands: { [key: string]: Command } = {
 		postRunCallback: () => {
 			CFG.useTypeFilter = false;
 		},
-	},
-	listSearchLocations: {
-		script: "list_search_locations",
-		uri: undefined,
-		preRunCallback: writePathOriginsFile,
-		postRunCallback: undefined,
 	},
 	flightCheck: {
 		script: "flight_check",
@@ -201,11 +195,6 @@ function setupConfig(context: vscode.ExtensionContext) {
 				(platform() === "win32" ? ".ps1" : ".sh"),
 		);
 
-	if (commands.listSearchLocations.script) {
-		commands.listSearchLocations.uri = localScript(
-			commands.listSearchLocations.script,
-		);
-	}
 	if (commands.flightCheck.script) {
 		commands.flightCheck.uri = localScript(commands.flightCheck.script);
 	}
@@ -372,54 +361,6 @@ function collectSearchLocations() {
 	return locations;
 }
 
-/**
- * Produce a human-readable string explaining where the search paths come from
- * @param useColor - Whether to use color in the output
- * @returns A formatted string explaining search locations
- */
-function explainSearchLocations(useColor = false) {
-	const listDirs = (which: PathOrigin) => {
-		let str = "";
-		for (const [k, v] of Object.entries(CFG.searchPathsOrigins)) {
-			if ((v & which) !== 0) {
-				str += `- ${k}\n`;
-			}
-		}
-		if (str.length === 0) {
-			str += "- <none>\n";
-		}
-		return str;
-	};
-
-	const maybeBlue = (s: string) => {
-		return useColor ? `\\033[36m${s}\\033[0m` : s;
-	};
-
-	let ret = "";
-	ret += maybeBlue("Paths added because they're the working directory:\n");
-	ret += listDirs(PathOrigin.cwd);
-	ret += maybeBlue("Paths added because they're defined in the workspace:\n");
-	ret += listDirs(PathOrigin.workspace);
-	ret += maybeBlue(
-		"Paths added because they're the specified in the settings:\n",
-	);
-	ret += listDirs(PathOrigin.settings);
-
-	return ret;
-}
-
-/**
- * Write the path origins to a file
- * @returns true if the operation was successful
- */
-function writePathOriginsFile() {
-	writeFileSync(
-		join(CFG.tempDir, "paths_explain"),
-		explainSearchLocations(platform() !== "win32"),
-	);
-	return true;
-}
-
 function handleWorkspaceFoldersChanges() {
 	CFG.searchPaths = collectSearchLocations();
 
@@ -452,7 +393,6 @@ function reinitialize() {
 	logger.info("Plugin initialized with key settings:", {
 		extensionName: CFG.extensionName,
 		searchPaths: CFG.searchPaths,
-		tempDir: CFG.tempDir,
 	});
 }
 
@@ -474,6 +414,7 @@ function getOrCreateTerminal() {
 		hideFromUser: false,
 		env: {
 			EXTENSION_PATH: CFG.extensionPath,
+			// TODO: Support those settings on commands.ts
 			FIND_FILES_PREVIEW_ENABLED: CFG.findFilesPreviewEnabled ? "1" : "0",
 			FIND_FILES_PREVIEW_COMMAND: CFG.findFilesPreviewCommand,
 			FIND_FILES_PREVIEW_WINDOW_CONFIG: CFG.findFilesPreviewWindowConfig,
@@ -740,7 +681,7 @@ async function executeCommand({
 	}
 
 	if (isResumeSearch) {
-		envVars += envVarToString("RESUME_SEARCH", "1");
+		envVars += envVarToString("HAS_RESUME", "1");
 	}
 
 	logger.info(`Executing ${name} command`);

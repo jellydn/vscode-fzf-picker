@@ -1,13 +1,21 @@
 import { exec, execSync, spawn } from "node:child_process";
+import * as fs from "node:fs";
 import * as path from "node:path";
+
+let lastQueryFile: string;
 
 /**
  * Runs `rg` to search for files and pipes the output to `fzf` to select files.
  * If only one path is provided, it will be used as the working directory.
  * @param paths The paths to search.
+ * @param initialQuery The initial query to search for.
  * @returns A promise that resolves with the selected files.
  */
-export async function findFiles(paths: string[]): Promise<string[]> {
+export async function findFiles(
+	paths: string[],
+	initialQuery?: string,
+): Promise<string[]> {
+	// TODO: Need to update the test to match the new behavior
 	return new Promise((resolve, reject) => {
 		const previewEnabled = process.env.FIND_FILES_PREVIEW_ENABLED === "1";
 		const previewCommand =
@@ -27,8 +35,8 @@ export async function findFiles(paths: string[]): Promise<string[]> {
 			process.chdir(singleDirRoot);
 		}
 
-		// TODO: Implement resume search with last query file
-		const query = "";
+		// Implement resume search with last query file
+		const query = initialQuery || "";
 
 		const rgArgs = [
 			"--files",
@@ -47,7 +55,7 @@ export async function findFiles(paths: string[]): Promise<string[]> {
 		rgArgs.push(...paths);
 		const rg = spawn("rg", rgArgs.filter(Boolean));
 
-		const fzfArgs = ["--cycle", "--multi", "--query", query];
+		const fzfArgs = ["--cycle", "--multi", "--query", query, "--print-query"];
 
 		if (previewEnabled) {
 			fzfArgs.push(
@@ -65,21 +73,27 @@ export async function findFiles(paths: string[]): Promise<string[]> {
 		rg.stdout.pipe(fzf.stdin);
 
 		let output = "";
+		let lastQuery = "";
 		fzf.stdout.on("data", (data) => {
 			output += data.toString();
 		});
 
 		fzf.on("close", (code) => {
 			if (code === 0) {
-				let selectedFiles = output.trim().split("\n");
+				const lines = output.trim().split("\n");
+				lastQuery = lines[0]; // The first line is the query
+				let selectedFiles = lines.slice(1); // The rest are selected files
 				if (singleDirRoot) {
 					// Prepend the single directory root to each selected file
 					selectedFiles = selectedFiles.map(
 						(file) => `${singleDirRoot}/${file}`,
 					);
 				}
-				// TODO: After successful file selection, save the query for future resume
 				resolve(selectedFiles);
+				// Save the query for future resume
+				if (lastQuery !== null) {
+					fs.writeFileSync(lastQueryFile, lastQuery);
+				}
 			} else {
 				reject(new Error("File selection canceled"));
 			}
@@ -104,6 +118,7 @@ export async function liveGrep(
 	paths: string[],
 	initialQuery?: string,
 ): Promise<string[]> {
+	// TODO: Need to update the test to match the new behavior
 	return new Promise((resolve, reject) => {
 		const previewCommand =
 			process.env.FIND_WITHIN_FILES_PREVIEW_COMMAND ||
@@ -164,6 +179,7 @@ export async function liveGrep(
 			previewWindow,
 			"--query",
 			query,
+			"--print-query",
 			"--bind",
 			`change:reload:${searchCommand}`,
 		];
@@ -196,14 +212,16 @@ export async function liveGrep(
 
 		fzf.on("close", (code) => {
 			if (code === 0) {
-				let selectedFiles = output.trim().split("\n");
+				const lines = output.trim().split("\n");
+				const lastQuery = lines[0]; // The first line is the query
+				let selectedFiles = lines.slice(1); // The rest are selected files
 				if (singleDirRoot) {
 					selectedFiles = selectedFiles.map(
 						(file) =>
 							`${singleDirRoot}/${file.split(":")[0]}:${file.split(":")[1]}:${file.split(":")[2]}`,
 					);
 				}
-				// TODO: After successful search, save the query for future resume
+				fs.writeFileSync(lastQueryFile, lastQuery);
 				resolve(selectedFiles);
 			} else {
 				reject(new Error("Search canceled"));
@@ -219,9 +237,13 @@ export async function liveGrep(
 /**
  * Searches for TODO/FIXME comments in files using rg and fzf.
  * @param paths - An array of file paths to search within.
+ * @param initialQuery - The initial query to search for.
  * @returns A promise that resolves to an array of selected file paths with line and column numbers.
  */
-export async function findTodoFixme(paths: string[]): Promise<string[]> {
+export async function findTodoFixme(
+	paths: string[],
+	initialQuery?: string,
+): Promise<string[]> {
 	return new Promise((resolve, reject) => {
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
 		const fileTypes = process.env.TYPE_FILTER || "";
@@ -248,7 +270,13 @@ export async function findTodoFixme(paths: string[]): Promise<string[]> {
 
 		rgArgs.push(...paths);
 
-		const rg = spawn("rg", rgArgs.filter(Boolean));
+		// Create a string of all rgArgs, properly escaped
+		const rgArgsString = rgArgs
+			.filter(Boolean)
+			.map((arg) => `'${arg.replace(/'/g, "'\\''")}'`)
+			.join(" ");
+
+		const searchCommand = `rg ${rgArgsString} || true`;
 
 		const previewCommand =
 			process.env.FIND_TODO_FIXME_PREVIEW_COMMAND ||
@@ -265,13 +293,30 @@ export async function findTodoFixme(paths: string[]): Promise<string[]> {
 			previewCommand,
 			"--preview-window",
 			previewWindow,
+			"--query",
+			initialQuery || "",
+			"--print-query",
+			"--bind",
+			`change:reload:${searchCommand}`,
 		];
+
+		if (initialQuery) {
+			fzfArgs.push("--bind", `start:reload:${searchCommand}`);
+		}
 
 		const fzf = spawn("fzf", fzfArgs, {
 			stdio: ["pipe", "pipe", process.stderr],
 		});
 
-		rg.stdout.pipe(fzf.stdin);
+		// If there's an initial query, perform the search immediately
+		if (initialQuery) {
+			const initialSearch = spawn("sh", ["-c", searchCommand]);
+			initialSearch.stdout.pipe(fzf.stdin);
+			initialSearch.stderr.pipe(process.stderr);
+		} else {
+			const rg = spawn("rg", rgArgs.filter(Boolean));
+			rg.stdout.pipe(fzf.stdin);
+		}
 
 		let output = "";
 		fzf.stdout.on("data", (data) => {
@@ -280,10 +325,18 @@ export async function findTodoFixme(paths: string[]): Promise<string[]> {
 
 		fzf.on("close", (code) => {
 			if (code === 0) {
-				resolve(output.trim().split("\n"));
+				const lines = output.trim().split("\n");
+				const lastQuery = lines[0]; // The first line is the query
+				const selectedFiles = lines.slice(1); // The rest are selected files
+				fs.writeFileSync(lastQueryFile, lastQuery);
+				resolve(selectedFiles);
 			} else {
 				reject(new Error("Search canceled"));
 			}
+		});
+
+		fzf.on("error", (error) => {
+			reject(new Error(`Failed to start fzf: ${error.message}`));
 		});
 	});
 }
@@ -294,6 +347,7 @@ export async function findTodoFixme(paths: string[]): Promise<string[]> {
  * @returns A promise that resolves to an array of selected file paths.
  */
 async function pickFilesFromGitStatus(): Promise<string[]> {
+	// FIXME: Ignore deleted files
 	return new Promise((resolve, reject) => {
 		const previewEnabled =
 			process.env.PICK_FILE_FROM_GIT_STATUS_PREVIEW_ENABLED !== "0";
@@ -412,12 +466,22 @@ export function openFiles(filePath: string) {
 if (require.main === module) {
 	const command = process.argv[2];
 	const args = process.argv.slice(3);
-
+	lastQueryFile = path.join(
+		process.env.EXTENSION_PATH || process.cwd(),
+		".last_query",
+	);
 	const executeCommand = async (
 		func: (paths: string[], selectedText?: string) => Promise<string[]>,
 	) => {
 		try {
-			const files = await func(args, process.env.SELECTED_TEXT);
+			const isResumeSearch = process.env.HAS_RESUME === "1";
+			let initialQuery = "";
+			if (isResumeSearch && fs.existsSync(lastQueryFile)) {
+				initialQuery = fs.readFileSync(lastQueryFile, "utf-8").trim();
+			} else if (process.env.SELECTED_TEXT) {
+				initialQuery = process.env.SELECTED_TEXT;
+			}
+			const files = await func(args, initialQuery);
 			const openCommand = process.env.OPEN_COMMAND_CLI || "code";
 			const openPromises = files.map((filePath) => {
 				return new Promise<void>((resolve, reject) => {
