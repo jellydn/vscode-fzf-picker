@@ -456,7 +456,6 @@ function handleWorkspaceSettingsChanges() {
  * @returns true if initialization was successful, false otherwise
  */
 function reinitialize() {
-	currentTerminal?.dispose();
 	updateConfigWithUserSettings();
 	logger.info("Plugin initialized with key settings:", {
 		extensionName: CFG.extensionName,
@@ -470,7 +469,6 @@ function reinitialize() {
  * @returns A VS Code terminal instance
  */
 function getOrCreateTerminal() {
-	// FIXME: It's show empty if terminal is not focused or not created yet. Let's fix it.
 	const existingTerminal = vscode.window.terminals.find(
 		(t) => t.name === TERMINAL_NAME,
 	);
