@@ -415,6 +415,8 @@ function getOrCreateTerminal() {
 		location: vscode.TerminalLocation.Editor,
 		env: {
 			EXTENSION_PATH: CFG.extensionPath,
+			// Hide history on terminal
+			HISTFILE: "",
 			// TODO: Support those settings on commands.ts
 			FIND_FILES_PREVIEW_ENABLED: CFG.findFilesPreviewEnabled ? "1" : "0",
 			FIND_FILES_PREVIEW_COMMAND: CFG.findFilesPreviewCommand,
