@@ -50,10 +50,6 @@
 				"title": "Find It Faster: search within files (with type filter)"
 			},
 			{
-				"command": "find-it-faster.listSearchLocations",
-				"title": "Find It Faster: list search locations (modify in extension settings)"
-			},
-			{
 				"command": "find-it-faster.resumeSearch",
 				"title": "Find It Faster: resume last search"
 			},
@@ -102,31 +98,6 @@
 		"configuration": {
 			"title": "FindItFaster",
 			"properties": {
-				"find-it-faster.general.hideTerminalAfterSuccess": {
-					"markdownDescription": "Extensions have limited control over the terminal panel. Ideally, it would be possible to automatically switch back to the previous thing you were doing (e.g. hide the terminal, show the terminal you're working on, show the tasks panel if that's what you were on), but we can't. Select here whether you want the terminal to be hidden or remain shown after invoking a command that fails / is canceled.",
-					"type": "boolean",
-					"default": true
-				},
-				"find-it-faster.general.hideTerminalAfterFail": {
-					"markdownDescription": "Extensions have limited control over the terminal panel. Ideally, it would be possible to automatically switch back to the previous thing you were doing (e.g. hide the terminal, show the terminal you're working on, show the tasks panel if that's what you were on), but we can't. Select here whether you want the terminal to be hidden or remain shown after invoking a command that succeeds.",
-					"type": "boolean",
-					"default": true
-				},
-				"find-it-faster.general.clearTerminalAfterUse": {
-					"markdownDescription": "Sends a 'clear' command after invoking a terminal command for a cleaner look",
-					"type": "boolean",
-					"default": true
-				},
-				"find-it-faster.general.killTerminalAfterUse": {
-					"markdownDescription": "Kills this extension's terminal such that your previous terminal gets back into focus. Comes with a performance penalty for creating a new terminal on every invocation.",
-					"type": "boolean",
-					"default": false
-				},
-				"find-it-faster.general.showMaximizedTerminal": {
-					"markdownDescription": "Show the terminal in full screen. Works especially nicely if you set the \"hide after success / fail\" options in these preferences.",
-					"type": "boolean",
-					"default": false
-				},
 				"find-it-faster.general.useGitIgnoreExcludes": {
 					"markdownDescription": "Use `.gitignore` entries (if present) to limit search paths",
 					"type": "boolean",

@@ -33,7 +33,6 @@ export interface Config {
 	searchCurrentWorkingDirectory: WhenCondition;
 	searchWorkspaceFolders: boolean;
 	extensionPath: string;
-	tempDir: string;
 	useTypeFilter: boolean;
 	lastCommand: string;
 	batTheme: string;
@@ -66,7 +65,6 @@ export const CFG: Config = {
 	searchCurrentWorkingDirectory: "never",
 	searchWorkspaceFolders: true,
 	extensionPath: "",
-	tempDir: "",
 	useTypeFilter: false,
 	lastCommand: "",
 	batTheme: "",
