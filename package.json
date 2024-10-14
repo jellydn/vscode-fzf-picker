@@ -276,6 +276,7 @@
 		"vscode:prepublish": "npm run build",
 		"build": "tsup --external vscode",
 		"build:tsc": "tsc -p ./",
+		"lint": "biome check src",
 		"test": "vitest --run",
 		"test:ui": "vitest --ui",
 		"test:coverage": "vitest --coverage",
