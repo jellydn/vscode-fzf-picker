@@ -79,10 +79,6 @@ export const CFG: Config = {
 	fuzzRgQuery: false,
 	findTodoFixmeSearchPattern: "(TODO|FIXME|HACK|FIX):\\s",
 	customTasks: [
-		{
-			name: "zoxide",
-			command: "code $(zoxide query --interactive)",
-		},
 	],
 	openCommand: "code -g",
 };
