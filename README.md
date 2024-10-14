@@ -112,6 +112,60 @@ Ensure you can run `fzf`, `rg`, `bat`, and `sed` directly in your terminal. If t
 
 This extension contributes various settings. Please refer to the VS Code settings UI for a complete list and descriptions.
 
+### Commands
+
+<!-- commands -->
+
+| Command                                  | Title                                                  |
+| ---------------------------------------- | ------------------------------------------------------ |
+| `find-it-faster.findFiles`               | Find It Faster: search file                            |
+| `find-it-faster.findFilesWithType`       | Find It Faster: search file (with type filter)         |
+| `find-it-faster.findWithinFiles`         | Find It Faster: search within files                    |
+| `find-it-faster.findWithinFilesWithType` | Find It Faster: search within files (with type filter) |
+| `find-it-faster.resumeSearch`            | Find It Faster: resume last search                     |
+| `find-it-faster.pickFileFromGitStatus`   | Find It Faster: Pick file from git status              |
+| `find-it-faster.findTodoFixme`           | Find It Faster: Find TODO/FIXME comments               |
+| `find-it-faster.runCustomTask`           | Find It Faster: Run Custom Task                        |
+
+<!-- commands -->
+
+### Settings
+
+<!-- configs -->
+
+| Key                                                        | Description                                                                                                                 | Type      | Default                                                                                  |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------- | ---------------------------------------------------------------------------------------- | ----- | ---- | ---------- |
+| `find-it-faster.general.useGitIgnoreExcludes`              |                                                                                                                             | `boolean` | `true`                                                                                   |
+| `find-it-faster.general.useWorkspaceSearchExcludes`        |                                                                                                                             | `boolean` | `true`                                                                                   |
+| `find-it-faster.general.additionalSearchLocations`         |                                                                                                                             | `array`   | `[]`                                                                                     |
+| `find-it-faster.general.additionalSearchLocationsWhen`     |                                                                                                                             | `string`  | `"always"`                                                                               |
+| `find-it-faster.general.searchWorkspaceFolders`            |                                                                                                                             | `boolean` | `true`                                                                                   |
+| `find-it-faster.general.searchCurrentWorkingDirectory`     |                                                                                                                             | `string`  | `"noWorkspaceOnly"`                                                                      |
+| `find-it-faster.general.batTheme`                          |                                                                                                                             | `string`  | `"1337"`                                                                                 |
+| `find-it-faster.general.openFileInPreviewEditor`           |                                                                                                                             | `boolean` | `false`                                                                                  |
+| `find-it-faster.findFiles.showPreview`                     |                                                                                                                             | `boolean` | `true`                                                                                   |
+| `find-it-faster.findFiles.previewCommand`                  |                                                                                                                             | `string`  | `""`                                                                                     |
+| `find-it-faster.findFiles.previewWindowConfig`             |                                                                                                                             | `string`  | `""`                                                                                     |
+| `find-it-faster.findWithinFiles.showPreview`               |                                                                                                                             | `boolean` | `true`                                                                                   |
+| `find-it-faster.findWithinFiles.previewCommand`            |                                                                                                                             | `string`  | `""`                                                                                     |
+| `find-it-faster.findWithinFiles.previewWindowConfig`       |                                                                                                                             | `string`  | `""`                                                                                     |
+| `find-it-faster.findWithinFiles.fuzzRipgrepQuery`          |                                                                                                                             | `boolean` | `false`                                                                                  |
+| `find-it-faster.advanced.useEditorSelectionAsQuery`        |                                                                                                                             | `boolean` | `true`                                                                                   |
+| `find-it-faster.general.restoreFocusTerminal`              |                                                                                                                             | `boolean` | `false`                                                                                  |
+| `find-it-faster.general.useTerminalInEditor`               |                                                                                                                             | `boolean` | `false`                                                                                  |
+| `find-it-faster.general.shellPathForTerminal`              |                                                                                                                             | `string`  | `""`                                                                                     |
+| `find-it-faster.pickFileFromGitStatus.showPreview`         |                                                                                                                             | `boolean` | `true`                                                                                   |
+| `find-it-faster.pickFileFromGitStatus.previewCommand`      |                                                                                                                             | `string`  | `""`                                                                                     |
+| `find-it-faster.pickFileFromGitStatus.previewWindowConfig` |                                                                                                                             | `string`  | `""`                                                                                     |
+| `find-it-faster.findTodoFixme.previewEnabled`              | Enable preview for TODO/FIXME search results                                                                                | `boolean` | `true`                                                                                   |
+| `find-it-faster.findTodoFixme.previewCommand`              | Preview command for TODO/FIXME search results                                                                               | `string`  | `"bat --decorations=always --color=always {1} --highlight-line {2} --style=header,grid"` |
+| `find-it-faster.findTodoFixme.previewWindowConfig`         | Preview window configuration for TODO/FIXME search results                                                                  | `string`  | `"right:border-left:50%:+{2}+3/3:~3"`                                                    |
+| `find-it-faster.findTodoFixme.searchPattern`               | Regular expression pattern for searching TODO/FIXME/HACK comments. Matches keywords followed by a colon and optional space. | `string`  | `"(TODO                                                                                  | FIXME | HACK | FIX):\\s"` |
+| `find-it-faster.customTasks`                               | Custom tasks that can be executed by the extension                                                                          | `array`   | `[{"name":"zoxide","command":"code $(zoxide query --interactive)"}]`                     |
+| `find-it-faster.general.openCommand`                       | CLI command to open files. Use 'code' for VS Code, 'cursor' for Cursor, or any other custom command.                        | `string`  | `"code -g"`                                                                              |
+
+<!-- configs -->
+
 ## FAQ
 
 Please refer to the [FAQ.md](FAQ.md) file for known issues and frequently asked questions.

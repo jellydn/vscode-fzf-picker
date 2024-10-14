@@ -1,3 +1,10 @@
+import { defineConfigObject } from "reactive-vscode";
+import * as Meta from "./generated/meta";
+
+export const config = defineConfigObject<Meta.ScopedConfigKeyTypeMap>(
+	Meta.scopedConfigs.scope,
+	Meta.scopedConfigs.defaults,
+);
 type WhenCondition = "always" | "never" | "noWorkspaceOnly";
 export enum PathOrigin {
 	cwd = 1 << 0,
