@@ -5,7 +5,7 @@
 
 Finds files and text within files, but faster than VS Code normally does.
 
-Make sure to check the [Requirements](#requirements) below (TL;DR: have `fzf`, `rg`, `bat` on your
+Make sure to check the [Requirements](#requirements) below (TL;DR: have `fzf`, `rg`, `bat` and `node` on your
 `PATH`).
 
 ## Default Key Bindings
@@ -87,6 +87,18 @@ The extension provides five main commands:
 
 </details>
 
+## Live Grep
+
+The Live Grep feature now supports selecting multiple files. Users can use the following keys in fzf:
+
+- Tab: Select/deselect a file
+- Shift+Tab: Deselect all files
+- Enter: Confirm selection(s)
+
+Multiple selected files will be opened in separate tabs or windows, depending on your VS Code configuration.
+
+- [ ] TODO: Add new demo per setting
+
 ## Requirements
 
 Ensure you can run `fzf`, `rg`, `bat`, and `sed` directly in your terminal. If those work, this plugin will work as expected.
@@ -94,6 +106,7 @@ Ensure you can run `fzf`, `rg`, `bat`, and `sed` directly in your terminal. If t
 - [`fzf` ("command-line fuzzy finder")](https://github.com/junegunn/fzf)
 - [`rg` ("ripgrep")](https://github.com/BurntSushi/ripgrep)
 - [`bat` ("a cat clone with wings")](https://github.com/sharkdp/bat)
+- [`nodejs`](https://nodejs.dev) LTS
 
 ## Extension Settings
 
