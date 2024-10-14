@@ -1,6 +1,6 @@
 {
 	"name": "find-it-faster",
-	"displayName": "FindItFaster",
+	"displayName": "Find It Faster",
 	"publisher": "jellydn",
 	"icon": "res/icon.png",
 	"repository": {
@@ -293,19 +293,12 @@
 		"@types/vscode": "1.92.0",
 		"@vscode/vsce": "3.1.1",
 		"bumpp": "9.7.1",
+		"pnpm": "^9.12.1",
 		"reactive-vscode": "0.2.5",
 		"tsup": "8.3.0",
 		"typescript": "5.6.3",
-		"vite": "5.4.8",
-		"vitest": "2.1.2",
+		"vite": "5.4.9",
+		"vitest": "2.1.3",
 		"vscode-ext-gen": "0.4.3"
-	},
-	"packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
-	"tsup": {
-		"entry": ["src/extension.ts", "src/commands.ts"],
-		"splitting": false,
-		"sourcemap": true,
-		"clean": true,
-		"outDir": "out"
 	}
 }

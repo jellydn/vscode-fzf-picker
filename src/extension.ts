@@ -1,26 +1,18 @@
 import assert from "node:assert";
 import { execSync } from "node:child_process";
-import { readFileSync, unlinkSync, watch, writeFileSync } from "node:fs";
+import { unlinkSync, watch, writeFileSync } from "node:fs";
 import { platform } from "node:os";
 import { join } from "node:path";
+import { defineExtension, extensionContext, useCommand } from "reactive-vscode";
 import * as vscode from "vscode";
 
-import { CFG, PathOrigin } from "./config";
+import { CFG, PathOrigin, config } from "./config";
+import { displayName } from "./generated/meta";
 import { logger } from "./logger";
 import { getIgnoreString } from "./utils";
 
-const TERMINAL_NAME = "Find it Faster";
+const TERMINAL_NAME = displayName;
 
-interface PackageJson {
-	name: string;
-	contributes: {
-		commands: Array<{
-			command: string;
-		}>;
-	};
-}
-
-let PACKAGE: PackageJson;
 let currentTerminal: vscode.Terminal;
 
 interface Command {
@@ -185,94 +177,29 @@ async function selectTypeFilter() {
 	});
 }
 
-/** We need the extension context to get paths to our scripts. We do that here. */
-function setupConfig(context: vscode.ExtensionContext) {
-	CFG.extensionName = PACKAGE.name;
-	assert(CFG.extensionName);
-	const localScript = (x: string) =>
-		vscode.Uri.file(
-			join(context.extensionPath, x) +
-				(platform() === "win32" ? ".ps1" : ".sh"),
-		);
-
-	if (commands.flightCheck.script) {
-		commands.flightCheck.uri = localScript(commands.flightCheck.script);
-	}
-}
-
-/** Register the commands we defined with VS Code so users have access to them */
-function registerCommands() {
-	Object.keys(commands).map((k) => {
-		vscode.commands.registerCommand(`${CFG.extensionName}.${k}`, () => {
-			executeTerminalCommand(k);
-		});
-	});
-}
-
-/**
- * Entry point called by VS Code when the extension is activated
- * @param context - The extension context provided by VS Code
- */
-export function activate(context: vscode.ExtensionContext) {
-	CFG.extensionPath = context.extensionPath;
-	const local = (x: string) => vscode.Uri.file(join(CFG.extensionPath, x));
-
-	// Load our package.json
-	PACKAGE = JSON.parse(
-		readFileSync(local("package.json").fsPath, "utf-8"),
-	) as PackageJson;
-	setupConfig(context);
-
-	handleWorkspaceSettingsChanges();
-	handleWorkspaceFoldersChanges();
-
-	registerCommands();
-	reinitialize();
-}
-
-/**
- * Called when the extension is deactivated by VS Code
- */
-export function deactivate() {
-	currentTerminal?.dispose();
-}
-
 /**
  * Map settings from the user-configurable settings to our internal data structure
  */
 function updateConfigWithUserSettings() {
-	function getCFG<T>(key: string) {
-		const userCfg = vscode.workspace.getConfiguration();
-		const ret = userCfg.get<T>(`${CFG.extensionName}.${key}`);
-		assert(ret !== undefined);
-		return ret;
-	}
-
-	CFG.useEditorSelectionAsQuery = getCFG("advanced.useEditorSelectionAsQuery");
-	CFG.useWorkspaceSearchExcludes = getCFG("general.useWorkspaceSearchExcludes");
-	CFG.useGitIgnoreExcludes = getCFG("general.useGitIgnoreExcludes");
-	CFG.additionalSearchLocations = getCFG("general.additionalSearchLocations");
-	CFG.additionalSearchLocationsWhen = getCFG(
-		"general.additionalSearchLocationsWhen",
-	);
-	CFG.searchCurrentWorkingDirectory = getCFG(
-		"general.searchCurrentWorkingDirectory",
-	);
-	CFG.searchWorkspaceFolders = getCFG("general.searchWorkspaceFolders");
-	CFG.batTheme = getCFG("general.batTheme");
-	CFG.openCommand = getCFG("general.openCommand");
-	CFG.openFileInPreviewEditor = getCFG("general.openFileInPreviewEditor");
-	CFG.findFilesPreviewEnabled = getCFG("findFiles.showPreview");
-	CFG.findFilesPreviewCommand = getCFG("findFiles.previewCommand");
-	CFG.findFilesPreviewWindowConfig = getCFG("findFiles.previewWindowConfig");
-	CFG.findWithinFilesPreviewEnabled = getCFG("findWithinFiles.showPreview");
-	CFG.findWithinFilesPreviewCommand = getCFG("findWithinFiles.previewCommand");
-	CFG.findWithinFilesPreviewWindowConfig = getCFG(
-		"findWithinFiles.previewWindowConfig",
-	);
-	CFG.fuzzRgQuery = getCFG("findWithinFiles.fuzzRipgrepQuery");
-	CFG.findTodoFixmeSearchPattern = getCFG("findTodoFixme.searchPattern");
-	CFG.customTasks = getCFG("customTasks");
+	CFG.useEditorSelectionAsQuery = config["advanced.useEditorSelectionAsQuery"];
+	CFG.useWorkspaceSearchExcludes = config["general.useWorkspaceSearchExcludes"];
+	CFG.useGitIgnoreExcludes = config["general.useGitIgnoreExcludes"];
+	CFG.searchCurrentWorkingDirectory =
+		config["general.searchCurrentWorkingDirectory"];
+	CFG.searchWorkspaceFolders = config["general.searchWorkspaceFolders"];
+	CFG.batTheme = config["general.batTheme"];
+	CFG.openCommand = config["general.openCommand"];
+	CFG.openFileInPreviewEditor = config["general.openFileInPreviewEditor"];
+	CFG.findFilesPreviewEnabled = config["findFiles.showPreview"];
+	CFG.findFilesPreviewCommand = config["findFiles.previewCommand"];
+	CFG.findFilesPreviewWindowConfig = config["findFiles.previewWindowConfig"];
+	CFG.findWithinFilesPreviewEnabled = config["findWithinFiles.showPreview"];
+	CFG.findWithinFilesPreviewCommand = config["findWithinFiles.previewCommand"];
+	CFG.findWithinFilesPreviewWindowConfig =
+		config["findWithinFiles.previewWindowConfig"];
+	CFG.fuzzRgQuery = config["findWithinFiles.fuzzRipgrepQuery"];
+	CFG.findTodoFixmeSearchPattern = config["findTodoFixme.searchPattern"];
+	CFG.customTasks = config.customTasks;
 }
 
 /**
@@ -390,10 +317,6 @@ function handleWorkspaceSettingsChanges() {
  */
 function reinitialize() {
 	updateConfigWithUserSettings();
-	logger.info("Plugin initialized with key settings:", {
-		extensionName: CFG.extensionName,
-		searchPaths: CFG.searchPaths,
-	});
 }
 
 /**
@@ -713,3 +636,46 @@ async function executeCommand({
 		currentTerminal.dispose();
 	});
 }
+
+const { activate, deactivate } = defineExtension(() => {
+	CFG.extensionPath = extensionContext.value?.extensionPath ?? "";
+	reinitialize();
+	handleWorkspaceSettingsChanges();
+	handleWorkspaceFoldersChanges();
+
+	useCommand("find-it-faster.findFiles", async () => {
+		await executeTerminalCommand("findFiles");
+	});
+
+	useCommand("find-it-faster.findFilesWithType", async () => {
+		await executeTerminalCommand("findFilesWithType");
+	});
+
+	useCommand("find-it-faster.findWithinFiles", async () => {
+		await executeTerminalCommand("findWithinFiles");
+	});
+
+	useCommand("find-it-faster.findWithinFilesWithType", async () => {
+		await executeTerminalCommand("findWithinFilesWithType");
+	});
+
+	useCommand("find-it-faster.findTodoFixme", async () => {
+		await executeTerminalCommand("findTodoFixme");
+	});
+
+	useCommand("find-it-faster.pickFileFromGitStatus", async () => {
+		await executeTerminalCommand("pickFileFromGitStatus");
+	});
+
+	useCommand("find-it-faster.runCustomTask", async () => {
+		await executeTerminalCommand("runCustomTask");
+	});
+
+	return {
+		dispose: () => {
+			currentTerminal?.dispose();
+		},
+	};
+});
+
+export { activate, deactivate };
