@@ -78,7 +78,6 @@ export const CFG: Config = {
 	openFileInPreviewEditor: false,
 	fuzzRgQuery: false,
 	findTodoFixmeSearchPattern: "(TODO|FIXME|HACK|FIX):\\s",
-	customTasks: [
-	],
+	customTasks: [],
 	openCommand: "code -g",
 };
