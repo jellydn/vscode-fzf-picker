@@ -55,7 +55,14 @@ export async function findFiles(
 		rgArgs.push(...paths);
 		const rg = spawn("rg", rgArgs.filter(Boolean));
 
-		const fzfArgs = ["--cycle", "--multi", "--query", query, "--print-query"];
+		const fzfArgs = [
+			"--cycle",
+			"--multi",
+			"--query",
+			query,
+			"--print-query",
+			"--layout=reverse",
+		];
 
 		if (previewEnabled) {
 			fzfArgs.push(
@@ -183,6 +190,7 @@ export async function liveGrep(
 			"--print-query",
 			"--bind",
 			`change:reload:${searchCommand}`,
+			"--layout=reverse",
 		];
 
 		if (initialQuery) {
@@ -290,6 +298,7 @@ export async function findTodoFixme(
 			previewCommand,
 			"--preview-window",
 			previewWindow,
+			"--layout=reverse",
 		];
 
 		const fzf = spawn("fzf", fzfArgs, {
@@ -347,7 +356,7 @@ async function pickFilesFromGitStatus(): Promise<string[]> {
 				return;
 			}
 
-			const fzfArgs = ["--cycle", "--multi"];
+			const fzfArgs = ["--cycle", "--multi", "--layout=reverse"];
 
 			if (previewEnabled) {
 				fzfArgs.push(
