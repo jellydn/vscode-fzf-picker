@@ -2,7 +2,7 @@
 	"name": "find-it-faster",
 	"displayName": "FindItFaster",
 	"publisher": "jellydn",
-	"icon": "media/icon.png",
+	"icon": "res/icon.png",
 	"repository": {
 		"url": "https://github.com/jellydn/vscode-finditfaster"
 	},
