@@ -1,4 +1,3 @@
-import assert from "node:assert";
 import { execSync } from "node:child_process";
 import { unlinkSync, watch, writeFileSync } from "node:fs";
 import { platform } from "node:os";
@@ -235,7 +234,7 @@ function collectSearchLocations() {
 			}
 			break;
 		default:
-			assert(false, "Unhandled case");
+			logger.error("Unhandled case");
 	}
 
 	// additional search locations from extension settings
@@ -257,7 +256,7 @@ function collectSearchLocations() {
 			}
 			break;
 		default:
-			assert(false, "Unhandled case");
+			logger.error("Unhandled case");
 	}
 
 	// add the workspace folders
@@ -374,9 +373,8 @@ function getCommandString(
 	withArgs = true,
 	withTextSelection = true,
 ) {
-	assert(cmd.uri);
 	let result = "";
-	const cmdPath = cmd.uri.fsPath;
+	const cmdPath = cmd.uri?.fsPath ?? "";
 
 	if (CFG.useEditorSelectionAsQuery && withTextSelection) {
 		const editor = vscode.window.activeTextEditor;
@@ -669,6 +667,10 @@ const { activate, deactivate } = defineExtension(() => {
 
 	useCommand("find-it-faster.runCustomTask", async () => {
 		await executeTerminalCommand("runCustomTask");
+	});
+
+	useCommand("find-it-faster.resumeSearch", async () => {
+		await executeTerminalCommand("resumeSearch");
 	});
 
 	return {
