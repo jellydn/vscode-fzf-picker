@@ -17,7 +17,6 @@ let currentTerminal: vscode.Terminal;
 interface Command {
 	script?: string;
 	command?: string;
-	uri: vscode.Uri | undefined;
 	preRunCallback: undefined | (() => boolean | Promise<boolean>);
 	postRunCallback: undefined | (() => void);
 	isCustomTask?: boolean;
@@ -25,13 +24,11 @@ interface Command {
 const commands: { [key: string]: Command } = {
 	findFiles: {
 		command: "findFiles",
-		uri: undefined,
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
 	findFilesWithType: {
 		command: "findFiles",
-		uri: undefined,
 		preRunCallback: selectTypeFilter,
 		postRunCallback: () => {
 			CFG.useTypeFilter = false;
@@ -39,45 +36,33 @@ const commands: { [key: string]: Command } = {
 	},
 	findWithinFiles: {
 		command: "findWithinFiles",
-		uri: undefined,
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
 	findWithinFilesWithType: {
 		command: "findWithinFiles",
-		uri: undefined,
 		preRunCallback: selectTypeFilter,
 		postRunCallback: () => {
 			CFG.useTypeFilter = false;
 		},
 	},
-	flightCheck: {
-		script: "flight_check",
-		uri: undefined,
-		preRunCallback: undefined,
-		postRunCallback: undefined,
-	},
 	resumeSearch: {
 		command: "resumeSearch", // Dummy. We will set the uri from the last-run script. But we will use this value to check whether we are resuming.
-		uri: undefined,
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
 	pickFileFromGitStatus: {
 		command: "pickFileFromGitStatus",
-		uri: undefined,
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
 	findTodoFixme: {
 		command: "findTodoFixme",
-		uri: undefined,
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
 	runCustomTask: {
 		command: "runCustomTask",
-		uri: undefined,
 		preRunCallback: chooseCustomTask,
 		postRunCallback: undefined,
 		isCustomTask: true,
@@ -374,7 +359,6 @@ function getCommandString(
 	withTextSelection = true,
 ) {
 	let result = "";
-	const cmdPath = cmd.uri?.fsPath ?? "";
 
 	if (CFG.useEditorSelectionAsQuery && withTextSelection) {
 		const editor = vscode.window.activeTextEditor;
@@ -395,7 +379,6 @@ function getCommandString(
 		);
 	}
 
-	result += cmdPath;
 	if (withArgs) {
 		const paths = CFG.searchPaths.reduce((x, y) => `${x} '${y}'`, "");
 		result += ` ${paths}`;
