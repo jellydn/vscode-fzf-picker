@@ -87,18 +87,6 @@ The extension provides five main commands:
 
 </details>
 
-## Live Grep
-
-The Live Grep feature now supports selecting multiple files. Users can use the following keys in fzf:
-
-- Tab: Select/deselect a file
-- Shift+Tab: Deselect all files
-- Enter: Confirm selection(s)
-
-Multiple selected files will be opened in separate tabs or windows, depending on your VS Code configuration.
-
-- [ ] TODO: Add new demo per setting
-
 ## Requirements
 
 Ensure you can run `fzf`, `rg`, `bat`, and `sed` directly in your terminal. If those work, this plugin will work as expected.
@@ -134,7 +122,7 @@ This extension contributes various settings. Please refer to the VS Code setting
 <!-- configs -->
 
 | Key                                                        | Description                                                                                                                 | Type      | Default                                                                                  |
-| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------- | ---------------------------------------------------------------------------------------- |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------- | ---------------------------------------------------------------------------------------- | ----- | ---- | ---------- |
 | `find-it-faster.general.useGitIgnoreExcludes`              |                                                                                                                             | `boolean` | `true`                                                                                   |
 | `find-it-faster.general.useWorkspaceSearchExcludes`        |                                                                                                                             | `boolean` | `true`                                                                                   |
 | `find-it-faster.general.additionalSearchLocations`         |                                                                                                                             | `array`   | `[]`                                                                                     |
@@ -160,7 +148,7 @@ This extension contributes various settings. Please refer to the VS Code setting
 | `find-it-faster.findTodoFixme.previewEnabled`              | Enable preview for TODO/FIXME search results                                                                                | `boolean` | `true`                                                                                   |
 | `find-it-faster.findTodoFixme.previewCommand`              | Preview command for TODO/FIXME search results                                                                               | `string`  | `"bat --decorations=always --color=always {1} --highlight-line {2} --style=header,grid"` |
 | `find-it-faster.findTodoFixme.previewWindowConfig`         | Preview window configuration for TODO/FIXME search results                                                                  | `string`  | `"right:border-left:50%:+{2}+3/3:~3"`                                                    |
-| `find-it-faster.findTodoFixme.searchPattern`               | Regular expression pattern for searching TODO/FIXME/HACK comments. Matches keywords followed by a colon and optional space. | `string`  | `"(TODO|FIXME|HACK|FIX):\\s"`                                                            |
+| `find-it-faster.findTodoFixme.searchPattern`               | Regular expression pattern for searching TODO/FIXME/HACK comments. Matches keywords followed by a colon and optional space. | `string`  | `"(TODO                                                                                  | FIXME | HACK | FIX):\\s"` |
 | `find-it-faster.customTasks`                               | Custom tasks that can be executed by the extension                                                                          | `array`   | `[]`                                                                                     |
 | `find-it-faster.general.openCommand`                       | CLI command to open files. Use 'code' for VS Code, 'cursor' for Cursor, or any other custom command.                        | `string`  | `"code -g"`                                                                              |
 
