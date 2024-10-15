@@ -6,11 +6,11 @@ import { defineExtension, extensionContext, useCommand } from "reactive-vscode";
 import * as vscode from "vscode";
 
 import { CFG, PathOrigin, config } from "./config";
-import { displayName } from "./generated/meta";
+import * as Meta from "./generated/meta";
 import { logger } from "./logger";
 import { getIgnoreString } from "./utils";
 
-const TERMINAL_NAME = displayName;
+const TERMINAL_NAME = Meta.displayName;
 
 let currentTerminal: vscode.Terminal;
 
@@ -641,35 +641,35 @@ const { activate, deactivate } = defineExtension(() => {
 	handleWorkspaceSettingsChanges();
 	handleWorkspaceFoldersChanges();
 
-	useCommand("find-it-faster.findFiles", async () => {
+	useCommand(Meta.commands.findFiles, async () => {
 		await executeTerminalCommand("findFiles");
 	});
 
-	useCommand("find-it-faster.findFilesWithType", async () => {
+	useCommand(Meta.commands.findFilesWithType, async () => {
 		await executeTerminalCommand("findFilesWithType");
 	});
 
-	useCommand("find-it-faster.findWithinFiles", async () => {
+	useCommand(Meta.commands.findWithinFiles, async () => {
 		await executeTerminalCommand("findWithinFiles");
 	});
 
-	useCommand("find-it-faster.findWithinFilesWithType", async () => {
+	useCommand(Meta.commands.findWithinFilesWithType, async () => {
 		await executeTerminalCommand("findWithinFilesWithType");
 	});
 
-	useCommand("find-it-faster.findTodoFixme", async () => {
+	useCommand(Meta.commands.findTodoFixme, async () => {
 		await executeTerminalCommand("findTodoFixme");
 	});
 
-	useCommand("find-it-faster.pickFileFromGitStatus", async () => {
+	useCommand(Meta.commands.pickFileFromGitStatus, async () => {
 		await executeTerminalCommand("pickFileFromGitStatus");
 	});
 
-	useCommand("find-it-faster.runCustomTask", async () => {
+	useCommand(Meta.commands.runCustomTask, async () => {
 		await executeTerminalCommand("runCustomTask");
 	});
 
-	useCommand("find-it-faster.resumeSearch", async () => {
+	useCommand(Meta.commands.resumeSearch, async () => {
 		await executeTerminalCommand("resumeSearch");
 	});
 

@@ -5,6 +5,7 @@ export const config = defineConfigObject<Meta.ScopedConfigKeyTypeMap>(
 	Meta.scopedConfigs.scope,
 	Meta.scopedConfigs.defaults,
 );
+
 type WhenCondition = "always" | "never" | "noWorkspaceOnly";
 export enum PathOrigin {
 	cwd = 1 << 0,
@@ -17,9 +18,7 @@ export interface CustomTask {
 	command: string;
 }
 
-/** Global variable cesspool erm, I mean, Configuration Data Structure! It does the job for now. */
 export interface Config {
-	extensionName: string | undefined;
 	searchPaths: string[];
 	searchPathsOrigins: { [key: string]: PathOrigin };
 	useEditorSelectionAsQuery: boolean;
@@ -51,7 +50,6 @@ export interface Config {
 }
 
 export const CFG: Config = {
-	extensionName: undefined,
 	searchPaths: [],
 	searchPathsOrigins: {},
 	useEditorSelectionAsQuery: true,
