@@ -257,12 +257,7 @@
 						},
 						"required": ["name", "command"]
 					},
-					"default": [
-						{
-							"name": "zoxide",
-							"command": "code $(zoxide query --interactive)"
-						}
-					],
+					"default": [],
 					"description": "Custom tasks that can be executed by the extension"
 				},
 				"find-it-faster.general.openCommand": {
