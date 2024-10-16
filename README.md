@@ -14,11 +14,12 @@
 
 ## Prerequisites
 
-- vscode ^1.92.0
-- fzf
-- rg
-- bat
-- node
+Ensure you can run `fzf`, `rg`, `bat`, and `sed` directly in your terminal. If those work, this plugin will work as expected.
+
+- [`fzf` ("command-line fuzzy finder")](https://github.com/junegunn/fzf)
+- [`rg` ("ripgrep")](https://github.com/BurntSushi/ripgrep)
+- [`bat` ("a cat clone with wings")](https://github.com/sharkdp/bat)
+- [`nodejs`](https://nodejs.dev) LTS
 
 ## Default Key Bindings
 
@@ -34,7 +35,7 @@ You can change these using VS Code's keyboard shortcuts.
 
 ```json
 {
-  // Setup FindItFaster extension
+  // Setup fzf-picker extension
   "fzf-picker.customTasks": [
     // Choose folder to open on new window
     {
@@ -98,15 +99,6 @@ The extension provides five main commands:
 ![Find TODO/FIXME Demo](https://i.gyazo.com/d73a096b2bb48d1c8baee692097a5427.gif)
 
 </details>
-
-## Requirements
-
-Ensure you can run `fzf`, `rg`, `bat`, and `sed` directly in your terminal. If those work, this plugin will work as expected.
-
-- [`fzf` ("command-line fuzzy finder")](https://github.com/junegunn/fzf)
-- [`rg` ("ripgrep")](https://github.com/BurntSushi/ripgrep)
-- [`bat` ("a cat clone with wings")](https://github.com/sharkdp/bat)
-- [`nodejs`](https://nodejs.dev) LTS
 
 ## Extension Settings
 
