@@ -170,7 +170,7 @@
 					"default": true
 				},
 				"fzf-picker.findWithinFiles.previewCommand": {
-					"markdownDescription": "When populated: Used by `fzf` to produce the preview when searching within files. Use `{1}` to indicate the filename, `{2}` for the line number. Example using `cat` and `awk` instead of `bat`: `cat {1} | awk '{if (NR>={2}) print}'`.",
+					"markdownDescription": "When populated: Used by `fzf` to produce the preview when searching within files. Use `{1}` to indicate the filename, `{2}` for the line number",
 					"type": "string",
 					"default": ""
 				},
@@ -292,6 +292,6 @@
 		"typescript": "5.6.3",
 		"vite": "5.4.9",
 		"vitest": "2.1.3",
-		"vscode-ext-gen": "0.4.3"
+		"vscode-ext-gen": "0.4.4"
 	}
 }
