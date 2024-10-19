@@ -95,7 +95,7 @@
 			}
 		],
 		"configuration": {
-			"title": "FindItFaster",
+			"title": "Fzf Picker",
 			"properties": {
 				"fzf-picker.general.batTheme": {
 					"markdownDescription": "The color theme to use for `bat` (see `bat --list-themes`)",
@@ -218,8 +218,27 @@
 				},
 				"fzf-picker.general.openCommand": {
 					"type": "string",
+					"enum": [
+						"code -g",
+						"code-insiders -g",
+						"cursor -g",
+						"codium -g",
+						"codium-insiders -g"
+					],
+					"enumDescriptions": [
+						"Visual Studio Code",
+						"Visual Studio Code Insiders",
+						"Cursor",
+						"VSCodium",
+						"VSCodium Insiders"
+					],
 					"default": "code -g",
-					"description": "CLI command to open files. Use 'code' for VS Code, 'cursor' for Cursor, or any other custom command."
+					"description": "Select the command to open files. Choose 'custom' to use a custom command specified in fzf-picker.general.customOpenCommand."
+				},
+				"fzf-picker.general.customOpenCommand": {
+					"type": "string",
+					"default": "",
+					"description": "Specify a custom command to open files when 'custom' is selected in fzf-picker.general.openCommand."
 				}
 			}
 		}
