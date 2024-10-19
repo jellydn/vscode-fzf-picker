@@ -23,7 +23,7 @@
 	],
 	"version": "0.5.3",
 	"engines": {
-		"vscode": "^1.94.0"
+		"vscode": "^1.93.0"
 	},
 	"packageManager": "pnpm@9.12.2",
 	"categories": ["Other"],
@@ -97,48 +97,6 @@
 		"configuration": {
 			"title": "FindItFaster",
 			"properties": {
-				"fzf-picker.general.useGitIgnoreExcludes": {
-					"markdownDescription": "Use `.gitignore` entries (if present) to limit search paths",
-					"type": "boolean",
-					"default": true
-				},
-				"fzf-picker.general.useWorkspaceSearchExcludes": {
-					"markdownDescription": "In order to speed up VS Code's native search functionality, you can use the `search.exclude` setting. If checked, this extension will honor the same exclude patterns (as long as they follow the standard \"gitignore glob style\" that `rg` uses.",
-					"type": "boolean",
-					"default": true
-				},
-				"fzf-picker.general.additionalSearchLocations": {
-					"markdownDescription": "Search files in these locations",
-					"type": "array",
-					"default": []
-				},
-				"fzf-picker.general.additionalSearchLocationsWhen": {
-					"markdownDescription": "When to search the files listed in `general.searchLocations`",
-					"type": "string",
-					"enum": ["always", "never", "noWorkspaceOnly"],
-					"enumDescriptions": [
-						"Always search these locations",
-						"Never search these locations (setting useful for individual workspace overrides)",
-						"Only when no workspace is open"
-					],
-					"default": "always"
-				},
-				"fzf-picker.general.searchWorkspaceFolders": {
-					"markdownDescription": "Search the folders defined in the workspace",
-					"type": "boolean",
-					"default": true
-				},
-				"fzf-picker.general.searchCurrentWorkingDirectory": {
-					"markdownDescription": "Search the current working directory (`process.cwd()`)",
-					"type": "string",
-					"enum": ["always", "never", "noWorkspaceOnly"],
-					"enumDescriptions": [
-						"Always search the working directory",
-						"Never search the working directory",
-						"Only search the working directory when no workspace is open"
-					],
-					"default": "noWorkspaceOnly"
-				},
 				"fzf-picker.general.batTheme": {
 					"markdownDescription": "The color theme to use for `bat` (see `bat --list-themes`)",
 					"type": "string",
@@ -283,7 +241,7 @@
 		"@antfu/ni": "0.23.0",
 		"@biomejs/biome": "1.9.4",
 		"@types/node": "22.7.7",
-		"@types/vscode": "1.94.0",
+		"@types/vscode": "1.93.0",
 		"@vscode/vsce": "3.2.0",
 		"bumpp": "9.7.1",
 		"pnpm": "^9.12.1",

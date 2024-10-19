@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { defineExtension, extensionContext, useCommand } from "reactive-vscode";
 import * as vscode from "vscode";
 
-import { CFG, PathOrigin, config } from "./config";
+import { CFG, config } from "./config";
 import * as Meta from "./generated/meta";
 import { logger } from "./logger";
 import { getIgnoreString } from "./utils";
@@ -166,14 +166,8 @@ async function selectTypeFilter() {
  */
 function updateConfigWithUserSettings() {
 	CFG.useEditorSelectionAsQuery = config["advanced.useEditorSelectionAsQuery"];
-	CFG.useWorkspaceSearchExcludes = config["general.useWorkspaceSearchExcludes"];
-	CFG.useGitIgnoreExcludes = config["general.useGitIgnoreExcludes"];
-	CFG.searchCurrentWorkingDirectory =
-		config["general.searchCurrentWorkingDirectory"];
-	CFG.searchWorkspaceFolders = config["general.searchWorkspaceFolders"];
 	CFG.batTheme = config["general.batTheme"];
 	CFG.openCommand = config["general.openCommand"];
-	CFG.openFileInPreviewEditor = config["general.openFileInPreviewEditor"];
 	CFG.findFilesPreviewEnabled = config["findFiles.showPreview"];
 	CFG.findFilesPreviewCommand = config["findFiles.previewCommand"];
 	CFG.findFilesPreviewWindowConfig = config["findFiles.previewWindowConfig"];
@@ -192,107 +186,12 @@ function updateConfigWithUserSettings() {
  */
 function collectSearchLocations() {
 	const locations: string[] = [];
-	// searchPathsOrigins is for diagnostics only
-	CFG.searchPathsOrigins = {};
-	const setOrUpdateOrigin = (path: string, origin: PathOrigin) => {
-		if (CFG.searchPathsOrigins[path] === undefined) {
-			CFG.searchPathsOrigins[path] = origin;
-		} else {
-			CFG.searchPathsOrigins[path] |= origin;
-		}
-	};
-	// cwd
-	const addCwd = () => {
-		const cwd = process.cwd();
-		locations.push(cwd);
-		setOrUpdateOrigin(cwd, PathOrigin.cwd);
-	};
-	switch (CFG.searchCurrentWorkingDirectory) {
-		case "always":
-			addCwd();
-			break;
-		case "never":
-			break;
-		case "noWorkspaceOnly":
-			if (vscode.workspace.workspaceFolders === undefined) {
-				addCwd();
-			}
-			break;
-		default:
-			logger.error("Unhandled case");
-	}
+	const cwd = process.cwd();
+	locations.push(cwd);
 
-	// additional search locations from extension settings
-	const addSearchLocationsFromSettings = () => {
-		locations.push(...CFG.additionalSearchLocations);
-		for (const x of CFG.additionalSearchLocations) {
-			setOrUpdateOrigin(x, PathOrigin.settings);
-		}
-	};
-	switch (CFG.additionalSearchLocationsWhen) {
-		case "always":
-			addSearchLocationsFromSettings();
-			break;
-		case "never":
-			break;
-		case "noWorkspaceOnly":
-			if (vscode.workspace.workspaceFolders === undefined) {
-				addSearchLocationsFromSettings();
-			}
-			break;
-		default:
-			logger.error("Unhandled case");
-	}
-
-	// add the workspace folders
-	if (
-		CFG.searchWorkspaceFolders &&
-		vscode.workspace.workspaceFolders !== undefined
-	) {
-		const dirs = vscode.workspace.workspaceFolders.map((x) => {
-			const uri = decodeURIComponent(x.uri.toString());
-			if (uri.substring(0, 7) === "file://") {
-				if (platform() === "win32") {
-					return uri.substring(8).replace(/\//g, "\\").replace(/%3A/g, ":");
-				}
-				return uri.substring(7);
-			}
-			vscode.window.showErrorMessage(
-				"Non-file:// uri's not currently supported...",
-			);
-			logger.error("Non-file:// uri's not currently supported...");
-			return "";
-		});
-		locations.push(...dirs);
-		for (const x of dirs) {
-			setOrUpdateOrigin(x, PathOrigin.workspace);
-		}
-	}
+	// NOTE: Support custom search locations if needed
 
 	return locations;
-}
-
-function handleWorkspaceFoldersChanges() {
-	CFG.searchPaths = collectSearchLocations();
-
-	// Also re-update when anything changes
-	vscode.workspace.onDidChangeWorkspaceFolders((event) => {
-		logger.info("workspace folders changed: ", event);
-		CFG.searchPaths = collectSearchLocations();
-	});
-}
-
-function handleWorkspaceSettingsChanges() {
-	updateConfigWithUserSettings();
-
-	// Also re-update when anything changes
-	vscode.workspace.onDidChangeConfiguration((_) => {
-		updateConfigWithUserSettings();
-		// This may also have affected our search paths
-		CFG.searchPaths = collectSearchLocations();
-		// We need to update the env vars in the terminal
-		reinitialize();
-	});
 }
 
 /**
@@ -334,8 +233,6 @@ function getOrCreateTerminal() {
 			FIND_WITHIN_FILES_PREVIEW_COMMAND: CFG.findWithinFilesPreviewCommand,
 			FIND_WITHIN_FILES_PREVIEW_WINDOW_CONFIG:
 				CFG.findWithinFilesPreviewWindowConfig,
-			USE_GITIGNORE: CFG.useGitIgnoreExcludes ? "1" : "0",
-			GLOBS: CFG.useWorkspaceSearchExcludes ? getIgnoreString() : "",
 			BAT_THEME: CFG.batTheme,
 			FUZZ_RG_QUERY: CFG.fuzzRgQuery ? "1" : "0",
 			FIND_TODO_FIXME_SEARCH_PATTERN: CFG.findTodoFixmeSearchPattern,
@@ -379,10 +276,6 @@ function getCommandString(
 		);
 	}
 
-	if (withArgs) {
-		const paths = CFG.searchPaths.reduce((x, y) => `${x} '${y}'`, "");
-		result += ` ${paths}`;
-	}
 	logger.info("Get command", result);
 	return result;
 }
@@ -621,8 +514,6 @@ async function executeCommand({
 const { activate, deactivate } = defineExtension(() => {
 	CFG.extensionPath = extensionContext.value?.extensionPath ?? "";
 	reinitialize();
-	handleWorkspaceSettingsChanges();
-	handleWorkspaceFoldersChanges();
 
 	useCommand(Meta.commands.findFiles, async () => {
 		await executeTerminalCommand("findFiles");
