@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="res/icon.png" alt="VS Code Fzf Picker" width="200"/>
+</p>
 <h1 align="center">Welcome to fzf-picker 👋</h1>
 <p>
   <img alt="Version" src="https://img.shields.io/badge/version-0.5.2-blue.svg?cacheSeconds=2592000" />
@@ -75,7 +78,7 @@ The extension provides five main commands:
 <details>
 <summary>Search within files</summary>
 
-[![Search within files](https://i.gyazo.com/ee00922f952eb69bb1c58a47e0a66e22.gif)](https://gyazo.com/ee00922f952eb69bb1c58a47e0a66e22)
+[![Search within files](https://i.gyazo.com/6bd31cdcdba38a84e4d5baecd49e8942.gif)](https://gyazo.com/6bd31cdcdba38a84e4d5baecd49e8942)
 
 </details>
 
@@ -148,7 +151,8 @@ This extension contributes various settings. Please refer to the VS Code setting
 | `fzf-picker.findTodoFixme.previewWindowConfig`         | Preview window configuration for TODO/FIXME search results                                                                                                                                                                                                                                                                                                 | `string`  | `"right:border-left:50%:+{2}+3/3:~3"`                                                    |
 | `fzf-picker.findTodoFixme.searchPattern`               | Regular expression pattern for searching TODO/FIXME/HACK comments. Matches keywords followed by a colon and optional space.                                                                                                                                                                                                                                | `string`  | `"(TODO|FIXME|HACK|FIX):\\s"`                                                            |
 | `fzf-picker.customTasks`                               | Custom tasks that can be executed by the extension                                                                                                                                                                                                                                                                                                         | `array`   | `[]`                                                                                     |
-| `fzf-picker.general.openCommand`                       | CLI command to open files. Use 'code' for VS Code, 'cursor' for Cursor, or any other custom command.                                                                                                                                                                                                                                                       | `string`  | `"code -g"`                                                                              |
+| `fzf-picker.general.openCommand`                       | Select the command to open files. Choose 'custom' to use a custom command specified in fzf-picker.general.customOpenCommand.                                                                                                                                                                                                                               | `string`  | `"code -g"`                                                                              |
+| `fzf-picker.general.customOpenCommand`                 | Specify a custom command to open files when 'custom' is selected in fzf-picker.general.openCommand.                                                                                                                                                                                                                                                        | `string`  | `""`                                                                                     |
 
 <!-- configs -->
 
