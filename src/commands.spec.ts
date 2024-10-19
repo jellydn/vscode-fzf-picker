@@ -1,7 +1,8 @@
 import * as childProcess from "node:child_process";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { findFiles, liveGrep } from "./commands";
+import { findFiles } from "./commands/find-files";
+import { liveGrep } from "./commands/live-grep";
 
 vi.mock("node:child_process");
 vi.mock("node:fs");
