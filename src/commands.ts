@@ -23,6 +23,7 @@ export async function findFiles(
 			"bat --decorations=always --color=always --plain {}";
 		const previewWindow =
 			process.env.FIND_FILES_PREVIEW_WINDOW_CONFIG || "right:50%:border-left";
+		// TODO: Add <Ctr-g> to toggle gitignore with fzf keybinding
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
 		const fileTypes = process.env.TYPE_FILTER || "";
 
@@ -133,6 +134,7 @@ export async function liveGrep(
 		const previewWindow =
 			process.env.FIND_WITHIN_FILES_PREVIEW_WINDOW_CONFIG ||
 			"right:border-left:50%:+{2}+3/3:~3";
+		// TODO: Add <Ctr-g> to toggle gitignore with fzf keybinding
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
 		const fileTypes = process.env.TYPE_FILTER || "";
 		const fuzzRgQuery = process.env.FUZZ_RG_QUERY === "1";
@@ -174,7 +176,9 @@ export async function liveGrep(
 			.map((arg) => `'${arg.replace(/'/g, "'\\''")}'`)
 			.join(" ");
 
-		const searchCommand = `rg ${rgArgsString} ${fuzzRgQuery ? "-e" : ""} {q} || true`;
+		const searchCommand = `rg ${rgArgsString} ${
+			fuzzRgQuery ? "-e" : ""
+		} {q} || true`;
 
 		const fzfArgs = [
 			"--ansi",
@@ -227,7 +231,9 @@ export async function liveGrep(
 				if (singleDirRoot) {
 					selectedFiles = selectedFiles.map(
 						(file) =>
-							`${singleDirRoot}/${file.split(":")[0]}:${file.split(":")[1]}:${file.split(":")[2]}`,
+							`${singleDirRoot}/${file.split(":")[0]}:${file.split(":")[1]}:${
+								file.split(":")[2]
+							}`,
 					);
 				}
 				writeFileSync(lastQueryFile, lastQuery);
@@ -255,6 +261,7 @@ export async function findTodoFixme(
 	initialQuery?: string,
 ): Promise<string[]> {
 	return new Promise((resolve, reject) => {
+		// TODO: Add <Ctr-g> to toggle gitignore with fzf keybinding
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
 		const fileTypes = process.env.TYPE_FILTER || "";
 		const searchPattern =
@@ -406,7 +413,9 @@ async function pickFilesFromGitStatus(): Promise<string[]> {
 		} catch (error) {
 			reject(
 				new Error(
-					`Error in pickFilesFromGitStatus: ${error instanceof Error ? error.message : String(error)}`,
+					`Error in pickFilesFromGitStatus: ${
+						error instanceof Error ? error.message : String(error)
+					}`,
 				),
 			);
 		}
@@ -468,7 +477,9 @@ if (require.main === module) {
 				return new Promise<void>((resolve, reject) => {
 					const { file, selection } = openFiles(filePath);
 					exec(
-						`${openCommand} ${selection ? `${file}:${selection.start.line}` : file}`,
+						`${openCommand} ${
+							selection ? `${file}:${selection.start.line}` : file
+						}`,
 						(error: Error | null, stdout: string) => {
 							if (error) {
 								console.error("Error opening file", error);

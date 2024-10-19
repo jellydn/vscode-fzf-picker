@@ -233,7 +233,7 @@
 						"VSCodium Insiders"
 					],
 					"default": "code -g",
-					"description": "Select the command to open files. Choose 'custom' to use a custom command specified in fzf-picker.general.customOpenCommand."
+					"description": "Select the command to open files base on your current editor"
 				},
 				"fzf-picker.general.customOpenCommand": {
 					"type": "string",
