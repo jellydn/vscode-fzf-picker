@@ -8,7 +8,6 @@ import * as vscode from "vscode";
 import { CFG, config } from "./config";
 import * as Meta from "./generated/meta";
 import { logger } from "./logger";
-import { getIgnoreString } from "./utils";
 
 const TERMINAL_NAME = Meta.displayName;
 
@@ -47,7 +46,7 @@ const commands: { [key: string]: Command } = {
 		},
 	},
 	resumeSearch: {
-		command: "resumeSearch", // Dummy. We will set the uri from the last-run script. But we will use this value to check whether we are resuming.
+		command: "resumeSearch",
 		preRunCallback: undefined,
 		postRunCallback: undefined,
 	},
@@ -181,24 +180,10 @@ function updateConfigWithUserSettings() {
 }
 
 /**
- * Collect search locations based on the current configuration
- * @returns An array of search locations
- */
-function collectSearchLocations() {
-	const locations: string[] = [];
-	const cwd = process.cwd();
-	locations.push(cwd);
-
-	// NOTE: Support custom search locations if needed
-
-	return locations;
-}
-
-/**
  * Initialize or reinitialize the extension
  * @returns true if initialization was successful, false otherwise
  */
-function reinitialize() {
+function initialize() {
 	updateConfigWithUserSettings();
 }
 
@@ -417,6 +402,7 @@ async function chooseCustomTask(): Promise<boolean> {
 		const task = customTasks.find((t) => t.name === selectedTask.label);
 		if (task) {
 			try {
+				// NOTE: Support open files on editor with custom tasks if needed
 				await executeCustomTask(task);
 				return true;
 			} catch (error) {
@@ -513,7 +499,7 @@ async function executeCommand({
 
 const { activate, deactivate } = defineExtension(() => {
 	CFG.extensionPath = extensionContext.value?.extensionPath ?? "";
-	reinitialize();
+	initialize();
 
 	useCommand(Meta.commands.findFiles, async () => {
 		await executeTerminalCommand("findFiles");
