@@ -21,6 +21,9 @@ This project is a fork of the amazing work done by [@tomrijndorp](https://github
 
 This fork aims to extend and enhance the functionality of the original project. We're actively working on incorporating workflows inspired by tools like [fzf-lua](https://github.com/ibhagwan/fzf-lua) to provide a more comprehensive and flexible file picking experience in VS Code.
 
+[![IT Man - Supercharge Your VS Code with VSCode Fzf Picker](https://i.ytimg.com/vi/PIYsa3IV59o/hqdefault.jpg)](https://www.youtube.com/watch?v=PIYsa3IV59o)
+
+
 ## Prerequisites
 
 Ensure you can run `fzf`, `rg`, `bat`, and `sed` directly in your terminal. If those work, this plugin will work as expected.
@@ -174,14 +177,26 @@ For information on contributing fixes and features, see [CONTRIBUTING.md](CONTRI
 
 For detailed release notes, please see the [CHANGELOG.md](CHANGELOG.md) file.
 
-## Author
-
-* Github: [@jellydn](https://github.com/jellydn)
-
 ## Future Plans
 
 We're actively exploring ways to incorporate additional workflows and features inspired by other powerful tools like [fzf-lua](https://github.com/ibhagwan/fzf-lua). If you have suggestions or specific workflows you'd like to see implemented, please feel free to open an issue or contribute to the project.
 
+# Author
+
+👤 **Dung Huynh Duc <dung@productsway.com>**
+
+- Website: https://productsway.com/
+- Github: [@jellydn](https://github.com/jellydn)
+
 ## Show your support
 
 Give a ⭐️ if this project helped you!
+
+## 📝 License
+
+Copyright © 2024 [Dung Huynh Duc <dung@productsway.com>](https://github.com/jellydn).<br />
+This project is [MIT](https://github.com/jellydn/vscode-hurl-runner/blob/master/LICENSE) licensed.
+
+[![kofi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/dunghd)
+[![paypal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/dunghd)
+[![buymeacoffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/dunghd)
