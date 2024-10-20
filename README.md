@@ -3,8 +3,8 @@
 </p>
 <h1 align="center">Welcome to fzf-picker 👋</h1>
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-0.5.2-blue.svg?cacheSeconds=2592000" />
-  <img src="https://img.shields.io/badge/vscode-%5E1.92.0-blue.svg" />
+  <img alt="Version" src="https://img.shields.io/badge/version-0.6.0-blue.svg?cacheSeconds=2592000" />
+  <img src="https://img.shields.io/badge/vscode-%5E1.93.0-blue.svg" />
   <a href="https://github.com/jellydn/vscode-fzf-picker#readme" target="_blank">
     <img alt="Documentation" src="https://img.shields.io/badge/documentation-yes-brightgreen.svg" />
   </a>
@@ -14,6 +14,12 @@
 </p>
 
 > File Picker with fzf and rg
+
+This project is a fork of the amazing work done by [@tomrijndorp](https://github.com/tomrijndorp/vscode-finditfaster). While the initial intention was to contribute via a pull request, the changes became quite extensive, leading to this separate project.
+
+## About This Fork
+
+This fork aims to extend and enhance the functionality of the original project. We're actively working on incorporating workflows inspired by tools like [fzf-lua](https://github.com/ibhagwan/fzf-lua) to provide a more comprehensive and flexible file picking experience in VS Code.
 
 ## Prerequisites
 
@@ -167,3 +173,15 @@ For information on contributing fixes and features, see [CONTRIBUTING.md](CONTRI
 ## Release Notes
 
 For detailed release notes, please see the [CHANGELOG.md](CHANGELOG.md) file.
+
+## Author
+
+* Github: [@jellydn](https://github.com/jellydn)
+
+## Future Plans
+
+We're actively exploring ways to incorporate additional workflows and features inspired by other powerful tools like [fzf-lua](https://github.com/ibhagwan/fzf-lua). If you have suggestions or specific workflows you'd like to see implemented, please feel free to open an issue or contribute to the project.
+
+## Show your support
+
+Give a ⭐️ if this project helped you!
