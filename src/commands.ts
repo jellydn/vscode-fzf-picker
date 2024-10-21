@@ -1,4 +1,4 @@
-import { exec, execSync, spawn } from "node:child_process";
+import { exec } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import * as path from "node:path";
 import { findFiles } from "./commands/find-files";
