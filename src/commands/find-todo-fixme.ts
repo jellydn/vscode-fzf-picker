@@ -1,5 +1,7 @@
 import { spawn } from "node:child_process";
 
+const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
+
 /**
  * Searches for TODO/FIXME comments in files using rg and fzf.
  * @param paths - An array of file paths to search within.
@@ -71,14 +73,32 @@ export async function findTodoFixme(
 		let output = "";
 		fzf.stdout.on("data", (data) => {
 			output += data.toString();
+			if (DEBUG) console.log("FZF stdout:", data.toString());
 		});
 
 		fzf.on("close", (code) => {
+			if (DEBUG) console.log("FZF process closed with code:", code);
 			if (code === 0) {
 				resolve(output.trim().split("\n"));
 			} else {
 				reject(new Error("Search canceled"));
 			}
 		});
+
+		rg.on("error", (error) => {
+			if (DEBUG) console.error("RG error:", error);
+			reject(new Error(`Failed to start rg: ${error.message}`));
+		});
+
+		fzf.on("error", (error) => {
+			if (DEBUG) console.error("FZF error:", error);
+			reject(new Error(`Failed to start fzf: ${error.message}`));
+		});
+
+		if (DEBUG) {
+			rg.stderr.on("data", (data) => {
+				console.error("RG stderr:", data.toString());
+			});
+		}
 	});
 }

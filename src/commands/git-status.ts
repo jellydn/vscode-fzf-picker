@@ -2,6 +2,8 @@ import { execSync } from "node:child_process";
 import { spawn } from "node:child_process";
 import * as path from "node:path";
 
+const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
+
 /**
  * Picks files from git status using fzf.
  * If no file is selected, it will return an empty array.
@@ -49,6 +51,11 @@ export async function pickFilesFromGitStatus(): Promise<string[]> {
 				);
 			}
 
+			if (DEBUG) {
+				console.log("FZF command:", "fzf", fzfArgs.join(" "));
+				console.log("Git status command:", "git status --porcelain");
+			}
+
 			const fzf = spawn("fzf", fzfArgs, {
 				stdio: ["pipe", "pipe", process.stderr],
 			});
@@ -67,9 +74,11 @@ export async function pickFilesFromGitStatus(): Promise<string[]> {
 			let output = "";
 			fzf.stdout.on("data", (data) => {
 				output += data.toString();
+				if (DEBUG) console.log("FZF stdout:", data.toString());
 			});
 
 			fzf.on("close", (code) => {
+				if (DEBUG) console.log("FZF process closed with code:", code);
 				if (code === 0 && output.trim()) {
 					const selectedFiles = output.trim().split("\n");
 					const fullPaths = selectedFiles.map((file) =>
@@ -83,9 +92,11 @@ export async function pickFilesFromGitStatus(): Promise<string[]> {
 			});
 
 			fzf.on("error", (error) => {
+				if (DEBUG) console.error("FZF error:", error);
 				reject(new Error(`Failed to start fzf: ${error.message}`));
 			});
 		} catch (error) {
+			if (DEBUG) console.error("Error in pickFilesFromGitStatus:", error);
 			reject(
 				new Error(
 					`Error in pickFilesFromGitStatus: ${

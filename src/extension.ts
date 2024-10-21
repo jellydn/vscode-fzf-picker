@@ -222,6 +222,7 @@ function getOrCreateTerminal() {
 			FUZZ_RG_QUERY: CFG.fuzzRgQuery ? "1" : "0",
 			FIND_TODO_FIXME_SEARCH_PATTERN: CFG.findTodoFixmeSearchPattern,
 			OPEN_COMMAND_CLI: CFG.openCommand,
+			DEBUG_FZF_PICKER: config["general.debugMode"] ? "1" : "0",
 		},
 	};
 
@@ -432,6 +433,11 @@ async function executeCommand({
 	hasFilter: boolean;
 	isResumeSearch?: boolean;
 }) {
+	logger.info(`Executing command: ${name}`);
+	logger.info(`With text selection: ${withTextSelection}`);
+	logger.info(`Has filter: ${hasFilter}`);
+	logger.info(`Is resume search: ${isResumeSearch}`);
+
 	const workspaceFolders = vscode.workspace.workspaceFolders;
 	if (!workspaceFolders) {
 		vscode.window.showErrorMessage("No workspace folder open");
@@ -531,6 +537,20 @@ const { activate, deactivate } = defineExtension(() => {
 
 	useCommand(Meta.commands.resumeSearch, async () => {
 		await executeTerminalCommand("resumeSearch");
+	});
+
+	vscode.workspace.onDidChangeConfiguration((event) => {
+		if (event.affectsConfiguration("fzf-picker.general.debugMode")) {
+			initialize();
+			// Recreate the terminal to update the DEBUG_LIVE_GREP environment variable
+			if (currentTerminal) {
+				currentTerminal.dispose();
+			}
+			currentTerminal = getOrCreateTerminal();
+			logger.info(
+				"Debug mode changed. Reinitialized extension and recreated terminal.",
+			);
+		}
 	});
 
 	return {

@@ -2,6 +2,8 @@ import { spawn } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { lastQueryFile } from "../commands";
 
+const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
+
 /**
  * Interactive search for text within files using rg and fzf.
  * @param paths - An array of file paths to search within.
@@ -87,29 +89,55 @@ export async function liveGrep(
 			fzfArgs.push("--bind", `start:reload:${searchCommand}`);
 		}
 
+		if (DEBUG) {
+			console.log("FZF command:", "fzf", fzfArgs.join(" "));
+			console.log("Search command:", searchCommand);
+		}
+
 		const fzf = spawn("fzf", fzfArgs, {
 			stdio: ["pipe", "pipe", process.stderr],
 		});
 
 		// If there's an initial query, perform the search immediately
 		if (initialQuery) {
+			if (DEBUG) console.log("Executing initial search with query:", query);
 			const initialSearch = spawn("sh", [
 				"-c",
 				searchCommand.replace("{q}", query),
 			]);
 			initialSearch.stdout.pipe(fzf.stdin);
 			initialSearch.stderr.pipe(process.stderr);
+
+			if (DEBUG) {
+				initialSearch.stderr.on("data", (data) => {
+					console.error("Initial search stderr:", data.toString());
+				});
+			}
 		} else {
+			if (DEBUG)
+				console.log(
+					"Executing rg command:",
+					"rg",
+					rgArgs.filter(Boolean).join(" "),
+				);
 			const rg = spawn("rg", rgArgs.filter(Boolean));
 			rg.stdout.pipe(fzf.stdin);
+
+			if (DEBUG) {
+				rg.stderr.on("data", (data) => {
+					console.error("RG stderr:", data.toString());
+				});
+			}
 		}
 
 		let output = "";
 		fzf.stdout.on("data", (data) => {
 			output += data.toString();
+			if (DEBUG) console.log("FZF stdout:", data.toString());
 		});
 
 		fzf.on("close", (code) => {
+			if (DEBUG) console.log("FZF process closed with code:", code);
 			if (code === 0) {
 				const lines = output.trim().split("\n");
 				const lastQuery = lines[0]; // The first line is the query
@@ -130,6 +158,7 @@ export async function liveGrep(
 		});
 
 		fzf.on("error", (error) => {
+			if (DEBUG) console.error("FZF error:", error);
 			reject(new Error(`Failed to start fzf: ${error.message}`));
 		});
 	});

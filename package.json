@@ -239,6 +239,11 @@
 					"type": "string",
 					"default": "",
 					"description": "Specify a custom command to open files when 'custom' is selected in fzf-picker.general.openCommand."
+				},
+				"fzf-picker.general.debugMode": {
+					"type": "boolean",
+					"default": false,
+					"description": "Enable debug mode for the extension. This will log additional information to the console."
 				}
 			}
 		}
