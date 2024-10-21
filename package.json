@@ -102,11 +102,6 @@
 					"type": "string",
 					"default": "1337"
 				},
-				"fzf-picker.general.openFileInPreviewEditor": {
-					"markdownDescription": "When set to `true` files open in a Preview Editor. Use in conjunction with the `workbench.editor.enablePreivew` setting.",
-					"type": "boolean",
-					"default": false
-				},
 				"fzf-picker.findFiles.showPreview": {
 					"markdownDescription": "Show a preview window when searching files",
 					"type": "boolean",
@@ -146,21 +141,6 @@
 					"markdownDescription": "By default, if you have an active editor with a text selection, we'll use that to populate the prompt in `fzf` such that it will start filtering text directly. Uncheck to disable.",
 					"type": "boolean",
 					"default": true
-				},
-				"fzf-picker.general.restoreFocusTerminal": {
-					"markdownDescription": "When enabled, the extension will restore focus to the previously active terminal after executing a command. This is useful if you frequently switch between the terminal and other parts of VS Code. Note: due to limitations in VS Code, will not focus other panel tabs such as problems/output/etc.",
-					"type": "boolean",
-					"default": false
-				},
-				"fzf-picker.general.useTerminalInEditor": {
-					"markdownDescription": "When enabled, the extension will create the terminal in the main editor stage.",
-					"type": "boolean",
-					"default": false
-				},
-				"fzf-picker.general.shellPathForTerminal": {
-					"markdownDescription": "Set the path for the shell (terminal type) to be used.",
-					"type": "string",
-					"default": ""
 				},
 				"fzf-picker.pickFileFromGitStatus.showPreview": {
 					"markdownDescription": "Show a preview window when picking a file from git status",
@@ -234,11 +214,6 @@
 					],
 					"default": "code -g",
 					"description": "Select the command to open files base on your current editor"
-				},
-				"fzf-picker.general.customOpenCommand": {
-					"type": "string",
-					"default": "",
-					"description": "Specify a custom command to open files when 'custom' is selected in fzf-picker.general.openCommand."
 				},
 				"fzf-picker.general.debugMode": {
 					"type": "boolean",
