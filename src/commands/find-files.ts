@@ -25,7 +25,7 @@ export async function findFiles(
 			"bat --decorations=always --color=always --plain {}";
 		const previewWindow =
 			process.env.FIND_FILES_PREVIEW_WINDOW_CONFIG || "right:50%:border-left";
-		// TODO: Add <Ctr-g> to toggle gitignore with fzf keybinding
+		// TODO: Add <Ctr-t> to toggle gitignore with fzf keybinding
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
 		const fileTypes = process.env.TYPE_FILTER || "";
 

@@ -15,7 +15,7 @@ export async function findTodoFixme(
 	initialQuery?: string,
 ): Promise<string[]> {
 	return new Promise((resolve, reject) => {
-		// TODO: Add <Ctr-g> to toggle gitignore with fzf keybinding
+		// TODO: Add <Ctr-t> to toggle gitignore with fzf keybinding
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
 		const fileTypes = process.env.TYPE_FILTER || "";
 		const searchPattern =
