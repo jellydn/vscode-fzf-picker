@@ -36,8 +36,6 @@ export async function liveGrep(
 			paths = [];
 		}
 
-		const query = initialQuery || "";
-
 		const rgArgs = [
 			"--column",
 			"--line-number",
@@ -64,7 +62,12 @@ export async function liveGrep(
 			.map((arg) => `'${arg.replace(/'/g, "'\\''")}'`)
 			.join(" ");
 
-		const searchCommand = `rg ${rgArgsString} ${fuzzRgQuery ? "-e" : ""} {q} || true`;
+		let rgQueryParsing = "{q}";
+		if (fuzzRgQuery) {
+			rgQueryParsing = "$(echo {q} | sed 's/ /.*/g')";
+		}
+
+		const searchCommand = `rg ${rgArgsString} ${rgQueryParsing} || true`;
 
 		const fzfArgs = [
 			"--ansi",
@@ -75,11 +78,12 @@ export async function liveGrep(
 			previewCommand,
 			"--preview-window",
 			previewWindow,
+			"--phony",
 			"--query",
-			query,
+			initialQuery || "",
 			"--print-query",
 			"--bind",
-			`change:reload:${searchCommand}`,
+			`change:reload:sleep 0.1; ${searchCommand}`,
 			"--layout=reverse",
 			"--bind",
 			"ctrl-g:toggle-preview",
@@ -100,10 +104,12 @@ export async function liveGrep(
 
 		// If there's an initial query, perform the search immediately
 		if (initialQuery) {
-			if (DEBUG) console.log("Executing initial search with query:", query);
+			if (DEBUG) {
+				console.log("Executing initial search with query:", initialQuery);
+			}
 			const initialSearch = spawn("sh", [
 				"-c",
-				searchCommand.replace("{q}", query),
+				searchCommand.replace("{q}", initialQuery),
 			]);
 			initialSearch.stdout.pipe(fzf.stdin);
 			initialSearch.stderr.pipe(process.stderr);
@@ -144,10 +150,7 @@ export async function liveGrep(
 				let selectedFiles = lines.slice(1); // The rest are selected files
 				if (singleDirRoot) {
 					selectedFiles = selectedFiles.map(
-						(file) =>
-							`${singleDirRoot}/${file.split(":")[0]}:${file.split(":")[1]}:${
-								file.split(":")[2]
-							}`,
+						(file) => `${singleDirRoot}/${file}`,
 					);
 				}
 				writeFileSync(lastQueryFile, lastQuery);
