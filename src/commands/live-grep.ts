@@ -62,9 +62,7 @@ export async function liveGrep(
 			.map((arg) => `'${arg.replace(/'/g, "'\\''")}'`)
 			.join(" ");
 
-		const searchCommand = `rg ${rgArgsString} ${
-			fuzzRgQuery ? "-e" : ""
-		} {q} || true`;
+		const searchCommand = `rg ${rgArgsString} ${fuzzRgQuery ? "-e" : ""} {q}`;
 
 		const fzfArgs = [
 			"--ansi",
@@ -81,6 +79,8 @@ export async function liveGrep(
 			"--bind",
 			`change:reload:${searchCommand}`,
 			"--layout=reverse",
+			"--bind",
+			"ctrl-g:toggle-preview",
 		];
 
 		if (initialQuery) {

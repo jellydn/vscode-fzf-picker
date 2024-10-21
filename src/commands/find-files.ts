@@ -71,6 +71,8 @@ export async function findFiles(
 				previewCommand,
 				"--preview-window",
 				previewWindow,
+				"--bind",
+				"ctrl-g:toggle-preview",
 			);
 		}
 

@@ -58,6 +58,8 @@ export async function findTodoFixme(
 			"--preview-window",
 			previewWindow,
 			"--layout=reverse",
+			"--bind",
+			"ctrl-g:toggle-preview",
 		];
 
 		const fzf = spawn("fzf", fzfArgs, {

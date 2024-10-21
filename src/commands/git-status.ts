@@ -44,6 +44,8 @@ export async function pickFilesFromGitStatus(): Promise<string[]> {
 					previewCommand,
 					"--preview-window",
 					previewWindow,
+					"--bind",
+					"ctrl-g:toggle-preview",
 				);
 			}
 
