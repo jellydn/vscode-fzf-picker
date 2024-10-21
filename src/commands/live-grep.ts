@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { writeFileSync } from "node:fs";
+
 import { lastQueryFile } from "../commands";
 
 const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
@@ -14,7 +15,6 @@ export async function liveGrep(
 	paths: string[],
 	initialQuery?: string,
 ): Promise<string[]> {
-	// TODO: Need to update the test to match the new behavior
 	return new Promise((resolve, reject) => {
 		const previewCommand =
 			process.env.FIND_WITHIN_FILES_PREVIEW_COMMAND ||
@@ -22,7 +22,7 @@ export async function liveGrep(
 		const previewWindow =
 			process.env.FIND_WITHIN_FILES_PREVIEW_WINDOW_CONFIG ||
 			"right:border-left:50%:+{2}+3/3:~3";
-		// TODO: Add <Ctr-g> to toggle gitignore with fzf keybinding
+		// TODO: Add <Ctr-t> to toggle gitignore with fzf keybinding
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
 		const fileTypes = process.env.TYPE_FILTER || "";
 		const fuzzRgQuery = process.env.FUZZ_RG_QUERY === "1";
@@ -64,7 +64,7 @@ export async function liveGrep(
 			.map((arg) => `'${arg.replace(/'/g, "'\\''")}'`)
 			.join(" ");
 
-		const searchCommand = `rg ${rgArgsString} ${fuzzRgQuery ? "-e" : ""} {q}`;
+		const searchCommand = `rg ${rgArgsString} ${fuzzRgQuery ? "-e" : ""} {q} || true`;
 
 		const fzfArgs = [
 			"--ansi",
