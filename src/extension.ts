@@ -14,7 +14,6 @@ const TERMINAL_NAME = Meta.displayName;
 let currentTerminal: vscode.Terminal;
 
 interface Command {
-	script?: string;
 	command?: string;
 	preRunCallback: undefined | (() => boolean | Promise<boolean>);
 	postRunCallback: undefined | (() => void);
@@ -180,7 +179,6 @@ function updateConfigWithUserSettings() {
 
 /**
  * Initialize or reinitialize the extension
- * @returns true if initialization was successful, false otherwise
  */
 function initialize() {
 	updateConfigWithUserSettings();
@@ -229,16 +227,10 @@ function getOrCreateTerminal() {
 
 /**
  * Get the command string for a given command
- * @param cmd - The command object
- * @param withArgs - Whether to include arguments
  * @param withTextSelection - Whether to include text selection
  * @returns The formatted command string
  */
-function getCommandString(
-	cmd: Command,
-	withArgs = true,
-	withTextSelection = true,
-) {
+function getCommandString(withTextSelection = true) {
 	let result = "";
 
 	if (CFG.useEditorSelectionAsQuery && withTextSelection) {
@@ -333,7 +325,7 @@ async function executeTerminalCommand(cmd: string) {
 				});
 				break;
 			default:
-				currentTerminal.sendText(getCommandString(commands[cmd]));
+				currentTerminal.sendText(getCommandString(false));
 				currentTerminal.show();
 				break;
 		}
