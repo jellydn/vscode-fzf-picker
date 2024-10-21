@@ -25,7 +25,6 @@ export async function liveGrep(
 		// TODO: Add <Ctr-t> to toggle gitignore with fzf keybinding
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
 		const fileTypes = process.env.TYPE_FILTER || "";
-		const fuzzRgQuery = process.env.FUZZ_RG_QUERY === "1";
 
 		// Navigate to the first path if it's the only one
 		let singleDirRoot = "";
@@ -62,11 +61,7 @@ export async function liveGrep(
 			.map((arg) => `'${arg.replace(/'/g, "'\\''")}'`)
 			.join(" ");
 
-		let rgQueryParsing = "{q}";
-		if (fuzzRgQuery) {
-			rgQueryParsing = "$(echo {q} | sed 's/ /.*/g')";
-		}
-
+		const rgQueryParsing = "{q}";
 		const searchCommand = `rg ${rgArgsString} ${rgQueryParsing} || true`;
 
 		const fzfArgs = [

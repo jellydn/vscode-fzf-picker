@@ -174,7 +174,6 @@ function updateConfigWithUserSettings() {
 	CFG.findWithinFilesPreviewCommand = config["findWithinFiles.previewCommand"];
 	CFG.findWithinFilesPreviewWindowConfig =
 		config["findWithinFiles.previewWindowConfig"];
-	CFG.fuzzRgQuery = config["findWithinFiles.fuzzRipgrepQuery"];
 	CFG.findTodoFixmeSearchPattern = config["findTodoFixme.searchPattern"];
 	CFG.customTasks = config.customTasks;
 }
@@ -219,7 +218,6 @@ function getOrCreateTerminal() {
 			FIND_WITHIN_FILES_PREVIEW_WINDOW_CONFIG:
 				CFG.findWithinFilesPreviewWindowConfig,
 			BAT_THEME: CFG.batTheme,
-			FUZZ_RG_QUERY: CFG.fuzzRgQuery ? "1" : "0",
 			FIND_TODO_FIXME_SEARCH_PATTERN: CFG.findTodoFixmeSearchPattern,
 			OPEN_COMMAND_CLI: CFG.openCommand,
 			DEBUG_FZF_PICKER: config["general.debugMode"] ? "1" : "0",

@@ -27,7 +27,6 @@ export interface Config {
 	useTypeFilter: boolean;
 	lastCommand: string;
 	batTheme: string;
-	fuzzRgQuery: boolean;
 	findTodoFixmeSearchPattern: string;
 	customTasks: CustomTask[];
 	openCommand: string;
@@ -49,7 +48,6 @@ export const CFG: Config = {
 	useTypeFilter: false,
 	lastCommand: "",
 	batTheme: "",
-	fuzzRgQuery: false,
 	findTodoFixmeSearchPattern: "(TODO|FIXME|HACK|FIX):\\s",
 	customTasks: [],
 	openCommand: "code -g",
