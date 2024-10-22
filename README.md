@@ -33,6 +33,31 @@ Ensure you can run `fzf`, `rg`, `bat`, and `sed` directly in your terminal. If t
 - [`bat` ("a cat clone with wings")](https://github.com/sharkdp/bat)
 - [`nodejs`](https://nodejs.dev) LTS
 
+> [!TIP]
+> Installing prerequisites with mise
+
+You can easily install all the required tools globally using [mise](https://mise.jdx.dev/). Here's how:
+
+1. First, install mise by following the [mise installation guide](https://mise.jdx.dev/getting-started.html).
+
+2. Then, install the required tools globally:
+
+   ```sh
+   mise use -g fzf@latest
+   mise use -g ripgrep@latest
+   mise use -g bat@latest
+   mise use -g node@lts
+   ```
+
+3. Activate mise in your shell:
+   ```sh
+   eval "$(mise activate bash)" # or zsh, fish, etc.
+   ```
+
+This will ensure you have all the necessary tools installed globally and available in your environment.
+
+For more information on global installations, refer to the [mise install documentation](https://mise.jdx.dev/cli/install.html).
+
 ## Default Key Bindings
 
 - `cmd+shift+j` / `ctrl+shift+j`: Search files
@@ -197,4 +222,3 @@ This project is [MIT](https://github.com/jellydn/vscode-hurl-runner/blob/master/
 [![kofi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/dunghd)
 [![paypal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/dunghd)
 [![buymeacoffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/dunghd)
-
