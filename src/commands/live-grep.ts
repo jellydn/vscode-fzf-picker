@@ -78,7 +78,7 @@ export async function liveGrep(
 			initialQuery || "",
 			"--print-query",
 			"--bind",
-			`change:reload:sleep 0.1; ${searchCommand}`,
+			`change:reload:[ ! -z {q} ] && sleep 0.1 && ${searchCommand}`, // Only run if query is not empty
 			"--layout=reverse",
 			"--bind",
 			"ctrl-g:toggle-preview",
@@ -115,20 +115,9 @@ export async function liveGrep(
 				});
 			}
 		} else {
-			if (DEBUG)
-				console.log(
-					"Executing rg command:",
-					"rg",
-					rgArgs.filter(Boolean).join(" "),
-				);
-			const rg = spawn("rg", rgArgs.filter(Boolean));
-			rg.stdout.pipe(fzf.stdin);
-
-			if (DEBUG) {
-				rg.stderr.on("data", (data) => {
-					console.error("RG stderr:", data.toString());
-				});
-			}
+			// Don't run initial rg command when there's no query
+			if (DEBUG) console.log("No initial query, waiting for user input");
+			fzf.stdin.end();
 		}
 
 		let output = "";
