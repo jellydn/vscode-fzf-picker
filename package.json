@@ -21,7 +21,7 @@
 		"search",
 		"within"
 	],
-	"version": "0.8.1",
+	"version": "0.8.2",
 	"engines": {
 		"vscode": "^1.93.0"
 	},
