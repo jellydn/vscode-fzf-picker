@@ -27,12 +27,20 @@ export async function pickFilesFromGitStatus(): Promise<string[]> {
 			}).trim();
 			process.chdir(gitRoot);
 
-			// Get git status
+			// Get git status for tracked files
 			const gitStatus = execSync("git status --porcelain", {
 				encoding: "utf-8",
 			});
 
-			if (!gitStatus.trim()) {
+			// Get untracked files, including those in new folders
+			const untrackedFiles = execSync(
+				"git ls-files --others --exclude-standard",
+				{
+					encoding: "utf-8",
+				},
+			);
+
+			if (!gitStatus.trim() && !untrackedFiles.trim()) {
 				console.log("No changes in the git repository.");
 				resolve([]);
 				return;
@@ -60,15 +68,27 @@ export async function pickFilesFromGitStatus(): Promise<string[]> {
 				stdio: ["pipe", "pipe", process.stderr],
 			});
 
-			// Prepare git status for fzf input and exclude deleted files
-			const fzfInput = gitStatus
+			// Prepare git status for fzf input - filter out directory entries
+			const trackedFiles = gitStatus
 				.split("\n")
 				.filter(Boolean)
 				.filter((line) => !line.startsWith("D ") && !line.startsWith(" D"))
 				.map((line) => line.slice(3))
-				.join("\n");
+				.filter((line) => !line.endsWith("/")); // Filter out directory entries
 
-			fzf.stdin.write(fzfInput);
+			// Combine tracked and untracked files, ensuring we only include files
+			const allFiles = [
+				...new Set([
+					...trackedFiles,
+					...untrackedFiles.split("\n").filter(Boolean),
+				]),
+			].join("\n");
+
+			if (DEBUG) {
+				console.log("All files to be shown in fzf:", allFiles);
+			}
+
+			fzf.stdin.write(allFiles);
 			fzf.stdin.end();
 
 			let output = "";
