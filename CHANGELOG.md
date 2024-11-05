@@ -1,6 +1,6 @@
 # Change Log
 
-All notable changes to the "FindItFaster" extension will be documented in this file.
+Please refer to Github releases for the latest changes.
 
 ## [0.3.0]
 
