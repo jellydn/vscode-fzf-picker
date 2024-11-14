@@ -58,7 +58,12 @@ if (require.main === module) {
 				initialQuery = process.env.SELECTED_TEXT;
 			}
 			const files = await func(args, initialQuery);
-			const openCommand = process.env.OPEN_COMMAND_CLI || "code";
+			const openCommand = process.env.OPEN_COMMAND_CLI;
+			if (!openCommand) {
+				console.error("OPEN_COMMAND_CLI is not set");
+				process.exit(1);
+			}
+
 			const openPromises = files.map((filePath) => {
 				return new Promise<void>((resolve, reject) => {
 					const { file, selection } = openFiles(filePath);
