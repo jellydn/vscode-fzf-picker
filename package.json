@@ -198,14 +198,16 @@
 						"code-insiders -g",
 						"cursor -g",
 						"codium -g",
-						"codium-insiders -g"
+						"codium-insiders -g",
+						"windsurf -g"
 					],
 					"enumDescriptions": [
 						"Visual Studio Code",
 						"Visual Studio Code Insiders",
 						"Cursor",
 						"VSCodium",
-						"VSCodium Insiders"
+						"VSCodium Insiders",
+						"Windsurf"
 					],
 					"default": "code -g",
 					"description": "Select the command to open files base on your current editor"
