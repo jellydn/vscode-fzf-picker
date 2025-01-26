@@ -25,7 +25,7 @@
 	"engines": {
 		"vscode": "^1.93.0"
 	},
-	"packageManager": "pnpm@9.12.3",
+	"packageManager": "pnpm@9.15.4",
 	"categories": ["Other"],
 	"activationEvents": [],
 	"main": "./out/extension.js",
@@ -199,7 +199,8 @@
 						"cursor -g",
 						"codium -g",
 						"codium-insiders -g",
-						"windsurf -g"
+						"windsurf -g",
+						"trae -g"
 					],
 					"enumDescriptions": [
 						"Visual Studio Code",
@@ -207,7 +208,8 @@
 						"Cursor",
 						"VSCodium",
 						"VSCodium Insiders",
-						"Windsurf"
+						"Windsurf",
+						"Trae"
 					],
 					"default": "code -g",
 					"description": "Select the command to open files base on your current editor"
@@ -234,19 +236,19 @@
 		"vscode:prepublish": "nr build"
 	},
 	"devDependencies": {
-		"@antfu/ni": "0.23.0",
+		"@antfu/ni": "23.3.0",
 		"@biomejs/biome": "1.9.4",
-		"@types/node": "22.9.0",
+		"@types/node": "22.10.10",
 		"@types/vscode": "1.93.0",
 		"@vscode/vsce": "3.2.1",
-		"bumpp": "9.8.1",
-		"oxlint": "^0.11.0",
+		"bumpp": "10.0.1",
+		"oxlint": "^0.15.8",
 		"pnpm": "^9.12.1",
-		"reactive-vscode": "0.2.6",
-		"tsup": "8.3.5",
-		"typescript": "5.6.3",
-		"vite": "5.4.10",
-		"vitest": "2.1.4",
-		"vscode-ext-gen": "0.5.0"
+		"reactive-vscode": "0.2.9",
+		"tsup": "8.3.6",
+		"typescript": "5.7.3",
+		"vite": "6.0.11",
+		"vitest": "3.0.4",
+		"vscode-ext-gen": "1.0.0"
 	}
 }
