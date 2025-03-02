@@ -112,7 +112,7 @@ describe("findFiles", () => {
 		);
 	});
 
-	it("should reject when fzf process exits with non-zero code", async () => {
+	it("should return an empty array when fzf process exits with non-zero code", async () => {
 		const mockSpawn = vi.spyOn(childProcess, "spawn");
 
 		// Mock rg process
@@ -135,9 +135,8 @@ describe("findFiles", () => {
 			return mockRg as unknown as childProcess.ChildProcess;
 		});
 
-		await expect(findFiles([testDir])).rejects.toThrow(
-			"File selection canceled",
-		);
+		const result = await findFiles([testDir]);
+		expect(result).toEqual([]);
 	});
 });
 
