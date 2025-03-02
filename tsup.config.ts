@@ -7,5 +7,5 @@ export default defineConfig({
 	dts: false,
 	external: ["vscode"],
 	outDir: "out",
-	onSuccess: "cp LICENSE.md out/",
+	onSuccess: "cp LICENSE.md LICENSE.txt",
 });
