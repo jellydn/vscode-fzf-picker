@@ -21,7 +21,7 @@
 		"search",
 		"within"
 	],
-	"version": "0.9.5",
+	"version": "0.9.7",
 	"engines": {
 		"vscode": "^1.93.0"
 	},
@@ -29,7 +29,7 @@
 	"categories": ["Other"],
 	"activationEvents": [],
 	"main": "./out/extension.js",
-	"files": ["out/*", "res/*", "LICENSE"],
+	"files": ["out/*", "res/*"],
 	"contributes": {
 		"commands": [
 			{
