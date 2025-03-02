@@ -81,7 +81,8 @@ export async function findTodoFixme(
 			if (code === 0) {
 				resolve(output.trim().split("\n"));
 			} else {
-				reject(new Error("Search canceled"));
+				if (DEBUG) console.log("FZF process was canceled by user");
+				resolve([]);
 			}
 		});
 

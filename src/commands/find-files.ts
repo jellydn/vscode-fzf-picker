@@ -114,7 +114,10 @@ export async function findFiles(
 					writeFileSync(lastQueryFile, lastQuery);
 				}
 			} else {
-				reject(new Error("File selection canceled"));
+				// Even when the user cancels, we need to resolve with an empty array
+				// to ensure the terminal is properly hidden
+				if (DEBUG) console.log("FZF process was canceled by user");
+				resolve([]);
 			}
 		});
 

@@ -106,7 +106,7 @@ export async function pickFilesFromGitStatus(): Promise<string[]> {
 					);
 					resolve(fullPaths);
 				} else {
-					console.log("No file selected.");
+					if (DEBUG) console.log("FZF process was canceled by user");
 					resolve([]);
 				}
 			});

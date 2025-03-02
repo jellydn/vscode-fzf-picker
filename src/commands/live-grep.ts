@@ -140,7 +140,10 @@ export async function liveGrep(
 				writeFileSync(lastQueryFile, lastQuery);
 				resolve(selectedFiles);
 			} else {
-				reject(new Error("Search canceled"));
+				// Even when the user cancels, we need to resolve with an empty array
+				// to ensure the terminal is properly hidden
+				if (DEBUG) console.log("FZF process was canceled by user");
+				resolve([]);
 			}
 		});
 
