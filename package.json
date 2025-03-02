@@ -21,20 +21,15 @@
 		"search",
 		"within"
 	],
-	"version": "0.9.3",
+	"version": "0.9.4",
 	"engines": {
 		"vscode": "^1.93.0"
 	},
 	"packageManager": "pnpm@10.5.2",
-	"categories": [
-		"Other"
-	],
+	"categories": ["Other"],
 	"activationEvents": [],
 	"main": "./out/extension.js",
-	"files": [
-		"out/*",
-		"res/*"
-	],
+	"files": ["out/*", "res/*"],
 	"contributes": {
 		"commands": [
 			{
@@ -191,10 +186,7 @@
 								"description": "Command to execute for the custom task"
 							}
 						},
-						"required": [
-							"name",
-							"command"
-						]
+						"required": ["name", "command"]
 					},
 					"default": [],
 					"description": "Custom tasks that can be executed by the extension"
