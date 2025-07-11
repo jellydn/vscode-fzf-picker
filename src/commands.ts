@@ -12,7 +12,7 @@ function openFiles(filePath: string) {
 	let [file, lineTmp, charTmp] = filePath.split(":", 3);
 
 	file = file.trim();
-	let selection = undefined;
+	let selection;
 	if (lineTmp !== undefined) {
 		let char = 0;
 		if (charTmp !== undefined) {

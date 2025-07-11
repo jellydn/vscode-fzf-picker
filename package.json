@@ -26,10 +26,16 @@
 		"vscode": "^1.93.0"
 	},
 	"packageManager": "pnpm@10.13.1",
-	"categories": ["Other"],
+	"categories": [
+		"Other"
+	],
 	"activationEvents": [],
 	"main": "./out/extension.js",
-	"files": ["out/*", "res/*", "LICENSE.txt"],
+	"files": [
+		"out/*",
+		"res/*",
+		"LICENSE.txt"
+	],
 	"contributes": {
 		"commands": [
 			{
@@ -186,7 +192,10 @@
 								"description": "Command to execute for the custom task"
 							}
 						},
-						"required": ["name", "command"]
+						"required": [
+							"name",
+							"command"
+						]
 					},
 					"default": [],
 					"description": "Custom tasks that can be executed by the extension"

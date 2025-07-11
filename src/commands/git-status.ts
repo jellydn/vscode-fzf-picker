@@ -1,5 +1,4 @@
-import { execSync } from "node:child_process";
-import { spawn } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 import * as path from "node:path";
 
 const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
