@@ -237,18 +237,18 @@
 	},
 	"devDependencies": {
 		"@antfu/ni": "25.0.0",
-		"@biomejs/biome": "1.9.4",
+		"@biomejs/biome": "2.1.1",
 		"@types/node": "24.0.13",
 		"@types/vscode": "1.93.0",
 		"@vscode/vsce": "3.6.0",
 		"bumpp": "10.2.0",
 		"oxlint": "^1.6.0",
 		"pnpm": "^9.12.1",
-		"reactive-vscode": "0.3.1",
+		"reactive-vscode": "0.2.6",
 		"tsup": "8.5.0",
 		"typescript": "5.8.3",
 		"vite": "7.0.4",
 		"vitest": "3.2.4",
-		"vscode-ext-gen": "1.1.0"
+		"vscode-ext-gen": "1.0.2"
 	}
 }
