@@ -17,22 +17,13 @@ vi.mock("node:os", () => ({
 	homedir: vi.fn(() => "/mock/home"),
 }));
 
-const mockFs = fs as {
-	mkdir: typeof fs.mkdir;
-	readFile: typeof fs.readFile;
-	writeFile: typeof fs.writeFile;
-	rename: typeof fs.rename;
-	unlink: typeof fs.unlink;
-};
+// Get mocked functions with proper typing
+const mockFs = vi.mocked(fs);
 
 describe("search-cache", () => {
 	const testProjectPath = "/test/project";
-	const expectedCacheFilePath = join(
-		"/mock/home",
-		".config",
-		"fzf-picker",
-		"search-cache.json",
-	);
+	const expectedCacheDir = join("/mock/home", ".config", "fzf-picker");
+	const expectedCacheFilePath = join(expectedCacheDir, "search-cache.json");
 
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -56,10 +47,9 @@ describe("search-cache", () => {
 
 			await saveLastQuery(testQuery, testProjectPath);
 
-			expect(mockFs.mkdir).toHaveBeenCalledWith(
-				join("/mock/home", ".config", "fzf-picker"),
-				{ recursive: true },
-			);
+			expect(mockFs.mkdir).toHaveBeenCalledWith(expectedCacheDir, {
+				recursive: true,
+			});
 
 			const expectedCache = {
 				findTodoFixme: {
