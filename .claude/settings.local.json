@@ -31,7 +31,7 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "echo '✅ Commit completed with pre-commit hooks'"
+						"command": "if [ $? -eq 0 ]; then echo '✅ Commit completed with pre-commit hooks'; else echo '⚠️ Pre-commit hooks modified files, adding and retrying commit...'; git add .; git commit --amend --no-edit; fi"
 					}
 				]
 			},
