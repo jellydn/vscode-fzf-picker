@@ -25,8 +25,21 @@ Create a preview command that intelligently handles both tracked and untracked f
 
 ## Implementation Plan
 
-1. Improve the smart preview command to handle edge cases\n2. Add support for better file viewing (use bat if available)\n3. Handle binary files gracefully\n4. Add file size limits to prevent hanging\n5. Test with various git file states
+1. Improve the smart preview command to handle edge cases
+2. Add support for better file viewing (use bat if available)
+3. Handle binary files gracefully
+4. Add file size limits to prevent hanging
+5. Test with various git file states
 
 ## Implementation Notes
 
-Enhanced the smart preview command to be more robust and user-friendly. The improved command handles multiple scenarios gracefully including binary files, large files, and missing commands.\n\nImplementation details:\n- Uses conditional logic to detect tracked vs untracked files\n- Prefers bat for syntax highlighting when available\n- Falls back to head for plain text preview\n- Limits preview to 500 lines to prevent hanging\n- Shows friendly error message when file cannot be previewed\n\nThe command is now production-ready and provides a consistent preview experience for all file types in git status.
+Enhanced the smart preview command to be more robust and user-friendly. The improved command handles multiple scenarios gracefully including binary files, large files, and missing commands.
+
+Implementation details:
+- Uses conditional logic to detect tracked vs untracked files
+- Prefers bat for syntax highlighting when available
+- Falls back to head for plain text preview
+- Limits preview to 500 lines to prevent hanging
+- Shows friendly error message when file cannot be previewed
+
+The command is now production-ready and provides a consistent preview experience for all file types in git status.

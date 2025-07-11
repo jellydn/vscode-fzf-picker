@@ -31,7 +31,10 @@ Git preview shows empty content when selecting untracked files (files not yet ad
 
 ## Implementation Notes
 
-Implemented a smart preview command in git-status.ts that detects whether a file is tracked or untracked. For tracked files, it shows git diff as before. For untracked files, it shows the file content using bat (with syntax highlighting) or head as fallback. The command also handles edge cases like binary files and limits preview to 500 lines to prevent hanging on large files.\n\nModified files:\n- src/commands/git-status.ts: Updated defaultPreviewCommand with smart logic
+Implemented a smart preview command in git-status.ts that detects whether a file is tracked or untracked. For tracked files, it shows git diff as before. For untracked files, it shows the file content using bat (with syntax highlighting) or head as fallback. The command also handles edge cases like binary files and limits preview to 500 lines to prevent hanging on large files.
+
+Modified files:
+- src/commands/git-status.ts: Updated defaultPreviewCommand with smart logic
 
 Implemented a cross-platform compatible preview command in git-status.ts that handles both tracked and untracked files. The solution uses the command: 'git diff --color=always -- {} 2>/dev/null || cat {}'. For tracked files with changes, it shows git diff as before. For untracked files or files without changes, it falls back to showing file content using cat. This approach is more efficient (single git diff call) and works across different operating systems including Windows.
 
