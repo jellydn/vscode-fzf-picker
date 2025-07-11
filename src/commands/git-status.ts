@@ -15,7 +15,9 @@ export async function pickFilesFromGitStatus(): Promise<string[]> {
 			process.env.PICK_FILE_FROM_GIT_STATUS_PREVIEW_ENABLED !== "0";
 		const previewCommand =
 			process.env.PICK_FILE_FROM_GIT_STATUS_PREVIEW_COMMAND ||
-			"git diff --color=always -- {} 2>/dev/null || cat {}";
+			(process.platform === "win32"
+				? "powershell -c \"$file = '{}'; $diff = git diff --color=always -- $file 2>$null; if($diff) { $diff } else { if(Get-Command bat -ErrorAction SilentlyContinue) { bat --color=always --style=plain $file } else { Get-Content $file } }\""
+				: 'sh -c \'file="{}"; diff_output=$(git diff --color=always -- "$file" 2>/dev/null); if [ -n "$diff_output" ]; then echo "$diff_output"; else if command -v bat >/dev/null 2>&1; then bat --color=always --style=plain "$file" 2>/dev/null || echo "[Binary file or unable to read]"; else cat "$file" 2>/dev/null || echo "[Binary file or unable to read]"; fi; fi\'');
 		const previewWindow =
 			process.env.PICK_FILE_FROM_GIT_STATUS_PREVIEW_WINDOW_CONFIG ||
 			"right:50%:border-left";

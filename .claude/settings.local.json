@@ -20,7 +20,11 @@
 			"Bash(backlog task:*)",
 			"WebFetch(domain:docs.anthropic.com)",
 			"Bash(gh pr list:*)",
-			"Bash(gh pr edit:*)"
+			"Bash(gh pr edit:*)",
+			"Bash(bash -c \"git diff --color=always -- test_untracked.txt 2>/dev/null || cat test_untracked.txt\")",
+			"Bash(sh -c 'git diff --color=always -- \"\"test_untracked.txt\"\" 2>/dev/null || cat \"\"test_untracked.txt\"\"')",
+			"Bash(sh:*)",
+			"Bash(rm:*)"
 		],
 		"deny": []
 	},
