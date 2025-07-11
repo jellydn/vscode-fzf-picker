@@ -23,7 +23,11 @@ Git preview shows empty content when selecting untracked files (files not yet ad
 
 ## Implementation Plan
 
-1. Analyze current git preview implementation in git-status.ts\n2. Create a helper function to detect if a file is tracked by git\n3. Implement smart preview command that handles both tracked and untracked files\n4. Update the default preview command to use the smart logic\n5. Test with various file states (tracked, untracked, modified, deleted)
+1. Analyze current git preview implementation in git-status.ts
+2. Create a helper function to detect if a file is tracked by git
+3. Implement smart preview command that handles both tracked and untracked files
+4. Update the default preview command to use the smart logic
+5. Test with various file states (tracked, untracked, modified, deleted)
 
 ## Implementation Notes
 
