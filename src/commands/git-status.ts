@@ -4,6 +4,19 @@ import * as path from "node:path";
 const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
 
 /**
+ * Removes quotes that git adds around filenames with special characters
+ * and unescapes common git escape sequences.
+ */
+function unquoteGitFilename(filename: string): string {
+	if (filename.startsWith('"') && filename.endsWith('"')) {
+		filename = filename.slice(1, -1);
+		// Unescape common git escape sequences
+		filename = filename.replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+	}
+	return filename;
+}
+
+/**
  * Picks files from git status using fzf.
  * If no file is selected, it will return an empty array.
  * @returns A promise that resolves to an array of selected file paths.
@@ -15,8 +28,8 @@ export async function pickFilesFromGitStatus(): Promise<string[]> {
 		const previewCommand =
 			process.env.PICK_FILE_FROM_GIT_STATUS_PREVIEW_COMMAND ||
 			(process.platform === "win32"
-				? "powershell -c \"$file = '{}'; $diff = git diff --color=always -- $file 2>$null; if($diff) { $diff } else { if(Get-Command bat -ErrorAction SilentlyContinue) { bat --color=always --style=plain $file } else { Get-Content $file } }\""
-				: 'sh -c \'file="{}"; diff_output=$(git diff --color=always -- "$file" 2>/dev/null); if [ -n "$diff_output" ]; then echo "$diff_output"; else if command -v bat >/dev/null 2>&1; then bat --color=always --style=plain "$file" 2>/dev/null || echo "[Binary file or unable to read]"; else cat "$file" 2>/dev/null || echo "[Binary file or unable to read]"; fi; fi\'');
+				? 'powershell -NoProfile -Command "& { param($file) $diff = git diff --color=always -- $file 2>$null; if($diff) { $diff } else { if(Get-Command bat -ErrorAction SilentlyContinue) { bat --color=always --style=plain $file } else { Get-Content $file } } }" {}'
+				: 'bash -c \'file="$@"; diff_output=$(git diff --color=always -- "$file" 2>/dev/null); if [ -n "$diff_output" ]; then echo "$diff_output"; else if command -v bat >/dev/null 2>&1; then bat --color=always --style=plain "$file" 2>/dev/null || echo "[Binary file or unable to read]"; else cat "$file" 2>/dev/null || echo "[Binary file or unable to read]"; fi; fi\' -- {}');
 		const previewWindow =
 			process.env.PICK_FILE_FROM_GIT_STATUS_PREVIEW_WINDOW_CONFIG ||
 			"right:50%:border-left";
@@ -74,7 +87,7 @@ export async function pickFilesFromGitStatus(): Promise<string[]> {
 				.split("\n")
 				.filter(Boolean)
 				.filter((line) => !line.startsWith("D ") && !line.startsWith(" D"))
-				.map((line) => line.slice(3))
+				.map((line) => unquoteGitFilename(line.slice(3)))
 				.filter((line) => !line.endsWith("/")); // Filter out directory entries
 
 			// Combine tracked and untracked files, ensuring we only include files
