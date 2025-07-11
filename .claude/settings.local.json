@@ -18,7 +18,9 @@
 			"Bash(backlog task list:*)",
 			"WebFetch(domain:github.com)",
 			"Bash(backlog task:*)",
-			"WebFetch(domain:docs.anthropic.com)"
+			"WebFetch(domain:docs.anthropic.com)",
+			"Bash(gh pr list:*)",
+			"Bash(gh pr edit:*)"
 		],
 		"deny": []
 	},
