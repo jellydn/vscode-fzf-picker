@@ -58,14 +58,12 @@ export async function findFiles(
 		rgArgs.push(...paths);
 		const rg = spawn("rg", rgArgs.filter(Boolean));
 
-		const fzfArgs = [
-			"--cycle",
-			"--multi",
-			"--query",
-			query,
-			"--print-query",
-			"--layout=reverse",
-		];
+		const fzfArgs = ["--cycle", "--multi", "--print-query", "--layout=reverse"];
+
+		// Only add query parameter if query is not empty
+		if (query.trim() !== "") {
+			fzfArgs.push("--query", query);
+		}
 
 		if (previewEnabled) {
 			fzfArgs.push(
@@ -99,19 +97,30 @@ export async function findFiles(
 		fzf.on("close", (code) => {
 			if (DEBUG) console.log("FZF process closed with code:", code);
 			if (code === 0) {
-				const lines = output.trim().split("\n");
-				lastQuery = lines[0]; // The first line is the query
-				let selectedFiles = lines.slice(1); // The rest are selected files
+				// Don't trim the output because we need to preserve the empty query line
+				const lines = output.split("\n");
+
+				// With --print-query, first line is the query, rest are results
+				lastQuery = lines[0] || ""; // The first line is the query
+				let selectedFiles = lines.slice(1).filter((line) => line.trim() !== ""); // Filter out empty lines
+
 				if (singleDirRoot) {
 					// Prepend the single directory root to each selected file
 					selectedFiles = selectedFiles.map(
 						(file) => `${singleDirRoot}/${file}`,
 					);
 				}
+
 				resolve(selectedFiles);
-				// Save the query for future resume
-				if (lastQuery !== null) {
-					writeFileSync(lastQueryFile, lastQuery);
+
+				// Save the query for future resume (only if not empty)
+				if (lastQuery.trim() !== "") {
+					try {
+						writeFileSync(lastQueryFile, lastQuery);
+					} catch (error) {
+						if (DEBUG) console.error("Failed to save last query:", error);
+						// Don't fail the search if save fails
+					}
 				}
 			} else {
 				// Even when the user cancels, we need to resolve with an empty array
