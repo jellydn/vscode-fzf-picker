@@ -25,7 +25,7 @@
 	"engines": {
 		"vscode": "^1.93.0"
 	},
-	"packageManager": "pnpm@10.5.2",
+	"packageManager": "pnpm@10.13.1",
 	"categories": ["Other"],
 	"activationEvents": [],
 	"main": "./out/extension.js",
@@ -236,19 +236,19 @@
 		"vscode:prepublish": "nr build"
 	},
 	"devDependencies": {
-		"@antfu/ni": "23.3.1",
+		"@antfu/ni": "25.0.0",
 		"@biomejs/biome": "1.9.4",
-		"@types/node": "22.13.8",
+		"@types/node": "24.0.13",
 		"@types/vscode": "1.93.0",
-		"@vscode/vsce": "3.2.2",
-		"bumpp": "10.0.3",
-		"oxlint": "^0.15.12",
+		"@vscode/vsce": "3.6.0",
+		"bumpp": "10.2.0",
+		"oxlint": "^1.6.0",
 		"pnpm": "^9.12.1",
-		"reactive-vscode": "0.2.6",
-		"tsup": "8.4.0",
-		"typescript": "5.8.2",
-		"vite": "6.2.0",
-		"vitest": "3.0.7",
-		"vscode-ext-gen": "1.0.2"
+		"reactive-vscode": "0.3.1",
+		"tsup": "8.5.0",
+		"typescript": "5.8.3",
+		"vite": "7.0.4",
+		"vitest": "3.2.4",
+		"vscode-ext-gen": "1.1.0"
 	}
 }
