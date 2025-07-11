@@ -1,13 +1,13 @@
 repos:
   - repo: https://github.com/biomejs/pre-commit
-    rev: "v0.5.0"
+    rev: "v2.1.1"
     hooks:
       - id: biome-check
-        additional_dependencies: ["@biomejs/biome@1.9.3"]
+        additional_dependencies: ["@biomejs/biome@latest"]
         description: "Format, organize imports, lint, and apply safe fixes to the committed files"
 
   - repo: https://github.com/oxc-project/mirrors-oxlint
-    rev: v0.10.1 # change to the latest version
+    rev: v1.6.0 # change to the latest version
     hooks:
       - id: oxlint
         verbose: true
