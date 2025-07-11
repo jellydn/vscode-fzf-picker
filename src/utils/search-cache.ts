@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
 
@@ -25,7 +25,7 @@ function getCacheFilePath(): string {
  */
 async function ensureCacheDir(): Promise<void> {
 	const cacheFilePath = getCacheFilePath();
-	const cacheDir = cacheFilePath.replace(/\/[^/]+$/, "");
+	const cacheDir = dirname(cacheFilePath);
 
 	try {
 		await fs.mkdir(cacheDir, { recursive: true });
