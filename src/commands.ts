@@ -8,11 +8,27 @@ import { liveGrep } from "./commands/live-grep";
 
 export let lastQueryFile: string;
 
+/**
+ * Properly escapes a file path for shell execution by wrapping it in quotes
+ * and escaping any existing quotes within the path.
+ */
+function escapeShellPath(filePath: string): string {
+	// Replace any existing double quotes with escaped quotes
+	const escapedPath = filePath.replace(/"/g, '\\"');
+	// Wrap the entire path in double quotes
+	return `"${escapedPath}"`;
+}
+
 function openFiles(filePath: string) {
 	let [file, lineTmp, charTmp] = filePath.split(":", 3);
 
 	file = file.trim();
-	let selection;
+	let selection:
+		| {
+				start: { line: number; character: number };
+				end: { line: number; character: number };
+		  }
+		| undefined;
 	if (lineTmp !== undefined) {
 		let char = 0;
 		if (charTmp !== undefined) {
@@ -67,9 +83,10 @@ if (require.main === module) {
 			const openPromises = files.map((filePath) => {
 				return new Promise<void>((resolve, reject) => {
 					const { file, selection } = openFiles(filePath);
+					const escapedFile = escapeShellPath(file);
 					exec(
 						`${openCommand} ${
-							selection ? `${file}:${selection.start.line}` : file
+							selection ? `${escapedFile}:${selection.start.line}` : escapedFile
 						}`,
 						(error: Error | null, stdout: string) => {
 							if (error) {
