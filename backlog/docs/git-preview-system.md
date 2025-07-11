@@ -2,7 +2,7 @@
 
 ## Overview
 
-The git preview system in vscode-finditfaster provides a preview pane when browsing files in the git status picker. This document describes how the preview system works and how to configure it.
+The git preview system in vscode-fzf-picker provides a preview pane when browsing files in the git status picker. This document describes how the preview system works and how to configure it.
 
 ## How It Works
 
