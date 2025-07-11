@@ -15,7 +15,7 @@ export async function pickFilesFromGitStatus(): Promise<string[]> {
 			process.env.PICK_FILE_FROM_GIT_STATUS_PREVIEW_ENABLED !== "0";
 		const previewCommand =
 			process.env.PICK_FILE_FROM_GIT_STATUS_PREVIEW_COMMAND ||
-			"git diff --color=always -- {} 2>/dev/null | grep -q . && git diff --color=always -- {} || cat {}";
+			"git diff --color=always -- {} 2>/dev/null || cat {}";
 		const previewWindow =
 			process.env.PICK_FILE_FROM_GIT_STATUS_PREVIEW_WINDOW_CONFIG ||
 			"right:50%:border-left";
