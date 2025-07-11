@@ -1,5 +1,6 @@
 import { execSync, spawn } from "node:child_process";
 import * as path from "node:path";
+import { getLastQuery, saveLastQuery } from "../utils/search-cache";
 
 const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
 
@@ -19,9 +20,18 @@ function unquoteGitFilename(filename: string): string {
 /**
  * Picks files from git status using fzf.
  * If no file is selected, it will return an empty array.
+ * @param paths - An array of file paths to search within (not used, but maintained for consistency).
+ * @param initialQuery - Optional initial query to pre-populate search. Empty strings are ignored.
+ * @param saveQuery - Whether to save the query for later resume. Defaults to true.
  * @returns A promise that resolves to an array of selected file paths.
+ *          Returns empty array if user cancels or no matches found.
+ * @throws {Error} If fzf processes fail to start.
  */
-export async function pickFilesFromGitStatus(): Promise<string[]> {
+export async function pickFilesFromGitStatus(
+	_paths: string[] = [],
+	initialQuery?: string,
+	saveQuery: boolean = true,
+): Promise<string[]> {
 	return new Promise((resolve, reject) => {
 		const previewEnabled =
 			process.env.PICK_FILE_FROM_GIT_STATUS_PREVIEW_ENABLED !== "0";
@@ -60,7 +70,17 @@ export async function pickFilesFromGitStatus(): Promise<string[]> {
 				return;
 			}
 
-			const fzfArgs = ["--cycle", "--multi", "--layout=reverse"];
+			const fzfArgs = [
+				"--cycle",
+				"--multi",
+				"--layout=reverse",
+				"--print-query",
+			];
+
+			// Only add query parameter if query is not empty
+			if (initialQuery && initialQuery.trim() !== "") {
+				fzfArgs.push("--query", initialQuery);
+			}
 
 			if (previewEnabled) {
 				fzfArgs.push(
@@ -111,14 +131,41 @@ export async function pickFilesFromGitStatus(): Promise<string[]> {
 				if (DEBUG) console.log("FZF stdout:", data.toString());
 			});
 
-			fzf.on("close", (code) => {
+			fzf.on("close", async (code) => {
 				if (DEBUG) console.log("FZF process closed with code:", code);
 				if (code === 0 && output.trim()) {
-					const selectedFiles = output.trim().split("\n");
-					const fullPaths = selectedFiles.map((file) =>
-						path.join(gitRoot, file),
-					);
-					resolve(fullPaths);
+					const lines = output.trim().split("\n");
+
+					// With --print-query, first line is the query, rest are results
+					const actualQuery = lines[0] || ""; // The first line is the query
+					const selectedFiles = lines
+						.slice(1)
+						.filter((line) => line.trim() !== ""); // Filter out empty lines
+
+					if (selectedFiles.length > 0) {
+						const fullPaths = selectedFiles.map((file) =>
+							path.join(gitRoot, file),
+						);
+
+						// Save the actual query entered by user for future resume
+						if (
+							saveQuery &&
+							actualQuery.trim() !== "" &&
+							selectedFiles.length > 0
+						) {
+							try {
+								await saveLastQuery(actualQuery.trim());
+							} catch (error) {
+								if (DEBUG) console.error("Failed to save last query:", error);
+								// Don't fail the search if cache save fails
+							}
+						}
+
+						resolve(fullPaths);
+					} else {
+						if (DEBUG) console.log("No files selected");
+						resolve([]);
+					}
 				} else {
 					if (DEBUG) console.log("FZF process was canceled by user");
 					resolve([]);
@@ -140,4 +187,25 @@ export async function pickFilesFromGitStatus(): Promise<string[]> {
 			);
 		}
 	});
+}
+
+/**
+ * Resume the last git status file picker with the previously used query.
+ * @param paths - An array of file paths to search within (not used, but maintained for consistency).
+ * @returns A promise that resolves to an array of selected file paths.
+ *          Returns empty array if no last query exists or user cancels.
+ * @throws {Error} If fzf processes fail to start.
+ */
+export async function pickFilesFromGitStatusResume(
+	paths: string[] = [],
+): Promise<string[]> {
+	const lastQuery = await getLastQuery();
+
+	if (!lastQuery) {
+		if (DEBUG) console.log("No last query found, starting fresh search");
+		return pickFilesFromGitStatus(paths);
+	}
+
+	if (DEBUG) console.log("Resuming with last query:", lastQuery);
+	return pickFilesFromGitStatus(paths, lastQuery, true);
 }

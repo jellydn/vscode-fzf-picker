@@ -1,13 +1,11 @@
 import { exec } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import * as path from "node:path";
 import { findFiles } from "./commands/find-files";
 import { findTodoFixme } from "./commands/find-todo-fixme";
 import { pickFilesFromGitStatus } from "./commands/git-status";
 import { liveGrep } from "./commands/live-grep";
 import { getLastQuery } from "./utils/search-cache";
-
-export let lastQueryFile: string;
 
 /**
  * Properly escapes a file path for shell execution by wrapping it in quotes
@@ -59,10 +57,6 @@ function openFiles(filePath: string) {
 if (require.main === module) {
 	const command = process.argv[2];
 	const args = process.argv.slice(3);
-	lastQueryFile = path.join(
-		process.env.EXTENSION_PATH || process.cwd(),
-		".last_query",
-	);
 	const executeCommand = async (
 		func: (paths: string[], selectedText?: string) => Promise<string[]>,
 	) => {
@@ -71,42 +65,21 @@ if (require.main === module) {
 			let initialQuery = "";
 
 			if (isResumeSearch) {
-				// For findTodoFixme, use the new cache system
-				if (command === "findTodoFixme") {
-					try {
-						const cachedQuery = await getLastQuery();
-						if (cachedQuery) {
-							initialQuery = cachedQuery;
-						}
-					} catch (error) {
-						console.error("Failed to get cached query:", error);
+				// Use the unified cache system for all commands
+				try {
+					const cachedQuery = await getLastQuery();
+					if (cachedQuery) {
+						initialQuery = cachedQuery;
 					}
-				} else {
-					// For other commands, use the old file-based system
-					if (existsSync(lastQueryFile)) {
-						initialQuery = readFileSync(lastQueryFile, "utf-8").trim();
-					}
+				} catch (error) {
+					console.error("Failed to get cached query:", error);
 				}
 			} else if (process.env.SELECTED_TEXT) {
 				initialQuery = process.env.SELECTED_TEXT;
 			}
 			const files = await func(args, initialQuery);
 
-			// For findTodoFixme, the query saving is handled internally
-			// For other commands, save the initial query if search was successful
-			if (
-				files.length > 0 &&
-				files[0] !== "" &&
-				initialQuery &&
-				command !== "findTodoFixme"
-			) {
-				try {
-					writeFileSync(lastQueryFile, initialQuery);
-				} catch (error) {
-					console.error("Failed to save last query:", error);
-					// Don't fail the search if save fails
-				}
-			}
+			// Query saving is now handled internally by each command
 
 			const openCommand = process.env.OPEN_COMMAND_CLI;
 			if (!openCommand) {

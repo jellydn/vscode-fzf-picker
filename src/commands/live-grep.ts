@@ -1,19 +1,22 @@
 import { spawn } from "node:child_process";
-import { writeFileSync } from "node:fs";
-
-import { lastQueryFile } from "../commands";
+import { getLastQuery, saveLastQuery } from "../utils/search-cache";
 
 const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
 
 /**
  * Interactive search for text within files using rg and fzf.
  * @param paths - An array of file paths to search within.
+ * @param initialQuery - Optional initial query to pre-populate search. Empty strings are ignored.
+ * @param saveQuery - Whether to save the query for later resume. Defaults to true.
  * @returns A promise that resolves to an array of selected file paths with line and column numbers.
+ *          Returns empty array if user cancels or no matches found.
+ * @throws {Error} If rg or fzf processes fail to start.
  */
 
 export async function liveGrep(
 	paths: string[],
 	initialQuery?: string,
+	saveQuery: boolean = true,
 ): Promise<string[]> {
 	return new Promise((resolve, reject) => {
 		const previewCommand =
@@ -31,7 +34,6 @@ export async function liveGrep(
 		if (paths.length === 1) {
 			singleDirRoot = paths[0];
 			process.chdir(singleDirRoot);
-			// biome-ignore lint: it's okay as the path is already set
 			paths = [];
 		}
 
@@ -126,18 +128,35 @@ export async function liveGrep(
 			if (DEBUG) console.log("FZF stdout:", data.toString());
 		});
 
-		fzf.on("close", (code) => {
+		fzf.on("close", async (code) => {
 			if (DEBUG) console.log("FZF process closed with code:", code);
 			if (code === 0) {
 				const lines = output.trim().split("\n");
-				const lastQuery = lines[0]; // The first line is the query
-				let selectedFiles = lines.slice(1); // The rest are selected files
+
+				// With --print-query, first line is the query, rest are results
+				const actualQuery = lines[0] || ""; // The first line is the query
+				let selectedFiles = lines.slice(1).filter((line) => line.trim() !== ""); // Filter out empty lines
+
 				if (singleDirRoot) {
 					selectedFiles = selectedFiles.map(
 						(file) => `${singleDirRoot}/${file}`,
 					);
 				}
-				writeFileSync(lastQueryFile, lastQuery);
+
+				// Save the actual query entered by user for future resume
+				if (
+					saveQuery &&
+					actualQuery.trim() !== "" &&
+					selectedFiles.length > 0
+				) {
+					try {
+						await saveLastQuery(actualQuery.trim());
+					} catch (error) {
+						if (DEBUG) console.error("Failed to save last query:", error);
+						// Don't fail the search if cache save fails
+					}
+				}
+
 				resolve(selectedFiles);
 			} else {
 				// Even when the user cancels, we need to resolve with an empty array
@@ -152,4 +171,23 @@ export async function liveGrep(
 			reject(new Error(`Failed to start fzf: ${error.message}`));
 		});
 	});
+}
+
+/**
+ * Resume the last live grep search with the previously used query.
+ * @param paths - An array of file paths to search within.
+ * @returns A promise that resolves to an array of selected file paths with line and column numbers.
+ *          Returns empty array if no last query exists or user cancels.
+ * @throws {Error} If rg or fzf processes fail to start.
+ */
+export async function liveGrepResume(paths: string[]): Promise<string[]> {
+	const lastQuery = await getLastQuery();
+
+	if (!lastQuery) {
+		if (DEBUG) console.log("No last query found, starting fresh search");
+		return liveGrep(paths);
+	}
+
+	if (DEBUG) console.log("Resuming with last query:", lastQuery);
+	return liveGrep(paths, lastQuery, true);
 }

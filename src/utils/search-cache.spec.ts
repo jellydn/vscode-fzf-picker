@@ -17,7 +17,13 @@ vi.mock("node:os", () => ({
 	homedir: vi.fn(() => "/mock/home"),
 }));
 
-const mockFs = fs as any;
+const mockFs = fs as {
+	mkdir: typeof fs.mkdir;
+	readFile: typeof fs.readFile;
+	writeFile: typeof fs.writeFile;
+	rename: typeof fs.rename;
+	unlink: typeof fs.unlink;
+};
 
 describe("search-cache", () => {
 	const testProjectPath = "/test/project";

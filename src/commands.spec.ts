@@ -443,7 +443,7 @@ describe("findTodoFixme", () => {
 
 		it("should handle very long initialQuery", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
-			const longQuery = "TODO: ".repeat(100) + "fix this";
+			const longQuery = `${"TODO: ".repeat(100)}fix this`;
 			const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
 			const mockFzf = {
 				stdin: { end: vi.fn() },
@@ -567,7 +567,7 @@ describe("findTodoFixme", () => {
 	// Query caching functionality
 	describe("query caching", () => {
 		const mockSaveLastQuery = vi.mocked(saveLastQuery);
-		const mockGetLastQuery = vi.mocked(getLastQuery);
+		const _mockGetLastQuery = vi.mocked(getLastQuery);
 
 		beforeEach(() => {
 			vi.clearAllMocks();
@@ -697,7 +697,7 @@ describe("findTodoFixme", () => {
 
 	// Resume functionality
 	describe("findTodoFixmeResume", () => {
-		const mockGetLastQuery = vi.mocked(getLastQuery);
+		const _mockGetLastQuery = vi.mocked(getLastQuery);
 
 		beforeEach(() => {
 			vi.clearAllMocks();
@@ -729,11 +729,11 @@ describe("findTodoFixme", () => {
 				return {} as childProcess.ChildProcess;
 			});
 
-			mockGetLastQuery.mockResolvedValue(lastQuery);
+			_mockGetLastQuery.mockResolvedValue(lastQuery);
 
 			const result = await findTodoFixmeResume([testDir]);
 
-			expect(mockGetLastQuery).toHaveBeenCalled();
+			expect(_mockGetLastQuery).toHaveBeenCalled();
 			expect(mockSpawn).toHaveBeenCalledWith(
 				"fzf",
 				expect.arrayContaining(["--query", lastQuery]),
@@ -767,11 +767,11 @@ describe("findTodoFixme", () => {
 				return {} as childProcess.ChildProcess;
 			});
 
-			mockGetLastQuery.mockResolvedValue(null);
+			_mockGetLastQuery.mockResolvedValue(null);
 
 			const result = await findTodoFixmeResume([testDir]);
 
-			expect(mockGetLastQuery).toHaveBeenCalled();
+			expect(_mockGetLastQuery).toHaveBeenCalled();
 			expect(mockSpawn).toHaveBeenCalledWith(
 				"fzf",
 				expect.not.arrayContaining(["--query"]),
