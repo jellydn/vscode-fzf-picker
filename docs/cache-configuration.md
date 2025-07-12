@@ -206,10 +206,12 @@ Then check the VSCode Developer Console (Help → Toggle Developer Tools → Con
 
 ## Performance Notes
 
-- Filesystem cache provides persistence across VSCode sessions
-- In-memory cache is faster but lost when VSCode closes
-- Platform-specific defaults follow OS conventions for optimal performance
-- Cache directory resolution is performed once per session and cached
+- **Filesystem cache** provides persistence across VSCode sessions
+- **In-memory cache** is faster but lost when VSCode closes
+- **Platform-specific defaults** follow OS conventions for optimal performance
+- **Cache directory resolution** is performed once per session and cached to avoid repeated filesystem operations
+- **Promise deduplication** ensures concurrent cache operations share the same resolution
+- **Command line compatibility** maintains full functionality when running outside VSCode extension context
 
 ## Related Documentation
 
