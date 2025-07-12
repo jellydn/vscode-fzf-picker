@@ -69,90 +69,9 @@
 						"command": "echo '📝 File modified - pre-commit will format on commit'"
 					}
 				]
-			},
-			{
-				"matcher": "Bash(git commit:*)",
-				"hooks": [
-					{
-						"type": "command",
-						"command": "echo '✅ Commit completed with pre-commit hooks'"
-					}
-				]
-			},
-			{
-				"matcher": "Edit(*)",
-				"hooks": [
-					{
-						"type": "command",
-						"command": "echo '📝 File modified - pre-commit will format on commit'"
-					}
-				]
-			},
-			{
-				"matcher": "Bash(git commit:*)",
-				"hooks": [
-					{
-						"type": "command",
-						"command": "echo '✅ Commit completed with pre-commit hooks'"
-					}
-				]
-			},
-			{
-				"matcher": "Edit(*)",
-				"hooks": [
-					{
-						"type": "command",
-						"command": "echo '📝 File modified - pre-commit will format on commit'"
-					}
-				]
-			},
-			{
-				"matcher": "Bash(git commit:*)",
-				"hooks": [
-					{
-						"type": "command",
-						"command": "echo '✅ Commit completed with pre-commit hooks'"
-					}
-				]
-			},
-			{
-				"matcher": "Edit(*)",
-				"hooks": [
-					{
-						"type": "command",
-						"command": "echo '📝 File modified - pre-commit will format on commit'"
-					}
-				]
 			}
 		],
 		"PreToolUse": [
-			{
-				"matcher": "Bash(git commit:*)",
-				"hooks": [
-					{
-						"type": "command",
-						"command": "echo '🔍 Running pre-commit hooks (biome, oxlint)...'"
-					}
-				]
-			},
-			{
-				"matcher": "Bash(git commit:*)",
-				"hooks": [
-					{
-						"type": "command",
-						"command": "echo '🔍 Running pre-commit hooks (biome, oxlint)...'"
-					}
-				]
-			},
-			{
-				"matcher": "Bash(git commit:*)",
-				"hooks": [
-					{
-						"type": "command",
-						"command": "echo '🔍 Running pre-commit hooks (biome, oxlint)...'"
-					}
-				]
-			},
 			{
 				"matcher": "Bash(git commit:*)",
 				"hooks": [
