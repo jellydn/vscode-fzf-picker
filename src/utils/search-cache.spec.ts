@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { clearCacheDirectoryCache } from "./cache-directory";
 import { clearCache, getLastQuery, saveLastQuery } from "./search-cache";
 
 vi.mock("node:fs", () => ({
@@ -15,6 +16,21 @@ vi.mock("node:fs", () => ({
 
 vi.mock("node:os", () => ({
 	homedir: vi.fn(() => "/mock/home"),
+	platform: vi.fn(() => "linux"),
+	tmpdir: vi.fn(() => "/tmp"),
+	userInfo: vi.fn(() => ({ uid: 1000, username: "testuser" })),
+}));
+
+vi.mock("vscode", () => ({
+	workspace: {
+		getConfiguration: vi.fn(() => ({
+			get: vi.fn((key: string, defaultValue: unknown) => {
+				if (key === "general.enableCache") return true;
+				if (key === "general.cacheDirectory") return "";
+				return defaultValue;
+			}),
+		})),
+	},
 }));
 
 // Get mocked functions with proper typing
@@ -22,11 +38,14 @@ const mockFs = vi.mocked(fs);
 
 describe("search-cache", () => {
 	const testProjectPath = "/test/project";
-	const expectedCacheDir = join("/mock/home", ".config", "fzf-picker");
+	// Platform defaults to Linux in mock, so expect .cache directory
+	const expectedCacheDir = join("/mock/home", ".cache", "fzf-picker");
 	const expectedCacheFilePath = join(expectedCacheDir, "search-cache.json");
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		// Clear cache directory cache to ensure fresh resolution in tests
+		clearCacheDirectoryCache();
 		// Mock successful directory creation
 		mockFs.mkdir.mockResolvedValue(undefined);
 		mockFs.writeFile.mockResolvedValue(undefined);
@@ -35,6 +54,8 @@ describe("search-cache", () => {
 
 	afterEach(() => {
 		vi.clearAllMocks();
+		// Clear cache directory cache after each test
+		clearCacheDirectoryCache();
 	});
 
 	describe("saveLastQuery", () => {

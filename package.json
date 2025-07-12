@@ -200,6 +200,16 @@
 					"default": [],
 					"description": "Custom tasks that can be executed by the extension"
 				},
+				"fzf-picker.general.cacheDirectory": {
+					"type": "string",
+					"default": "",
+					"markdownDescription": "Custom directory for cache files. If empty, uses platform-specific default location. Supports environment variable expansion."
+				},
+				"fzf-picker.general.enableCache": {
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Enable or disable cache functionality entirely. When disabled, no cache files will be created or used."
+				},
 				"fzf-picker.general.openCommand": {
 					"type": "string",
 					"enum": [
