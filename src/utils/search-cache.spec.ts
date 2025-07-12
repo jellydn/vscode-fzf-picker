@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { clearCacheDirectoryCache } from "./cache-directory";
 import { clearCache, getLastQuery, saveLastQuery } from "./search-cache";
 
 vi.mock("node:fs", () => ({
@@ -43,6 +44,8 @@ describe("search-cache", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		// Clear cache directory cache to ensure fresh resolution in tests
+		clearCacheDirectoryCache();
 		// Mock successful directory creation
 		mockFs.mkdir.mockResolvedValue(undefined);
 		mockFs.writeFile.mockResolvedValue(undefined);
@@ -51,6 +54,8 @@ describe("search-cache", () => {
 
 	afterEach(() => {
 		vi.clearAllMocks();
+		// Clear cache directory cache after each test
+		clearCacheDirectoryCache();
 	});
 
 	describe("saveLastQuery", () => {
