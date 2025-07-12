@@ -15,6 +15,21 @@ vi.mock("node:fs", () => ({
 
 vi.mock("node:os", () => ({
 	homedir: vi.fn(() => "/mock/home"),
+	platform: vi.fn(() => "linux"),
+	tmpdir: vi.fn(() => "/tmp"),
+	userInfo: vi.fn(() => ({ uid: 1000, username: "testuser" })),
+}));
+
+vi.mock("vscode", () => ({
+	workspace: {
+		getConfiguration: vi.fn(() => ({
+			get: vi.fn((key: string, defaultValue: unknown) => {
+				if (key === "general.enableCache") return true;
+				if (key === "general.cacheDirectory") return "";
+				return defaultValue;
+			}),
+		})),
+	},
 }));
 
 // Get mocked functions with proper typing

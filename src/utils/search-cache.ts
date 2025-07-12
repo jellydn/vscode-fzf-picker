@@ -1,6 +1,9 @@
 import { promises as fs } from "node:fs";
-import { homedir } from "node:os";
 import { dirname, join } from "node:path";
+import {
+	getLegacyCacheDirectory,
+	resolveCacheDirectory,
+} from "./cache-directory";
 
 const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
 
@@ -12,11 +15,18 @@ interface SearchCache {
 	};
 }
 
+// In-memory cache when filesystem cache is unavailable
+let inMemoryCache: SearchCache | null = null;
+
 /**
  * Get the cache file path for search state
+ * Returns null if cache should be in-memory only
  */
-function getCacheFilePath(): string {
-	const cacheDir = join(homedir(), ".config", "fzf-picker");
+async function getCacheFilePath(): Promise<string | null> {
+	const cacheDir = await resolveCacheDirectory();
+	if (!cacheDir) {
+		return null; // Use in-memory cache
+	}
 	return join(cacheDir, "search-cache.json");
 }
 
@@ -24,7 +34,11 @@ function getCacheFilePath(): string {
  * Ensure cache directory exists
  */
 async function ensureCacheDir(): Promise<void> {
-	const cacheFilePath = getCacheFilePath();
+	const cacheFilePath = await getCacheFilePath();
+	if (!cacheFilePath) {
+		return; // In-memory cache mode
+	}
+
 	const cacheDir = dirname(cacheFilePath);
 
 	try {
@@ -36,26 +50,81 @@ async function ensureCacheDir(): Promise<void> {
 }
 
 /**
- * Read cache from file system
+ * Migrate cache from legacy location if it exists
  */
-async function readCache(): Promise<SearchCache | null> {
+async function migrateLegacyCache(): Promise<SearchCache | null> {
 	try {
-		const cacheFilePath = getCacheFilePath();
-		const data = await fs.readFile(cacheFilePath, "utf-8");
-		return JSON.parse(data) as SearchCache;
-	} catch (error) {
-		if (DEBUG) console.error("Failed to read cache:", error);
+		const legacyCacheFile = join(
+			getLegacyCacheDirectory(),
+			"search-cache.json",
+		);
+		const data = await fs.readFile(legacyCacheFile, "utf-8");
+		const cache = JSON.parse(data) as SearchCache;
+
+		if (DEBUG) console.log("Found legacy cache, migrating...");
+
+		// Try to save to new location
+		await writeCache(cache);
+
+		// Remove legacy file after successful migration
+		try {
+			await fs.unlink(legacyCacheFile);
+			if (DEBUG) console.log("Legacy cache migrated and removed");
+		} catch (unlinkError) {
+			if (DEBUG)
+				console.warn("Failed to remove legacy cache file:", unlinkError);
+		}
+
+		return cache;
+	} catch (_error) {
+		// Legacy cache doesn't exist or can't be read - this is normal
 		return null;
 	}
 }
 
 /**
- * Write cache to file system atomically
+ * Read cache from file system or in-memory
+ */
+async function readCache(): Promise<SearchCache | null> {
+	const cacheFilePath = await getCacheFilePath();
+
+	// Use in-memory cache if filesystem cache is unavailable
+	if (!cacheFilePath) {
+		return inMemoryCache;
+	}
+
+	try {
+		const data = await fs.readFile(cacheFilePath, "utf-8");
+		return JSON.parse(data) as SearchCache;
+	} catch (error) {
+		if (DEBUG)
+			console.debug("Failed to read cache, trying legacy location:", error);
+
+		// Try to migrate from legacy location
+		const migratedCache = await migrateLegacyCache();
+		if (migratedCache) {
+			return migratedCache;
+		}
+
+		return null;
+	}
+}
+
+/**
+ * Write cache to file system atomically or to memory
  */
 async function writeCache(cache: SearchCache): Promise<void> {
+	const cacheFilePath = await getCacheFilePath();
+
+	// Use in-memory cache if filesystem cache is unavailable
+	if (!cacheFilePath) {
+		inMemoryCache = cache;
+		if (DEBUG) console.log("Cache saved to memory");
+		return;
+	}
+
 	try {
 		await ensureCacheDir();
-		const cacheFilePath = getCacheFilePath();
 		const tempPath = `${cacheFilePath}.tmp`;
 
 		// Write to temporary file first for atomic operation
@@ -64,10 +133,15 @@ async function writeCache(cache: SearchCache): Promise<void> {
 		// Atomic rename
 		await fs.rename(tempPath, cacheFilePath);
 
-		if (DEBUG) console.log("Cache saved successfully");
+		if (DEBUG) console.log("Cache saved to filesystem");
 	} catch (error) {
-		if (DEBUG) console.error("Failed to write cache:", error);
-		// Silently fail - cache is optional
+		if (DEBUG)
+			console.error(
+				"Failed to write cache to filesystem, falling back to memory:",
+				error,
+			);
+		// Fallback to in-memory cache
+		inMemoryCache = cache;
 	}
 }
 
@@ -121,12 +195,20 @@ export async function getLastQuery(
  * Clear all cached search data
  */
 export async function clearCache(): Promise<void> {
+	// Clear in-memory cache
+	inMemoryCache = null;
+
+	const cacheFilePath = await getCacheFilePath();
+	if (!cacheFilePath) {
+		if (DEBUG) console.log("In-memory cache cleared");
+		return;
+	}
+
 	try {
-		const cacheFilePath = getCacheFilePath();
 		await fs.unlink(cacheFilePath);
-		if (DEBUG) console.log("Cache cleared successfully");
+		if (DEBUG) console.log("Filesystem cache cleared successfully");
 	} catch (error) {
-		if (DEBUG) console.error("Failed to clear cache:", error);
+		if (DEBUG) console.error("Failed to clear filesystem cache:", error);
 		// Silently fail - cache might not exist
 	}
 }

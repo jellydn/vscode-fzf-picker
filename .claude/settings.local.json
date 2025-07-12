@@ -24,7 +24,29 @@
 			"Bash(bash -c \"git diff --color=always -- test_untracked.txt 2>/dev/null || cat test_untracked.txt\")",
 			"Bash(sh -c 'git diff --color=always -- \"\"test_untracked.txt\"\" 2>/dev/null || cat \"\"test_untracked.txt\"\"')",
 			"Bash(sh:*)",
-			"Bash(rm:*)"
+			"Bash(rm:*)",
+			"Bash(bash -c:*)",
+			"mcp__filesystem__read_file",
+			"mcp__filesystem__directory_tree",
+			"mcp__filesystem__list_directory",
+			"Bash(pnpm run lint:*)",
+			"mcp__filesystem__read_multiple_files",
+			"Bash(find:*)",
+			"Bash(pnpm run:*)",
+			"Bash(backlog:*)",
+			"mcp__filesystem__write_file",
+			"Bash(node:*)",
+			"Bash(gh issue:*)",
+			"Bash(npx vitest:*)",
+			"Bash(npm run test:*)",
+			"Bash(npm test:*)",
+			"Bash(pnpm test:*)",
+			"Bash(fzf:*)",
+			"mcp__filesystem__search_files",
+			"mcp__filesystem__create_directory",
+			"mcp__filesystem__edit_file",
+			"Bash(npm run compile:*)",
+			"Bash(npm run:*)"
 		],
 		"deny": []
 	},
@@ -47,9 +69,90 @@
 						"command": "echo '📝 File modified - pre-commit will format on commit'"
 					}
 				]
+			},
+			{
+				"matcher": "Bash(git commit:*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '✅ Commit completed with pre-commit hooks'"
+					}
+				]
+			},
+			{
+				"matcher": "Edit(*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '📝 File modified - pre-commit will format on commit'"
+					}
+				]
+			},
+			{
+				"matcher": "Bash(git commit:*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '✅ Commit completed with pre-commit hooks'"
+					}
+				]
+			},
+			{
+				"matcher": "Edit(*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '📝 File modified - pre-commit will format on commit'"
+					}
+				]
+			},
+			{
+				"matcher": "Bash(git commit:*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '✅ Commit completed with pre-commit hooks'"
+					}
+				]
+			},
+			{
+				"matcher": "Edit(*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '📝 File modified - pre-commit will format on commit'"
+					}
+				]
 			}
 		],
 		"PreToolUse": [
+			{
+				"matcher": "Bash(git commit:*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '🔍 Running pre-commit hooks (biome, oxlint)...'"
+					}
+				]
+			},
+			{
+				"matcher": "Bash(git commit:*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '🔍 Running pre-commit hooks (biome, oxlint)...'"
+					}
+				]
+			},
+			{
+				"matcher": "Bash(git commit:*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '🔍 Running pre-commit hooks (biome, oxlint)...'"
+					}
+				]
+			},
 			{
 				"matcher": "Bash(git commit:*)",
 				"hooks": [
