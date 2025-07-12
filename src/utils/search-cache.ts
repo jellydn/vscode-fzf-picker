@@ -1,11 +1,31 @@
 import { promises as fs } from "node:fs";
 import { dirname, join } from "node:path";
 import {
+	type CacheDirectoryConfig,
 	getLegacyCacheDirectory,
 	resolveCacheDirectory,
 } from "./cache-directory";
 
 const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
+
+/**
+ * Get cache configuration from VSCode when available
+ */
+function getCacheConfig(): CacheDirectoryConfig | undefined {
+	try {
+		// Try to load vscode module, but don't fail if it's not available
+		const vscode = require("vscode");
+		const config = vscode.workspace.getConfiguration("fzf-picker");
+
+		return {
+			userCacheDirectory: config.get<string>("general.cacheDirectory", ""),
+			cacheEnabled: config.get<boolean>("general.enableCache", true),
+		};
+	} catch {
+		// VSCode not available (command line mode)
+		return undefined;
+	}
+}
 
 interface SearchCache {
 	findTodoFixme: {
@@ -23,7 +43,8 @@ let inMemoryCache: SearchCache | null = null;
  * Returns null if cache should be in-memory only
  */
 async function getCacheFilePath(): Promise<string | null> {
-	const cacheDir = await resolveCacheDirectory();
+	const config = getCacheConfig();
+	const cacheDir = await resolveCacheDirectory(config);
 	if (!cacheDir) {
 		return null; // Use in-memory cache
 	}

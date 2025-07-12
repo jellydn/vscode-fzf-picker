@@ -4,13 +4,14 @@ import { join } from "node:path";
 
 const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
 
-// Check if we're running in VSCode context
-let vscode: typeof import("vscode") | null;
-try {
-	vscode = require("vscode");
-} catch {
-	// Running outside VSCode context (e.g., command line)
-	vscode = null;
+/**
+ * Configuration options for cache directory resolution
+ */
+export interface CacheDirectoryConfig {
+	/** Custom cache directory path from user configuration */
+	userCacheDirectory?: string;
+	/** Whether cache is enabled */
+	cacheEnabled?: boolean;
 }
 
 // Cache for resolved cache directory to avoid repeated filesystem operations
@@ -95,32 +96,27 @@ function expandEnvironmentVariables(path: string): string {
 /**
  * Internal function to resolve cache directory without caching
  */
-async function resolveActualCacheDirectory(): Promise<string | null> {
-	// When running outside VSCode, skip VSCode-specific configurations
-	if (vscode) {
-		const config = vscode.workspace.getConfiguration("fzf-picker");
+async function resolveActualCacheDirectory(
+	config?: CacheDirectoryConfig,
+): Promise<string | null> {
+	// Check if cache is disabled entirely
+	if (config?.cacheEnabled === false) {
+		if (DEBUG) console.log("Cache is disabled via configuration");
+		return null;
+	}
 
-		// Check if cache is disabled entirely
-		const cacheEnabled = config.get<boolean>("general.enableCache", true);
-		if (!cacheEnabled) {
-			if (DEBUG) console.log("Cache is disabled via configuration");
-			return null;
-		}
-
-		// 1. User configuration from VSCode settings
-		const userConfigured = config.get<string>("general.cacheDirectory", "");
-		if (userConfigured) {
-			const expandedPath = expandEnvironmentVariables(userConfigured);
-			if (await isDirectoryWritable(expandedPath)) {
-				if (DEBUG)
-					console.log(`Using user-configured cache directory: ${expandedPath}`);
-				return expandedPath;
-			}
+	// 1. User configuration from passed config
+	if (config?.userCacheDirectory) {
+		const expandedPath = expandEnvironmentVariables(config.userCacheDirectory);
+		if (await isDirectoryWritable(expandedPath)) {
 			if (DEBUG)
-				console.warn(
-					`User-configured cache directory is not writable: ${expandedPath}`,
-				);
+				console.log(`Using user-configured cache directory: ${expandedPath}`);
+			return expandedPath;
 		}
+		if (DEBUG)
+			console.warn(
+				`User-configured cache directory is not writable: ${expandedPath}`,
+			);
 	}
 
 	// 2. Environment variable
@@ -171,13 +167,15 @@ async function resolveActualCacheDirectory(): Promise<string | null> {
  * Resolve cache directory with caching to avoid repeated filesystem operations
  *
  * Resolution order:
- * 1. VSCode setting: fzf-picker.general.cacheDirectory
+ * 1. User configuration: config.userCacheDirectory
  * 2. Environment variable: FZF_PICKER_CACHE_DIR
  * 3. Platform-specific default cache directory
  * 4. System temporary directory with user isolation
  * 5. null (triggers in-memory cache mode)
  */
-export async function resolveCacheDirectory(): Promise<string | null> {
+export async function resolveCacheDirectory(
+	config?: CacheDirectoryConfig,
+): Promise<string | null> {
 	// Return cached result if available
 	if (cachedCacheDirectory !== undefined) {
 		return cachedCacheDirectory;
@@ -189,7 +187,7 @@ export async function resolveCacheDirectory(): Promise<string | null> {
 	}
 
 	// Start new resolution and cache the promise
-	cacheDirectoryPromise = resolveActualCacheDirectory();
+	cacheDirectoryPromise = resolveActualCacheDirectory(config);
 
 	try {
 		cachedCacheDirectory = await cacheDirectoryPromise;
