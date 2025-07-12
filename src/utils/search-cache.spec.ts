@@ -37,7 +37,8 @@ const mockFs = vi.mocked(fs);
 
 describe("search-cache", () => {
 	const testProjectPath = "/test/project";
-	const expectedCacheDir = join("/mock/home", ".config", "fzf-picker");
+	// Platform defaults to Linux in mock, so expect .cache directory
+	const expectedCacheDir = join("/mock/home", ".cache", "fzf-picker");
 	const expectedCacheFilePath = join(expectedCacheDir, "search-cache.json");
 
 	beforeEach(() => {
