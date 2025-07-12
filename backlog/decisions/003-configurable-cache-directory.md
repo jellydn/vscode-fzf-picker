@@ -1,7 +1,7 @@
 # Decision: Configurable Cache Directory for Cross-Platform Support
 
 ## Status
-Proposed
+Implemented
 
 ## Context
 

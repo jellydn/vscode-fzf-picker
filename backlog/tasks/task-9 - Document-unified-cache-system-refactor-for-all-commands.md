@@ -97,7 +97,7 @@ const fzfArgs = ["--print-query", ...otherArgs];
 // Parse output to separate query from results
 const lines = output.trim().split("\n");
 const actualQuery = lines[0] || "";
-const results = lines.slice(1).filter(line => line.trim() \!== "");
+const results = lines.slice(1).filter(line => line.trim() !== "");
 
 // Save actual user query
 if (saveQuery && actualQuery.trim() \!== "" && results.length > 0) {
@@ -111,7 +111,7 @@ All commands now have resume functions:
 export async function commandNameResume(paths: string[]): Promise<string[]> {
     const lastQuery = await getLastQuery();
     
-    if (\!lastQuery) {
+    if (!lastQuery) {
         return commandName(paths);
     }
     

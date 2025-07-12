@@ -76,7 +76,7 @@ async function migrateLegacyCache(): Promise<SearchCache | null> {
 		}
 
 		return cache;
-	} catch (_error) {
+	} catch {
 		// Legacy cache doesn't exist or can't be read - this is normal
 		return null;
 	}
