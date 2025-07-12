@@ -1,9 +1,17 @@
 import { promises as fs } from "node:fs";
 import { homedir, platform, tmpdir, userInfo } from "node:os";
 import { join } from "node:path";
-import * as vscode from "vscode";
 
 const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
+
+// Check if we're running in VSCode context
+let vscode: typeof import("vscode") | null;
+try {
+	vscode = require("vscode");
+} catch {
+	// Running outside VSCode context (e.g., command line)
+	vscode = null;
+}
 
 // Cache for resolved cache directory to avoid repeated filesystem operations
 let cachedCacheDirectory: string | null | undefined;
@@ -88,28 +96,31 @@ function expandEnvironmentVariables(path: string): string {
  * Internal function to resolve cache directory without caching
  */
 async function resolveActualCacheDirectory(): Promise<string | null> {
-	const config = vscode.workspace.getConfiguration("fzf-picker");
+	// When running outside VSCode, skip VSCode-specific configurations
+	if (vscode) {
+		const config = vscode.workspace.getConfiguration("fzf-picker");
 
-	// Check if cache is disabled entirely
-	const cacheEnabled = config.get<boolean>("general.enableCache", true);
-	if (!cacheEnabled) {
-		if (DEBUG) console.log("Cache is disabled via configuration");
-		return null;
-	}
-
-	// 1. User configuration from VSCode settings
-	const userConfigured = config.get<string>("general.cacheDirectory", "");
-	if (userConfigured) {
-		const expandedPath = expandEnvironmentVariables(userConfigured);
-		if (await isDirectoryWritable(expandedPath)) {
-			if (DEBUG)
-				console.log(`Using user-configured cache directory: ${expandedPath}`);
-			return expandedPath;
+		// Check if cache is disabled entirely
+		const cacheEnabled = config.get<boolean>("general.enableCache", true);
+		if (!cacheEnabled) {
+			if (DEBUG) console.log("Cache is disabled via configuration");
+			return null;
 		}
-		if (DEBUG)
-			console.warn(
-				`User-configured cache directory is not writable: ${expandedPath}`,
-			);
+
+		// 1. User configuration from VSCode settings
+		const userConfigured = config.get<string>("general.cacheDirectory", "");
+		if (userConfigured) {
+			const expandedPath = expandEnvironmentVariables(userConfigured);
+			if (await isDirectoryWritable(expandedPath)) {
+				if (DEBUG)
+					console.log(`Using user-configured cache directory: ${expandedPath}`);
+				return expandedPath;
+			}
+			if (DEBUG)
+				console.warn(
+					`User-configured cache directory is not writable: ${expandedPath}`,
+				);
+		}
 	}
 
 	// 2. Environment variable

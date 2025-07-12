@@ -46,7 +46,11 @@
 			"mcp__filesystem__create_directory",
 			"mcp__filesystem__edit_file",
 			"Bash(npm run compile:*)",
-			"Bash(npm run:*)"
+			"Bash(npm run:*)",
+			"Bash(chmod:*)",
+			"Bash(./test-command.sh:*)",
+			"Bash(export PID_FILE_NAME=\"test123\")",
+			"Bash(export FZF_PICKER_CACHE_DIR=\"/tmp/fzf-picker-test\")"
 		],
 		"deny": []
 	},
@@ -69,9 +73,90 @@
 						"command": "echo '📝 File modified - pre-commit will format on commit'"
 					}
 				]
+			},
+			{
+				"matcher": "Bash(git commit:*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '✅ Commit completed with pre-commit hooks'"
+					}
+				]
+			},
+			{
+				"matcher": "Edit(*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '📝 File modified - pre-commit will format on commit'"
+					}
+				]
+			},
+			{
+				"matcher": "Bash(git commit:*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '✅ Commit completed with pre-commit hooks'"
+					}
+				]
+			},
+			{
+				"matcher": "Edit(*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '📝 File modified - pre-commit will format on commit'"
+					}
+				]
+			},
+			{
+				"matcher": "Bash(git commit:*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '✅ Commit completed with pre-commit hooks'"
+					}
+				]
+			},
+			{
+				"matcher": "Edit(*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '📝 File modified - pre-commit will format on commit'"
+					}
+				]
 			}
 		],
 		"PreToolUse": [
+			{
+				"matcher": "Bash(git commit:*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '🔍 Running pre-commit hooks (biome, oxlint)...'"
+					}
+				]
+			},
+			{
+				"matcher": "Bash(git commit:*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '🔍 Running pre-commit hooks (biome, oxlint)...'"
+					}
+				]
+			},
+			{
+				"matcher": "Bash(git commit:*)",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '🔍 Running pre-commit hooks (biome, oxlint)...'"
+					}
+				]
+			},
 			{
 				"matcher": "Bash(git commit:*)",
 				"hooks": [
