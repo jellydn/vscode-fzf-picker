@@ -18,8 +18,8 @@ function getCacheConfig(): CacheDirectoryConfig | undefined {
 		const config = vscode.workspace.getConfiguration("fzf-picker");
 
 		return {
-			userCacheDirectory: config.get<string>("general.cacheDirectory", ""),
-			cacheEnabled: config.get<boolean>("general.enableCache", true),
+			userCacheDirectory: config.get("general.cacheDirectory", "") as string,
+			cacheEnabled: config.get("general.enableCache", true) as boolean,
 		};
 	} catch {
 		// VSCode not available (command line mode)
