@@ -8,6 +8,10 @@ import {
 
 const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
 
+// Track if we've shown cache fallback warning
+let hasShownCacheFallbackWarning = false;
+let hasShownMigrationWarning = false;
+
 /**
  * Get cache configuration from VSCode when available
  */
@@ -33,6 +37,42 @@ interface SearchCache {
 		timestamp: number;
 		projectPath: string;
 	};
+}
+
+/**
+ * Validate that cache data conforms to expected schema
+ */
+function isValidSearchCache(data: unknown): data is SearchCache {
+	if (!data || typeof data !== "object") {
+		return false;
+	}
+
+	const cache = data as Record<string, unknown>;
+
+	// Check top-level structure
+	if (!cache.findTodoFixme || typeof cache.findTodoFixme !== "object") {
+		return false;
+	}
+
+	// Check findTodoFixme properties
+	const ftf = cache.findTodoFixme;
+	if (
+		typeof ftf.lastQuery !== "string" ||
+		typeof ftf.timestamp !== "number" ||
+		typeof ftf.projectPath !== "string"
+	) {
+		return false;
+	}
+
+	// Validate timestamp is reasonable (not in future, not too old)
+	const now = Date.now();
+	const oneYearAgo = now - 365 * 24 * 60 * 60 * 1000;
+	if (ftf.timestamp > now || ftf.timestamp < oneYearAgo) {
+		if (DEBUG) console.warn("Cache timestamp out of reasonable range");
+		return false;
+	}
+
+	return true;
 }
 
 // In-memory cache when filesystem cache is unavailable
@@ -80,9 +120,15 @@ async function migrateLegacyCache(): Promise<SearchCache | null> {
 			"search-cache.json",
 		);
 		const data = await fs.readFile(legacyCacheFile, "utf-8");
-		const cache = JSON.parse(data) as SearchCache;
+		const cache = JSON.parse(data);
 
-		if (DEBUG) console.log("Found legacy cache, migrating...");
+		// Validate legacy cache data
+		if (!isValidSearchCache(cache)) {
+			if (DEBUG) console.warn("Legacy cache data invalid, skipping migration");
+			return null;
+		}
+
+		if (DEBUG) console.log("Found valid legacy cache, migrating...");
 
 		// Try to save to new location
 		await writeCache(cache);
@@ -94,6 +140,15 @@ async function migrateLegacyCache(): Promise<SearchCache | null> {
 		} catch (unlinkError) {
 			if (DEBUG)
 				console.warn("Failed to remove legacy cache file:", unlinkError);
+
+			// Show warning only once per session
+			if (!hasShownMigrationWarning) {
+				hasShownMigrationWarning = true;
+				console.warn(
+					`[FZF Picker] Legacy cache file could not be removed. ` +
+						`Please manually delete: ${legacyCacheFile}`,
+				);
+			}
 		}
 
 		return cache;
@@ -116,14 +171,22 @@ async function readCache(): Promise<SearchCache | null> {
 
 	try {
 		const data = await fs.readFile(cacheFilePath, "utf-8");
-		return JSON.parse(data) as SearchCache;
+		const parsed = JSON.parse(data);
+
+		// Validate cache data
+		if (!isValidSearchCache(parsed)) {
+			if (DEBUG) console.warn("Cache data failed validation, ignoring");
+			return null;
+		}
+
+		return parsed;
 	} catch (error) {
 		if (DEBUG)
 			console.debug("Failed to read cache, trying legacy location:", error);
 
 		// Try to migrate from legacy location
 		const migratedCache = await migrateLegacyCache();
-		if (migratedCache) {
+		if (migratedCache && isValidSearchCache(migratedCache)) {
 			return migratedCache;
 		}
 
@@ -141,6 +204,15 @@ async function writeCache(cache: SearchCache): Promise<void> {
 	if (!cacheFilePath) {
 		inMemoryCache = cache;
 		if (DEBUG) console.log("Cache saved to memory");
+
+		// Show warning only once per session
+		if (!hasShownCacheFallbackWarning) {
+			hasShownCacheFallbackWarning = true;
+			console.info(
+				"[FZF Picker] Using in-memory cache (search history will not persist). " +
+					"Configure cache directory in settings if persistence is needed.",
+			);
+		}
 		return;
 	}
 

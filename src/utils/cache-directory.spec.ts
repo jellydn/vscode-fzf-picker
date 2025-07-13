@@ -71,7 +71,7 @@ describe("cache-directory", () => {
 			process.env.HOME = "/home/testuser";
 
 			const config: CacheDirectoryConfig = {
-				userCacheDirectory: "${HOME}/.local/share/fzf-picker",
+				userCacheDirectory: "$" + "{HOME}/.local/share/fzf-picker",
 				cacheEnabled: true,
 			};
 
@@ -171,6 +171,66 @@ describe("cache-directory", () => {
 		it("should return the legacy cache directory path", () => {
 			const result = getLegacyCacheDirectory();
 			expect(result).toBe(join("/mock/home", ".config", "fzf-picker"));
+		});
+	});
+
+	describe("Security validation", () => {
+		it("should reject system directories", async () => {
+			clearCacheDirectoryCache();
+
+			// Test with system directory
+			const result = await resolveCacheDirectory({
+				userCacheDirectory: "/etc/fzf-picker",
+				cacheEnabled: true,
+			});
+
+			// Should fallback to platform default
+			expect(result).toBe(join("/mock/home", ".cache", "fzf-picker"));
+		});
+
+		it("should reject paths with directory traversal", async () => {
+			clearCacheDirectoryCache();
+
+			// Test with directory traversal
+			const result = await resolveCacheDirectory({
+				userCacheDirectory: "/home/../../../etc/passwd",
+				cacheEnabled: true,
+			});
+
+			// Should fallback to platform default
+			expect(result).toBe(join("/mock/home", ".cache", "fzf-picker"));
+		});
+
+		it("should reject Windows system directories", async () => {
+			clearCacheDirectoryCache();
+
+			// Test with Windows system path
+			const result = await resolveCacheDirectory({
+				userCacheDirectory: "C:\\Windows\\System32\\fzf-picker",
+				cacheEnabled: true,
+			});
+
+			// Should fallback to platform default
+			expect(result).toBe(join("/mock/home", ".cache", "fzf-picker"));
+		});
+
+		it("should allow safe user directories", async () => {
+			clearCacheDirectoryCache();
+			mockFs.mkdir.mockClear();
+			mockFs.writeFile.mockClear();
+
+			// Test with safe path
+			const result = await resolveCacheDirectory({
+				userCacheDirectory: "/mock/home/.local/share/fzf-picker",
+				cacheEnabled: true,
+			});
+
+			// Should use the user-configured path
+			expect(result).toBe("/mock/home/.local/share/fzf-picker");
+			expect(mockFs.mkdir).toHaveBeenCalledWith(
+				"/mock/home/.local/share/fzf-picker",
+				{ recursive: true },
+			);
 		});
 	});
 });

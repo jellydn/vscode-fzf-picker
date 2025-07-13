@@ -81,15 +81,74 @@ function getTempCacheDirectory(): string {
 }
 
 /**
+ * Validate that a cache path is safe to use
+ */
+function isValidCachePath(path: string): boolean {
+	// Normalize the path for consistent checking
+	const normalizedPath = path.toLowerCase();
+
+	// Reject system directories and sensitive locations
+	const restrictedPaths = [
+		"/etc",
+		"/usr",
+		"/bin",
+		"/sbin",
+		"/boot",
+		"/dev",
+		"/proc",
+		"/sys",
+		"/var/log",
+		"/root",
+		"c:\\windows",
+		"c:\\program files",
+		"c:\\programdata",
+	];
+
+	// Check if path starts with any restricted location
+	if (
+		restrictedPaths.some((restricted) => normalizedPath.startsWith(restricted))
+	) {
+		if (DEBUG) console.warn(`Cache path rejected - system directory: ${path}`);
+		return false;
+	}
+
+	// Reject paths with suspicious patterns
+	if (path.includes("..") || path.includes("~root")) {
+		if (DEBUG)
+			console.warn(`Cache path rejected - suspicious pattern: ${path}`);
+		return false;
+	}
+
+	return true;
+}
+
+/**
  * Expand environment variables in a path string
  */
 function expandEnvironmentVariables(path: string): string {
+	// Only expand specific safe environment variables
+	const safeEnvVars = [
+		"HOME",
+		"USERPROFILE",
+		"LOCALAPPDATA",
+		"XDG_CACHE_HOME",
+		"TMPDIR",
+		"TEMP",
+		"TMP",
+	];
+
 	return path
 		.replace(/\$\{([^}]+)\}/g, (match, envVar) => {
-			return process.env[envVar] || match;
+			if (safeEnvVars.includes(envVar) && process.env[envVar]) {
+				return process.env[envVar] as string;
+			}
+			return match;
 		})
 		.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (match, envVar) => {
-			return process.env[envVar] || match;
+			if (safeEnvVars.includes(envVar) && process.env[envVar]) {
+				return process.env[envVar] as string;
+			}
+			return match;
 		});
 }
 
@@ -108,32 +167,44 @@ async function resolveActualCacheDirectory(
 	// 1. User configuration from passed config
 	if (config?.userCacheDirectory) {
 		const expandedPath = expandEnvironmentVariables(config.userCacheDirectory);
-		if (await isDirectoryWritable(expandedPath)) {
+		if (!isValidCachePath(expandedPath)) {
+			if (DEBUG)
+				console.warn(
+					`User-configured cache directory failed validation: ${expandedPath}`,
+				);
+		} else if (await isDirectoryWritable(expandedPath)) {
 			if (DEBUG)
 				console.log(`Using user-configured cache directory: ${expandedPath}`);
 			return expandedPath;
+		} else {
+			if (DEBUG)
+				console.warn(
+					`User-configured cache directory is not writable: ${expandedPath}`,
+				);
 		}
-		if (DEBUG)
-			console.warn(
-				`User-configured cache directory is not writable: ${expandedPath}`,
-			);
 	}
 
 	// 2. Environment variable
 	const envConfigured = process.env.FZF_PICKER_CACHE_DIR;
 	if (envConfigured) {
 		const expandedPath = expandEnvironmentVariables(envConfigured);
-		if (await isDirectoryWritable(expandedPath)) {
+		if (!isValidCachePath(expandedPath)) {
+			if (DEBUG)
+				console.warn(
+					`Environment-configured cache directory failed validation: ${expandedPath}`,
+				);
+		} else if (await isDirectoryWritable(expandedPath)) {
 			if (DEBUG)
 				console.log(
 					`Using environment-configured cache directory: ${expandedPath}`,
 				);
 			return expandedPath;
+		} else {
+			if (DEBUG)
+				console.warn(
+					`Environment-configured cache directory is not writable: ${expandedPath}`,
+				);
 		}
-		if (DEBUG)
-			console.warn(
-				`Environment-configured cache directory is not writable: ${expandedPath}`,
-			);
 	}
 
 	// 3. Platform-specific default
