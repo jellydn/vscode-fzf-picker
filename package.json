@@ -209,7 +209,8 @@
 						"codium -g",
 						"codium-insiders -g",
 						"windsurf -g",
-						"trae -g"
+						"trae -g",
+						"kiro -g"
 					],
 					"enumDescriptions": [
 						"Visual Studio Code",
@@ -218,7 +219,8 @@
 						"VSCodium",
 						"VSCodium Insiders",
 						"Windsurf",
-						"Trae"
+						"Trae",
+						"Kiro"
 					],
 					"default": "code -g",
 					"description": "Select the command to open files base on your current editor"
