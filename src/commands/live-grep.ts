@@ -25,7 +25,6 @@ export async function liveGrep(
 		const previewWindow =
 			process.env.FIND_WITHIN_FILES_PREVIEW_WINDOW_CONFIG ||
 			"right:border-left:50%:+{2}+3/3:~3";
-		// TODO: Add <Ctr-t> to toggle gitignore with fzf keybinding
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
 		const fileTypes = process.env.TYPE_FILTER || "";
 
@@ -37,13 +36,13 @@ export async function liveGrep(
 			paths = [];
 		}
 
-		const rgArgs = [
+		// Base rg args that are always used
+		const baseRgArgs = [
 			"--column",
 			"--line-number",
 			"--no-heading",
 			"--color=always",
 			"--smart-case",
-			useGitignore ? "" : "--no-ignore",
 			"--glob",
 			"!**/.git/",
 		];
@@ -51,20 +50,28 @@ export async function liveGrep(
 		if (fileTypes) {
 			const fileTypesArray = fileTypes.split(":");
 			for (const fileType of fileTypesArray) {
-				rgArgs.push("--type", fileType);
+				baseRgArgs.push("--type", fileType);
 			}
 		}
 
-		rgArgs.push(...paths);
+		baseRgArgs.push(...paths);
 
-		// Create a string of all rgArgs, properly escaped
-		const rgArgsString = rgArgs
-			.filter(Boolean)
-			.map((arg) => `'${arg.replace(/'/g, "'\\''")}'`)
-			.join(" ");
+		// Create search commands for both gitignore states
+		const rgArgsWithIgnore = [...baseRgArgs];
+		const rgArgsWithoutIgnore = [...baseRgArgs, "--no-ignore"];
+		
+		const createSearchCommand = (args: string[]) => {
+			const rgArgsString = args
+				.map((arg) => `'${arg.replace(/'/g, "'\\''")}'`)
+				.join(" ");
+			return `rg ${rgArgsString} {q} || true`;
+		};
 
-		const rgQueryParsing = "{q}";
-		const searchCommand = `rg ${rgArgsString} ${rgQueryParsing} || true`;
+		const searchCommandWithIgnore = createSearchCommand(rgArgsWithIgnore);
+		const searchCommandWithoutIgnore = createSearchCommand(rgArgsWithoutIgnore);
+
+		// Use current gitignore setting for initial search
+		const searchCommand = useGitignore ? searchCommandWithIgnore : searchCommandWithoutIgnore;
 
 		const fzfArgs = [
 			"--ansi",
@@ -85,6 +92,14 @@ export async function liveGrep(
 			"--bind",
 			"ctrl-g:toggle-preview",
 		];
+
+		// Add ctrl-t toggle for gitignore using execute to manage state and reload
+		const toggleFile = `/tmp/fzf_gitignore_${process.pid}`;
+		
+		fzfArgs.push(
+			"--bind",
+			`ctrl-t:execute-silent([ -f ${toggleFile} ] && rm ${toggleFile} || touch ${toggleFile})+reload([ -f ${toggleFile} ] && [ ! -z {q} ] && ${searchCommandWithoutIgnore} || [ ! -z {q} ] && ${searchCommandWithIgnore} || true)`,
+		);
 
 		if (initialQuery) {
 			fzfArgs.push("--bind", `start:reload:${searchCommand}`);

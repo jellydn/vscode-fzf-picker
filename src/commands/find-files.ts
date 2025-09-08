@@ -27,7 +27,6 @@ export async function findFiles(
 			"bat --decorations=always --color=always --plain {}";
 		const previewWindow =
 			process.env.FIND_FILES_PREVIEW_WINDOW_CONFIG || "right:50%:border-left";
-		// TODO: Add <Ctr-t> to toggle gitignore with fzf keybinding
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
 		const fileTypes = process.env.TYPE_FILTER || "";
 
@@ -41,22 +40,23 @@ export async function findFiles(
 
 		const query = initialQuery || "";
 
-		const rgArgs = [
-			"--files",
-			"--hidden",
-			useGitignore ? "" : "--no-ignore",
-			"--glob",
-			"!**/.git/",
-		];
+		// Base rg args that are always used
+		const baseRgArgs = ["--files", "--hidden", "--glob", "!**/.git/"];
 		if (fileTypes) {
-			// Split file type `:` and add to rgArgs
+			// Split file type `:` and add to baseRgArgs
 			const fileTypesArray = fileTypes.split(":");
 			for (const fileType of fileTypesArray) {
-				rgArgs.push("--type", fileType);
+				baseRgArgs.push("--type", fileType);
 			}
 		}
-		rgArgs.push(...paths);
-		const rg = spawn("rg", rgArgs.filter(Boolean));
+		baseRgArgs.push(...paths);
+
+		// Create initial rg args with current gitignore setting
+		const rgArgs = [...baseRgArgs, useGitignore ? "" : "--no-ignore"].filter(
+			Boolean,
+		);
+
+		const rg = spawn("rg", rgArgs);
 
 		const fzfArgs = ["--cycle", "--multi", "--print-query", "--layout=reverse"];
 
@@ -64,6 +64,25 @@ export async function findFiles(
 		if (query.trim() !== "") {
 			fzfArgs.push("--query", query);
 		}
+
+		// Create reload commands for toggling gitignore
+		const rgArgsWithoutIgnore = [...baseRgArgs, "--no-ignore"];
+		const rgArgsWithIgnore = [...baseRgArgs];
+
+		// Escape args properly for shell execution
+		const escapeArg = (arg) => `'${arg.replace(/'/g, "'\"'\"'")}'`;
+		const reloadCommandNoIgnore = `rg ${rgArgsWithoutIgnore.map(escapeArg).join(" ")}`;
+		const reloadCommandWithIgnore = `rg ${rgArgsWithIgnore.map(escapeArg).join(" ")}`;
+
+		// Add ctrl-t toggle for gitignore using execute to manage state and reload
+		const toggleFile = `/tmp/fzf_gitignore_${process.pid}`;
+
+		// TODO: ctrl-h to toggle hidden files in future
+
+		fzfArgs.push(
+			"--bind",
+			`ctrl-t:execute-silent([ -f ${toggleFile} ] && rm ${toggleFile} || touch ${toggleFile})+reload([ -f ${toggleFile} ] && ${reloadCommandNoIgnore} || ${reloadCommandWithIgnore})`,
+		);
 
 		if (previewEnabled) {
 			fzfArgs.push(

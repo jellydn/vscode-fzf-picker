@@ -25,19 +25,19 @@ export async function findTodoFixme(
 			return;
 		}
 
-		// TODO: Add <Ctr-t> to toggle gitignore with fzf keybinding
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
 		const fileTypes = process.env.TYPE_FILTER || "";
 		const searchPattern =
 			process.env.FIND_TODO_FIXME_SEARCH_PATTERN || "(TODO|FIXME|HACK|FIX):s";
-		const rgArgs = [
+		
+		// Base rg args that are always used
+		const baseRgArgs = [
 			"--column",
 			"--line-number",
 			"--no-heading",
 			"--color=always",
 			"--smart-case",
 			"--glob",
-			useGitignore ? "" : "--no-ignore",
 			"!**/.git/",
 			searchPattern,
 		];
@@ -45,13 +45,19 @@ export async function findTodoFixme(
 		if (fileTypes) {
 			const fileTypesArray = fileTypes.split(":");
 			for (const fileType of fileTypesArray) {
-				rgArgs.push("--type", fileType);
+				baseRgArgs.push("--type", fileType);
 			}
 		}
 
-		rgArgs.push(...paths);
+		baseRgArgs.push(...paths);
 
-		const rg = spawn("rg", rgArgs.filter(Boolean));
+		// Create initial rg args with current gitignore setting
+		const rgArgs = [
+			...baseRgArgs,
+			useGitignore ? "" : "--no-ignore",
+		].filter(Boolean);
+
+		const rg = spawn("rg", rgArgs);
 
 		// Handle rg process errors
 		rg.on("error", (error) => {
@@ -65,6 +71,15 @@ export async function findTodoFixme(
 		const previewWindow =
 			process.env.FIND_TODO_FIXME_PREVIEW_WINDOW_CONFIG ||
 			"right:border-left:50%:+{2}+3/3:~3";
+
+		// Create reload commands for toggling gitignore
+		const rgArgsWithIgnore = [...baseRgArgs];
+		const rgArgsWithoutIgnore = [...baseRgArgs, "--no-ignore"];
+		
+		// Escape args properly for shell execution
+		const escapeArg = (arg) => `'${arg.replace(/'/g, "'\"'\"'")}'`;
+		const reloadCommandWithIgnore = `rg ${rgArgsWithIgnore.map(escapeArg).join(" ")}`;
+		const reloadCommandWithoutIgnore = `rg ${rgArgsWithoutIgnore.map(escapeArg).join(" ")}`;
 
 		const fzfArgs = [
 			"--ansi",
@@ -80,6 +95,14 @@ export async function findTodoFixme(
 			"ctrl-g:toggle-preview",
 			"--print-query",
 		];
+
+		// Add ctrl-t toggle for gitignore using execute to manage state and reload
+		const toggleFile = `/tmp/fzf_gitignore_${process.pid}`;
+		
+		fzfArgs.push(
+			"--bind",
+			`ctrl-t:execute-silent([ -f ${toggleFile} ] && rm ${toggleFile} || touch ${toggleFile})+reload([ -f ${toggleFile} ] && ${reloadCommandWithoutIgnore} || ${reloadCommandWithIgnore})`,
+		);
 
 		if (initialQuery && initialQuery !== "") {
 			fzfArgs.push("--query", initialQuery);
