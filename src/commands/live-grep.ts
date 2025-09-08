@@ -59,7 +59,7 @@ export async function liveGrep(
 		// Create search commands for both gitignore states
 		const rgArgsWithIgnore = [...baseRgArgs];
 		const rgArgsWithoutIgnore = [...baseRgArgs, "--no-ignore"];
-		
+
 		const createSearchCommand = (args: string[]) => {
 			const rgArgsString = args
 				.map((arg) => `'${arg.replace(/'/g, "'\\''")}'`)
@@ -71,7 +71,9 @@ export async function liveGrep(
 		const searchCommandWithoutIgnore = createSearchCommand(rgArgsWithoutIgnore);
 
 		// Use current gitignore setting for initial search
-		const searchCommand = useGitignore ? searchCommandWithIgnore : searchCommandWithoutIgnore;
+		const searchCommand = useGitignore
+			? searchCommandWithIgnore
+			: searchCommandWithoutIgnore;
 
 		const fzfArgs = [
 			"--ansi",
@@ -95,7 +97,7 @@ export async function liveGrep(
 
 		// Add ctrl-t toggle for gitignore using execute to manage state and reload
 		const toggleFile = `/tmp/fzf_gitignore_${process.pid}`;
-		
+
 		fzfArgs.push(
 			"--bind",
 			`ctrl-t:execute-silent([ -f ${toggleFile} ] && rm ${toggleFile} || touch ${toggleFile})+reload([ -f ${toggleFile} ] && [ ! -z {q} ] && ${searchCommandWithoutIgnore} || [ ! -z {q} ] && ${searchCommandWithIgnore} || true)`,

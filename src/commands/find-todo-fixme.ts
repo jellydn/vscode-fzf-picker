@@ -29,7 +29,7 @@ export async function findTodoFixme(
 		const fileTypes = process.env.TYPE_FILTER || "";
 		const searchPattern =
 			process.env.FIND_TODO_FIXME_SEARCH_PATTERN || "(TODO|FIXME|HACK|FIX):s";
-		
+
 		// Base rg args that are always used
 		const baseRgArgs = [
 			"--column",
@@ -52,10 +52,9 @@ export async function findTodoFixme(
 		baseRgArgs.push(...paths);
 
 		// Create initial rg args with current gitignore setting
-		const rgArgs = [
-			...baseRgArgs,
-			useGitignore ? "" : "--no-ignore",
-		].filter(Boolean);
+		const rgArgs = [...baseRgArgs, useGitignore ? "" : "--no-ignore"].filter(
+			Boolean,
+		);
 
 		const rg = spawn("rg", rgArgs);
 
@@ -75,7 +74,7 @@ export async function findTodoFixme(
 		// Create reload commands for toggling gitignore
 		const rgArgsWithIgnore = [...baseRgArgs];
 		const rgArgsWithoutIgnore = [...baseRgArgs, "--no-ignore"];
-		
+
 		// Escape args properly for shell execution
 		const escapeArg = (arg) => `'${arg.replace(/'/g, "'\"'\"'")}'`;
 		const reloadCommandWithIgnore = `rg ${rgArgsWithIgnore.map(escapeArg).join(" ")}`;
@@ -98,7 +97,7 @@ export async function findTodoFixme(
 
 		// Add ctrl-t toggle for gitignore using execute to manage state and reload
 		const toggleFile = `/tmp/fzf_gitignore_${process.pid}`;
-		
+
 		fzfArgs.push(
 			"--bind",
 			`ctrl-t:execute-silent([ -f ${toggleFile} ] && rm ${toggleFile} || touch ${toggleFile})+reload([ -f ${toggleFile} ] && ${reloadCommandWithoutIgnore} || ${reloadCommandWithIgnore})`,
