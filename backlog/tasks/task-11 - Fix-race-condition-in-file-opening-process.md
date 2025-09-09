@@ -4,7 +4,7 @@ title: Fix race condition in file opening process
 status: Done
 assignee: []
 created_date: '2025-09-09 07:38'
-updated_date: '2025-09-09 07:38'
+updated_date: '2025-09-09 08:17'
 labels: []
 dependencies: []
 ---
@@ -15,8 +15,12 @@ File opening commands were exiting before async file opening operations complete
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 File opening operations complete before process exit,Git status file opening works correctly,All file opening commands wait for completion,No race conditions in async operations
+- [x] File opening operations complete before process exit
+- [x] Git status file opening works correctly
+- [x] All file opening commands wait for completion
+- [x] No race conditions in async operations
 <!-- AC:END -->
+
 
 ## Implementation Notes
 
