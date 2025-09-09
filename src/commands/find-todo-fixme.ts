@@ -28,7 +28,7 @@ export async function findTodoFixme(
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
 		const fileTypes = process.env.TYPE_FILTER || "";
 		const searchPattern =
-			process.env.FIND_TODO_FIXME_SEARCH_PATTERN || "(TODO|FIXME|HACK|FIX):s";
+			process.env.FIND_TODO_FIXME_SEARCH_PATTERN || "(TODO|FIXME|HACK|FIX):\\s";
 
 		// Base rg args that are always used
 		const baseRgArgs = [
@@ -128,7 +128,7 @@ export async function findTodoFixme(
 		fzf.on("close", async (code) => {
 			if (DEBUG) console.log("FZF process closed with code:", code);
 			if (code === 0) {
-				const lines = output.trim().split("\n");
+				const lines = output.split("\n");
 
 				// With --print-query, first line is the query, rest are results
 				const query = lines[0] || "";

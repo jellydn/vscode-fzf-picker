@@ -133,8 +133,8 @@ export async function pickFilesFromGitStatus(
 
 			fzf.on("close", async (code) => {
 				if (DEBUG) console.log("FZF process closed with code:", code);
-				if (code === 0 && output.trim()) {
-					const lines = output.trim().split("\n");
+				if (code === 0) {
+					const lines = output.split("\n");
 
 					// With --print-query, first line is the query, rest are results
 					const actualQuery = lines[0] || ""; // The first line is the query
