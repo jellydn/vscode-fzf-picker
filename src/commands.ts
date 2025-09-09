@@ -12,11 +12,11 @@ const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
 /**
  * Logs debug information to fzf.logs file when debugging is enabled
  */
-function logDebug(message: string, data?: any) {
+function logDebug(message: string, data?: unknown) {
 	if (!DEBUG) return;
 
 	const timestamp = new Date().toISOString();
-	const logEntry = `[${timestamp}] ${message}${data ? " " + JSON.stringify(data, null, 2) : ""}\n`;
+	const logEntry = `[${timestamp}] ${message}${data ? ` ${JSON.stringify(data, null, 2)}` : ""}\n`;
 
 	try {
 		appendFileSync("fzf.logs", logEntry);
@@ -39,7 +39,11 @@ function escapeShellPath(filePath: string): string {
 
 export function openFiles(filePath: string) {
 	// Strip ANSI color codes before parsing
-	const cleanPath = filePath.replace(/\x1b\[[0-9;]*m/g, "");
+	// Using regex to match ANSI escape sequences (ESC[...m)
+	// Construct regex to avoid linter warning about control characters
+	const escapeCode = String.fromCharCode(0x1b);
+	const ansiRegex = new RegExp(`${escapeCode}\\[[0-9;]*m`, "g");
+	const cleanPath = filePath.replace(ansiRegex, "");
 	let [file, lineTmp, charTmp] = cleanPath.split(":", 3);
 
 	file = file.trim();
@@ -110,7 +114,9 @@ if (require.main === module) {
 						logDebug("No cached query found");
 					}
 				} catch (error) {
-					logDebug("Failed to get cached query", { error: error.message });
+					const errorMessage =
+						error instanceof Error ? error.message : String(error);
+					logDebug("Failed to get cached query", { error: errorMessage });
 					console.error("Failed to get cached query:", error);
 				}
 			} else if (process.env.SELECTED_TEXT) {
@@ -160,10 +166,12 @@ if (require.main === module) {
 
 					exec(finalCommand, (error: Error | null, stdout: string) => {
 						if (error) {
+							// Type assertion for NodeJS.ErrnoException which extends Error with code property
+							const nodeError = error as NodeJS.ErrnoException;
 							logDebug(`File open FAILED ${index + 1}/${files.length}`, {
 								filePath,
 								error: error.message,
-								code: error.code,
+								code: nodeError.code,
 							});
 							console.error("Error opening file", error);
 							reject(error);
@@ -186,9 +194,13 @@ if (require.main === module) {
 				await Promise.all(openPromises);
 				logDebug("All file opening operations completed successfully");
 			} catch (error) {
+				const errorMessage =
+					error instanceof Error ? error.message : String(error);
+				const errorType =
+					error instanceof Error ? error.constructor.name : typeof error;
 				logDebug("File opening operations failed", {
-					error: error.message,
-					errorType: error.constructor.name,
+					error: errorMessage,
+					errorType: errorType,
 				});
 				console.error("Error opening files:", error);
 			}
@@ -212,9 +224,12 @@ if (require.main === module) {
 			logDebug("=== COMMAND EXECUTION END (SUCCESS) ===");
 			process.exit(0);
 		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			const errorStack = error instanceof Error ? error.stack : undefined;
 			logDebug("=== COMMAND EXECUTION END (ERROR) ===", {
-				error: error.message,
-				stack: error.stack,
+				error: errorMessage,
+				stack: errorStack,
 			});
 			console.error("Error:", error);
 			process.exit(1);

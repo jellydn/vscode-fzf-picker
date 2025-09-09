@@ -76,7 +76,7 @@ export async function findTodoFixme(
 		const rgArgsWithoutIgnore = [...baseRgArgs, "--no-ignore"];
 
 		// Escape args properly for shell execution
-		const escapeArg = (arg) => `'${arg.replace(/'/g, "'\"'\"'")}'`;
+		const escapeArg = (arg: string) => `'${arg.replace(/'/g, "'\"'\"'")}'`;
 		const reloadCommandWithIgnore = `rg ${rgArgsWithIgnore.map(escapeArg).join(" ")}`;
 		const reloadCommandWithoutIgnore = `rg ${rgArgsWithoutIgnore.map(escapeArg).join(" ")}`;
 

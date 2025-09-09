@@ -70,7 +70,7 @@ export async function findFiles(
 		const rgArgsWithIgnore = [...baseRgArgs];
 
 		// Escape args properly for shell execution
-		const escapeArg = (arg) => `'${arg.replace(/'/g, "'\"'\"'")}'`;
+		const escapeArg = (arg: string) => `'${arg.replace(/'/g, "'\"'\"'")}'`;
 		const reloadCommandNoIgnore = `rg ${rgArgsWithoutIgnore.map(escapeArg).join(" ")}`;
 		const reloadCommandWithIgnore = `rg ${rgArgsWithIgnore.map(escapeArg).join(" ")}`;
 

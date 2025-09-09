@@ -23,7 +23,6 @@ This fork aims to extend and enhance the functionality of the original project. 
 
 [![IT Man - Supercharge Your VS Code with VSCode Fzf Picker](https://i.ytimg.com/vi/PIYsa3IV59o/hqdefault.jpg)](https://www.youtube.com/watch?v=PIYsa3IV59o)
 
-
 ## Prerequisites
 
 Ensure you can run `fzf`, `rg`, `bat`, and `sed` directly in your terminal. If those work, this plugin will work as expected.
@@ -143,6 +142,19 @@ All commands now support toggling the preview window using `Ctrl+G` while in the
 
 This extension contributes various settings. Please refer to the VS Code settings UI for a complete list and descriptions.
 
+## Debugging and Troubleshooting
+
+When encountering issues or bugs, enable debug mode by setting `fzf-picker.general.debugMode` to `true` in your VS Code settings. This will create a `fzf.log` file in your current working directory with detailed logging information.
+
+The debug log is invaluable for:
+
+- Troubleshooting extension behavior
+- Reporting bugs with detailed context
+- Understanding command execution flow
+- Debugging file opening issues
+
+> **Note**: The `fzf.log` file contains sensitive information about file paths and search queries. Review the contents before sharing when reporting issues.
+
 ### Commands
 
 <!-- commands -->
@@ -165,7 +177,7 @@ This extension contributes various settings. Please refer to the VS Code setting
 <!-- configs -->
 
 | Key                                                    | Description                                                                                                                                                                            | Type      | Default                                                                                  |
-| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ---------------------------------------------------------------------------------------- |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ---------------------------------------------------------------------------------------- | ----- | ---- | ---------- |
 | `fzf-picker.general.batTheme`                          | The color theme to use for `bat` (see `bat --list-themes`)                                                                                                                             | `string`  | `"1337"`                                                                                 |
 | `fzf-picker.findFiles.showPreview`                     | Show a preview window when searching files                                                                                                                                             | `boolean` | `true`                                                                                   |
 | `fzf-picker.findFiles.previewCommand`                  | When populated: Used by `fzf` to produce the preview. Use `{}` to indicate the filename. Example: `bat {}`.                                                                            | `string`  | `""`                                                                                     |
@@ -180,7 +192,7 @@ This extension contributes various settings. Please refer to the VS Code setting
 | `fzf-picker.findTodoFixme.previewEnabled`              | Enable preview for TODO/FIXME search results                                                                                                                                           | `boolean` | `true`                                                                                   |
 | `fzf-picker.findTodoFixme.previewCommand`              | Preview command for TODO/FIXME search results                                                                                                                                          | `string`  | `"bat --decorations=always --color=always {1} --highlight-line {2} --style=header,grid"` |
 | `fzf-picker.findTodoFixme.previewWindowConfig`         | Preview window configuration for TODO/FIXME search results                                                                                                                             | `string`  | `"right:border-left:50%:+{2}+3/3:~3"`                                                    |
-| `fzf-picker.findTodoFixme.searchPattern`               | Regular expression pattern for searching TODO/FIXME/HACK comments. Matches keywords followed by a colon and optional space.                                                            | `string`  | `"(TODO|FIXME|HACK|FIX):\\s"`                                                            |
+| `fzf-picker.findTodoFixme.searchPattern`               | Regular expression pattern for searching TODO/FIXME/HACK comments. Matches keywords followed by a colon and optional space.                                                            | `string`  | `"(TODO                                                                                  | FIXME | HACK | FIX):\\s"` |
 | `fzf-picker.customTasks`                               | Custom tasks that can be executed by the extension                                                                                                                                     | `array`   | `[]`                                                                                     |
 | `fzf-picker.general.openCommand`                       | Select the command to open files base on your current editor                                                                                                                           | `string`  | `"code -g"`                                                                              |
 | `fzf-picker.general.debugMode`                         | Enable debug mode for the extension. This will log additional information to the console.                                                                                              | `boolean` | `false`                                                                                  |
