@@ -25,6 +25,15 @@ export async function findTodoFixme(
 			return;
 		}
 
+		// Navigate to the first path if it's the only one (for relative paths)
+		let singleDirRoot = "";
+		if (paths.length === 1) {
+			singleDirRoot = paths[0];
+			process.chdir(singleDirRoot);
+			// Keep the current directory as search target instead of clearing paths
+			paths = ["."];
+		}
+
 		const useGitignore = process.env.USE_GITIGNORE !== "0";
 		const fileTypes = process.env.TYPE_FILTER || "";
 		const searchPattern =
@@ -132,7 +141,16 @@ export async function findTodoFixme(
 
 				// With --print-query, first line is the query, rest are results
 				const query = lines[0] || "";
-				const results = lines.slice(1).filter((line) => line.trim() !== "");
+				let results = lines.slice(1).filter((line) => line.trim() !== "");
+
+				if (singleDirRoot) {
+					// Prepend the single directory root to each selected file
+					results = results.map((file) => {
+						// Remove the leading "./" if present, then prepend the root
+						const cleanFile = file.startsWith("./") ? file.slice(2) : file;
+						return `${singleDirRoot}/${cleanFile}`;
+					});
+				}
 
 				// Save the actual query entered by user for future resume
 				if (saveQuery && query.trim() !== "" && results.length > 0) {
