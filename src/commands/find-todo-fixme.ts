@@ -1,7 +1,6 @@
 import { spawn } from "node:child_process";
+import { DEBUG } from "../utils/debug";
 import { getLastQuery, saveLastQuery } from "../utils/search-cache";
-
-const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
 
 /**
  * Searches for TODO/FIXME comments in files using rg and fzf.

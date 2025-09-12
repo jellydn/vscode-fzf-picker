@@ -1,7 +1,6 @@
 import { spawn } from "node:child_process";
+import { DEBUG } from "../utils/debug";
 import { getLastQuery, saveLastQuery } from "../utils/search-cache";
-
-const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
 
 /**
  * Interactive search for text within files using rg and fzf.

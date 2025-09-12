@@ -1,8 +1,7 @@
 import { execSync, spawn } from "node:child_process";
 import * as path from "node:path";
+import { DEBUG } from "../utils/debug";
 import { getLastQuery, saveLastQuery } from "../utils/search-cache";
-
-const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
 
 /**
  * Removes quotes that git adds around filenames with special characters

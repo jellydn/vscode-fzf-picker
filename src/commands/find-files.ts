@@ -1,7 +1,6 @@
 import { spawn } from "node:child_process";
+import { DEBUG } from "../utils/debug";
 import { getLastQuery, saveLastQuery } from "../utils/search-cache";
-
-const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
 
 /**
  * Runs `rg` to search for files and pipes the output to `fzf` to select files.
@@ -19,7 +18,6 @@ export async function findFiles(
 	initialQuery?: string,
 	saveQuery: boolean = true,
 ): Promise<string[]> {
-	// TODO: Need to update the test to match the new behavior
 	return new Promise((resolve, reject) => {
 		const previewEnabled = process.env.FIND_FILES_PREVIEW_ENABLED === "1";
 		const previewCommand =

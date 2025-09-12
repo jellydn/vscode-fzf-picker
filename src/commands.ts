@@ -5,9 +5,8 @@ import { findFiles } from "./commands/find-files";
 import { findTodoFixme } from "./commands/find-todo-fixme";
 import { pickFilesFromGitStatus } from "./commands/git-status";
 import { liveGrep } from "./commands/live-grep";
+import { DEBUG } from "./utils/debug";
 import { getLastQuery } from "./utils/search-cache";
-
-const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
 
 /**
  * Logs debug information to fzf.logs file when debugging is enabled

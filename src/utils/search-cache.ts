@@ -2,10 +2,10 @@ import { promises as fs } from "node:fs";
 import { homedir, platform } from "node:os";
 import { dirname, join } from "node:path";
 
+import { DEBUG } from "./debug";
+
 // Cache utility is now purely environment-based for standalone execution
 // VS Code extension passes configuration via environment variables
-
-const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
 
 interface SearchCache {
 	findTodoFixme: {

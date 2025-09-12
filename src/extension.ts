@@ -99,7 +99,7 @@ async function selectTypeFilter() {
 	const opts = getTypeOptions();
 	return await new Promise<boolean>((resolve, _) => {
 		const qp = vscode.window.createQuickPick();
-		let hasResolved = false; // I don't understand why this is necessary... Seems like I can resolve twice?
+		let hasResolved = false; // Prevent double resolution - both onDidAccept and onDidHide can trigger
 
 		qp.items = opts;
 		qp.title = `Type one or more type identifiers below and press Enter,
