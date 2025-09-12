@@ -8,6 +8,7 @@ import * as vscode from "vscode";
 import { CFG, config } from "./config";
 import * as Meta from "./generated/meta";
 import { logger } from "./logger";
+import { getResolvedCacheDirectory } from "./utils/search-cache";
 
 const TERMINAL_NAME = Meta.displayName;
 
@@ -175,6 +176,7 @@ function updateConfigWithUserSettings() {
 		config["findWithinFiles.previewWindowConfig"];
 	CFG.findTodoFixmeSearchPattern = config["findTodoFixme.searchPattern"];
 	CFG.customTasks = config.customTasks;
+	CFG.cacheDirectory = config["cache.directory"];
 }
 
 /**
@@ -219,6 +221,8 @@ function getOrCreateTerminal() {
 			FIND_TODO_FIXME_SEARCH_PATTERN: CFG.findTodoFixmeSearchPattern,
 			OPEN_COMMAND_CLI: CFG.openCommand,
 			DEBUG_FZF_PICKER: config["general.debugMode"] ? "1" : "0",
+			// Cache configuration
+			FZF_PICKER_CACHE_DIR: getResolvedCacheDirectory(CFG.cacheDirectory),
 		},
 	};
 
@@ -530,15 +534,18 @@ const { activate, deactivate } = defineExtension(() => {
 	});
 
 	vscode.workspace.onDidChangeConfiguration((event) => {
-		if (event.affectsConfiguration("fzf-picker.general.debugMode")) {
+		if (
+			event.affectsConfiguration("fzf-picker.general.debugMode") ||
+			event.affectsConfiguration("fzf-picker.cache")
+		) {
 			initialize();
-			// Recreate the terminal to update the DEBUG_LIVE_GREP environment variable
+			// Recreate the terminal to update environment variables
 			if (currentTerminal) {
 				currentTerminal.dispose();
 			}
 			currentTerminal = getOrCreateTerminal();
 			logger.info(
-				"Debug mode changed. Reinitialized extension and recreated terminal.",
+				"Configuration changed. Reinitialized extension and recreated terminal.",
 			);
 		}
 	});

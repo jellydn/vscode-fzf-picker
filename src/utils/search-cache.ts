@@ -1,6 +1,9 @@
 import { promises as fs } from "node:fs";
-import { homedir } from "node:os";
+import { homedir, platform } from "node:os";
 import { dirname, join } from "node:path";
+
+// Cache utility is now purely environment-based for standalone execution
+// VS Code extension passes configuration via environment variables
 
 const DEBUG = process.env.DEBUG_FZF_PICKER === "1";
 
@@ -13,10 +16,62 @@ interface SearchCache {
 }
 
 /**
+ * Get OS-specific default cache directory following platform conventions:
+ * - Windows: %APPDATA%\fzf-picker
+ * - macOS: ~/Library/Caches/fzf-picker
+ * - Linux: ~/.cache/fzf-picker (XDG_CACHE_HOME or fallback)
+ */
+function getDefaultCacheDirectory(): string {
+	const home = homedir();
+	const currentPlatform = platform();
+
+	switch (currentPlatform) {
+		case "win32":
+			// Windows: Use %APPDATA% or fallback to %USERPROFILE%\AppData\Roaming
+			return process.env.APPDATA
+				? join(process.env.APPDATA, "fzf-picker")
+				: join(home, "AppData", "Roaming", "fzf-picker");
+
+		case "darwin":
+			// macOS: Use ~/Library/Caches following Apple conventions
+			return join(home, "Library", "Caches", "fzf-picker");
+
+		default:
+			// Linux/Unix: Use XDG_CACHE_HOME or ~/.cache following XDG Base Directory Specification
+			return process.env.XDG_CACHE_HOME
+				? join(process.env.XDG_CACHE_HOME, "fzf-picker")
+				: join(home, ".cache", "fzf-picker");
+	}
+}
+
+/**
+ * Get the cache directory with fallback hierarchy:
+ * 1. FZF_PICKER_CACHE_DIR environment variable (set by VS Code extension or user)
+ * 2. OS-specific default location
+ *
+ * VS Code extension handles the configuration hierarchy and sets FZF_PICKER_CACHE_DIR accordingly
+ */
+function getCacheDirectory(): string {
+	// Priority 1: Environment variable (includes VS Code extension configuration)
+	const envCacheDir = process.env.FZF_PICKER_CACHE_DIR;
+	if (envCacheDir && envCacheDir.trim() !== "") {
+		if (DEBUG)
+			console.log("Using cache directory from environment:", envCacheDir);
+		return envCacheDir.trim();
+	}
+
+	// Priority 2: OS-specific default location
+	const defaultCacheDir = getDefaultCacheDirectory();
+	if (DEBUG)
+		console.log("Using OS-specific default cache directory:", defaultCacheDir);
+	return defaultCacheDir;
+}
+
+/**
  * Get the cache file path for search state
  */
 function getCacheFilePath(): string {
-	const cacheDir = join(homedir(), ".config", "fzf-picker");
+	const cacheDir = getCacheDirectory();
 	return join(cacheDir, "search-cache.json");
 }
 
@@ -129,4 +184,20 @@ export async function clearCache(): Promise<void> {
 		if (DEBUG) console.error("Failed to clear cache:", error);
 		// Silently fail - cache might not exist
 	}
+}
+
+/**
+ * Get the resolved cache directory for VS Code extension to pass to commands
+ * This resolves the user configuration to the actual directory path
+ */
+export function getResolvedCacheDirectory(
+	userConfigDirectory: string = "",
+): string {
+	// If user has set a custom directory, use it
+	if (userConfigDirectory && userConfigDirectory.trim() !== "") {
+		return userConfigDirectory.trim();
+	}
+
+	// Otherwise return the OS-specific default
+	return getDefaultCacheDirectory();
 }

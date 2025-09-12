@@ -30,6 +30,7 @@ export interface Config {
 	findTodoFixmeSearchPattern: string;
 	customTasks: CustomTask[];
 	openCommand: string;
+	cacheDirectory: string;
 }
 
 export const CFG: Config = {
@@ -51,4 +52,5 @@ export const CFG: Config = {
 	findTodoFixmeSearchPattern: "(TODO|FIXME|HACK|FIX):\\s",
 	customTasks: [],
 	openCommand: "code -g",
+	cacheDirectory: "",
 };

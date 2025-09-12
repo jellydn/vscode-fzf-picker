@@ -604,7 +604,7 @@ describe("findTodoFixme", () => {
 
 			const result = await findTodoFixme([testDir], initialQuery);
 
-			expect(result).toEqual(["result1:1:content"]);
+			expect(result).toEqual([`${testDir}/result1:1:content`]);
 			expect(mockSaveLastQuery).toHaveBeenCalledWith(actualQuery);
 		});
 
@@ -692,7 +692,7 @@ describe("findTodoFixme", () => {
 
 			// Should not throw even if cache save fails
 			const result = await findTodoFixme([testDir], initialQuery);
-			expect(result).toEqual(["result1:1:content"]);
+			expect(result).toEqual([`${testDir}/result1:1:content`]);
 		});
 	});
 
@@ -740,7 +740,7 @@ describe("findTodoFixme", () => {
 				expect.arrayContaining(["--query", lastQuery]),
 				expect.any(Object),
 			);
-			expect(result).toEqual(["result1:1:content"]);
+			expect(result).toEqual([`${testDir}/result1:1:content`]);
 		});
 
 		it("should start fresh search when no last query exists", async () => {
@@ -778,7 +778,7 @@ describe("findTodoFixme", () => {
 				expect.not.arrayContaining(["--query"]),
 				expect.any(Object),
 			);
-			expect(result).toEqual(["result1:1:content"]);
+			expect(result).toEqual([`${testDir}/result1:1:content`]);
 		});
 	});
 });

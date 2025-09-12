@@ -225,6 +225,11 @@
 					"default": "code -g",
 					"description": "Select the command to open files base on your current editor"
 				},
+				"fzf-picker.cache.directory": {
+					"type": "string",
+					"default": "",
+					"description": "Custom directory for cache storage. If empty, uses OS-specific default: Windows: %APPDATA%\\fzf-picker, macOS: ~/Library/Caches/fzf-picker, Linux: ~/.cache/fzf-picker (or $XDG_CACHE_HOME/fzf-picker). Set this for systems with immutable extension directories (e.g., NixOS). Environment variable FZF_PICKER_CACHE_DIR overrides this setting."
+				},
 				"fzf-picker.general.debugMode": {
 					"type": "boolean",
 					"default": false,
