@@ -9,6 +9,7 @@ import { CFG, config } from "./config";
 import * as Meta from "./generated/meta";
 import { logger } from "./logger";
 import { getResolvedCacheDirectory } from "./utils/search-cache";
+import { getRuntime, clearRuntimeCache } from "./utils/runtime";
 
 const TERMINAL_NAME = Meta.displayName;
 
@@ -177,6 +178,7 @@ function updateConfigWithUserSettings() {
 	CFG.findTodoFixmeSearchPattern = config["findTodoFixme.searchPattern"];
 	CFG.customTasks = config.customTasks;
 	CFG.cacheDirectory = config["cache.directory"];
+	CFG.runtime = config["general.runtime"];
 }
 
 /**
@@ -478,7 +480,12 @@ async function executeCommand({
 	writeFileSync(pidFilePath, process.pid.toString());
 
 	logger.info(`Executing ${name} command`);
-	const command = `${envVars} node "${commandsJsPath}" "${name}" "${rootPath}"`;
+
+	// Get the best available runtime based on user preference
+	const runtime = getRuntime(CFG.runtime);
+	logger.info(`Using runtime: ${runtime.type} (${runtime.command})`);
+
+	const command = `${envVars} ${runtime.command} "${commandsJsPath}" "${name}" "${rootPath}"`;
 
 	// Get or create the terminal and send the command
 	currentTerminal = getOrCreateTerminal();
@@ -536,9 +543,15 @@ const { activate, deactivate } = defineExtension(() => {
 	vscode.workspace.onDidChangeConfiguration((event) => {
 		if (
 			event.affectsConfiguration("fzf-picker.general.debugMode") ||
-			event.affectsConfiguration("fzf-picker.cache")
+			event.affectsConfiguration("fzf-picker.cache") ||
+			event.affectsConfiguration("fzf-picker.general.runtime")
 		) {
 			initialize();
+			// Clear runtime cache when runtime configuration changes
+			if (event.affectsConfiguration("fzf-picker.general.runtime")) {
+				clearRuntimeCache();
+				logger.info("Runtime configuration changed, cleared cache");
+			}
 			// Recreate the terminal to update environment variables
 			if (currentTerminal) {
 				currentTerminal.dispose();

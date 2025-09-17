@@ -1,5 +1,6 @@
 import { defineConfigObject } from "reactive-vscode";
 import * as Meta from "./generated/meta";
+import type { RuntimeType } from "./utils/runtime";
 
 export const config = defineConfigObject<Meta.ScopedConfigKeyTypeMap>(
 	Meta.scopedConfigs.scope,
@@ -31,6 +32,7 @@ export interface Config {
 	customTasks: CustomTask[];
 	openCommand: string;
 	cacheDirectory: string;
+	runtime: RuntimeType;
 }
 
 export const CFG: Config = {
@@ -53,4 +55,5 @@ export const CFG: Config = {
 	customTasks: [],
 	openCommand: "code -g",
 	cacheDirectory: "",
+	runtime: "auto",
 };

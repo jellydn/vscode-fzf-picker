@@ -1,64 +1,65 @@
 {
-	"permissions": {
-		"allow": [
-			"Bash(backlog task create:*)",
-			"Bash(git checkout:*)",
-			"Bash(backlog task edit:*)",
-			"Bash(grep:*)",
-			"Bash(npm run build:*)",
-			"Bash(npm run lint)",
-			"Bash(npm run typecheck:*)",
-			"Bash(cat:*)",
-			"Bash(ls:*)",
-			"Bash(echo:*)",
-			"Bash(git add:*)",
-			"Bash(git commit:*)",
-			"Bash(git push:*)",
-			"Bash(git pull:*)",
-			"Bash(backlog task list:*)",
-			"WebFetch(domain:github.com)",
-			"Bash(backlog task:*)",
-			"WebFetch(domain:docs.anthropic.com)",
-			"Bash(gh pr list:*)",
-			"Bash(gh pr edit:*)",
-			"Bash(bash -c \"git diff --color=always -- test_untracked.txt 2>/dev/null || cat test_untracked.txt\")",
-			"Bash(sh -c 'git diff --color=always -- \"\"test_untracked.txt\"\" 2>/dev/null || cat \"\"test_untracked.txt\"\"')",
-			"Bash(sh:*)",
-			"Bash(rm:*)"
-		],
-		"deny": []
-	},
-	"hooks": {
-		"PostToolUse": [
-			{
-				"matcher": "Bash(git commit:*)",
-				"hooks": [
-					{
-						"type": "command",
-						"command": "echo '✅ Commit completed with pre-commit hooks'"
-					}
-				]
-			},
-			{
-				"matcher": "Edit(*)",
-				"hooks": [
-					{
-						"type": "command",
-						"command": "echo '📝 File modified - pre-commit will format on commit'"
-					}
-				]
-			}
-		],
-		"PreToolUse": [
-			{
-				"matcher": "Bash(git commit:*)",
-				"hooks": [
-					{
-						"type": "command",
-						"command": "echo '🔍 Running pre-commit hooks (biome, oxlint)...'"
-					}
-				]
-			}
-		]
-	}
+  "permissions": {
+    "allow": [
+      "Bash(backlog task create:*)",
+      "Bash(git checkout:*)",
+      "Bash(backlog task edit:*)",
+      "Bash(grep:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run typecheck:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(echo:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(backlog task list:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(backlog task:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(bash -c \"git diff --color=always -- test_untracked.txt 2>/dev/null || cat test_untracked.txt\")",
+      "Bash(sh -c 'git diff --color=always -- \"\"test_untracked.txt\"\" 2>/dev/null || cat \"\"test_untracked.txt\"\"')",
+      "Bash(sh:*)",
+      "Bash(rm:*)",
+      "mcp__sequential-thinking__sequentialthinking"
+    ],
+    "deny": []
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash(git commit:*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '✅ Commit completed with pre-commit hooks'"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit(*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '📝 File modified - pre-commit will format on commit'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash(git commit:*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '🔍 Running pre-commit hooks (biome, oxlint)...'"
+          }
+        ]
+      }
+    ]
+  }
 }

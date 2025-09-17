@@ -234,6 +234,21 @@
 					"type": "boolean",
 					"default": false,
 					"description": "Enable debug mode for the extension. This will log additional information to the console."
+				},
+				"fzf-picker.general.runtime": {
+					"type": "string",
+					"enum": [
+						"auto",
+						"bun",
+						"node"
+					],
+					"enumDescriptions": [
+						"Automatically detect and use the fastest available runtime (Bun if available, otherwise Node.js)",
+						"Force use of Bun runtime (falls back to Node.js if Bun is not available)",
+						"Force use of Node.js runtime"
+					],
+					"default": "auto",
+					"description": "Select the JavaScript runtime to use for command execution. Bun provides faster startup times which improves performance in large projects."
 				}
 			}
 		}
