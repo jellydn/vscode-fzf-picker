@@ -8,8 +8,8 @@ import * as vscode from "vscode";
 import { CFG, config } from "./config";
 import * as Meta from "./generated/meta";
 import { logger } from "./logger";
+import { clearRuntimeCache, getRuntime } from "./utils/runtime";
 import { getResolvedCacheDirectory } from "./utils/search-cache";
-import { getRuntime, clearRuntimeCache } from "./utils/runtime";
 
 const TERMINAL_NAME = Meta.displayName;
 

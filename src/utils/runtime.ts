@@ -19,7 +19,7 @@ function isBunAvailable(): boolean {
 		const version = execSync("bun --version", {
 			encoding: "utf-8",
 			timeout: 1000,
-			stdio: "pipe"
+			stdio: "pipe",
 		}).trim();
 		logger.info("Bun detected", { version });
 		return true;
