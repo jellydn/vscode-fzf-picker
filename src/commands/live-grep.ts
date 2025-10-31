@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { join, dirname } from "node:path";
 import { DEBUG } from "../utils/debug";
 import { getLastQuery, saveLastQuery } from "../utils/search-cache";
 
@@ -18,7 +19,7 @@ export async function liveGrep(
 	saveQuery: boolean = true,
 ): Promise<string[]> {
 	return new Promise((resolve, reject) => {
-		const previewCommand =
+		let previewCommand =
 			process.env.FIND_WITHIN_FILES_PREVIEW_COMMAND ||
 			"bat --decorations=always --color=always {1} --highlight-line {2} --style=header,grid";
 		const previewWindow =
@@ -42,6 +43,7 @@ export async function liveGrep(
 			"--no-heading",
 			"--color=always",
 			"--smart-case",
+			"--pcre2", // Enable PCRE2 for regex lookaheads
 			"--glob",
 			"!**/.git/",
 			"--no-ignore-parent",
@@ -59,12 +61,28 @@ export async function liveGrep(
 		const rgArgsWithoutIgnore = [...baseRgArgs, "--no-ignore"];
 
 		const createSearchCommand = (args: string[], searchPaths: string[]) => {
-			const rgArgsString = args.join(" ");
-			const quotedPaths = searchPaths
-				.map((p) => `'${p.replace(/'/g, "'\\''")}'`)
-				.join(" ");
-			const cmd = `sh -c 'q="$1"; shift; [ -n "$q" ] || exit 0; printf "%s\n" "$q" | rg ${rgArgsString} -f - -- "$@" || true' _ '{q}'${quotedPaths ? ` ${quotedPaths}` : ""}`;
-			return cmd;
+			const helperPath = join(__dirname, "commands", "rg-search-helper.js");
+			const paramsJson = JSON.stringify({ paths: searchPaths, args });
+			const paramsB64 = Buffer.from(paramsJson).toString("base64");
+			const maxWords = 4;
+			const placeholderArgs = Array.from({ length: maxWords }, (_, i) => `"{q:${i + 1}}"`).join(" ");
+
+			// Minimal shell script: collect words, base64 encode each, pass to Node helper
+			const shellScript = [
+				'query="$1";',
+				'shift;',
+				'[ -n "$query" ] || exit 0;',
+				'words_b64="";',
+				'for w in "$@"; do',
+				'  [ -z "$w" ] && continue;',
+				'  w_b64=$(printf "%s" "$w" | base64 | tr -d "\\n");',
+				'  words_b64="$words_b64 $w_b64";',
+				'done;',
+				'[ -z "$words_b64" ] && exit 0;',
+				`node "${helperPath}" "${paramsB64}" "$words_b64" 2>/dev/null || true`,
+			].join(" ");
+
+			return `sh -c '${shellScript.replace(/'/g, "'\\''")}' _ '{q}' ${placeholderArgs}`;
 		};
 
 		const searchCommandWithIgnore = createSearchCommand(rgArgsWithIgnore, paths);
@@ -113,14 +131,35 @@ export async function liveGrep(
 
 		// If there's an initial query, perform the search immediately
 		if (initialQuery) {
-			const escapedInitialQuery = initialQuery.replace(/'/g, "'\\''");
-			const actualSearchCommand = searchCommand.replace("{q}", escapedInitialQuery);
-			const initialSearch = spawn("sh", [
-				"-c",
-				actualSearchCommand,
-			]);
-			initialSearch.stderr.pipe(process.stderr);
-			initialSearch.stdout.pipe(fzf.stdin);
+			// Split initial query by whitespace to get individual words
+			const queryWords = initialQuery.trim().split(/\s+/).filter((w) => w.length > 0);
+			
+			if (queryWords.length > 0) {
+				// Build the regex pattern with lookaheads for AND search
+				const escapedTerms = queryWords.map((term) => {
+					// Escape regex special characters
+					return term.replace(/[\.\^$*+?()\[\]{}|]/g, "\\$&");
+				});
+				const pattern = escapedTerms.map((term) => `(?=.*${term})`).join("");
+				
+				// Use the appropriate args based on gitignore setting
+				const rgArgs = useGitignore ? rgArgsWithIgnore : rgArgsWithoutIgnore;
+				
+				// Execute rg directly with the pattern
+				const initialSearch = spawn("rg", [
+					...rgArgs,
+					"-e",
+					pattern,
+					"--",
+					...paths,
+				], {
+					cwd: singleDirRoot || undefined,
+				});
+				initialSearch.stderr.pipe(process.stderr);
+				initialSearch.stdout.pipe(fzf.stdin);
+			} else {
+				fzf.stdin.end();
+			}
 		} else {
 			// Don't run initial rg command when there's no query
 			fzf.stdin.end();

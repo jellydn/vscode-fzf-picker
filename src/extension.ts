@@ -1,9 +1,12 @@
-import { execSync } from "node:child_process";
+import { exec, execSync } from "node:child_process";
 import { unlinkSync, watch, writeFileSync } from "node:fs";
 import { platform } from "node:os";
 import { join } from "node:path";
+import { promisify } from "node:util";
 import { defineExtension, extensionContext, useCommand } from "reactive-vscode";
 import * as vscode from "vscode";
+
+const execAsync = promisify(exec);
 
 import { CFG, config } from "./config";
 import * as Meta from "./generated/meta";
@@ -186,6 +189,43 @@ function updateConfigWithUserSettings() {
 	CFG.customTasks = config.customTasks;
 	CFG.cacheDirectory = config["cache.directory"];
 	CFG.runtime = config["general.runtime"];
+}
+
+/**
+ * Check if a command is available in PATH
+ * @param command - The command to check
+ * @returns true if the command is available, false otherwise
+ */
+async function checkCommandAvailable(command: string): Promise<boolean> {
+	try {
+		// Use 'command -v' which works in sh/bash and is POSIX compliant
+		await execAsync(`command -v ${command}`, { encoding: "utf8" });
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Check for required dependencies and show a warning if missing
+ */
+async function checkDependencies() {
+	const missingCommands: string[] = [];
+	
+	if (!(await checkCommandAvailable("node"))) {
+		missingCommands.push("node");
+	}
+	
+	if (!(await checkCommandAvailable("fzf"))) {
+		missingCommands.push("fzf");
+	}
+	
+	if (missingCommands.length > 0) {
+		const commandsList = missingCommands.join(" and ");
+		const message = `fzf-picker: Required command${missingCommands.length > 1 ? "s" : ""} not found in PATH: ${commandsList}. Please install ${commandsList} to use this extension.`;
+		vscode.window.showWarningMessage(message);
+		logger.error(message);
+	}
 }
 
 /**
@@ -511,9 +551,12 @@ async function executeCommand({
 	});
 }
 
-const { activate, deactivate } = defineExtension(() => {
+const { activate, deactivate } = defineExtension(async () => {
 	CFG.extensionPath = extensionContext.value?.extensionPath ?? "";
 	initialize();
+	
+	// Check for required dependencies
+	await checkDependencies();
 
 	useCommand(Meta.commands.findFiles, async () => {
 		await executeTerminalCommand("findFiles");
