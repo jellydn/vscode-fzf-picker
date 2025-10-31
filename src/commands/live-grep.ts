@@ -19,7 +19,7 @@ export async function liveGrep(
 	saveQuery: boolean = true,
 ): Promise<string[]> {
 	return new Promise((resolve, reject) => {
-		let previewCommand =
+		const previewCommand =
 			process.env.FIND_WITHIN_FILES_PREVIEW_COMMAND ||
 			"bat --decorations=always --color=always {1} --highlight-line {2} --style=header,grid";
 		const previewWindow =
@@ -138,7 +138,7 @@ export async function liveGrep(
 				// Build the regex pattern with lookaheads for AND search
 				const escapedTerms = queryWords.map((term) => {
 					// Escape regex special characters
-					return term.replace(/[\.\^$*+?()\[\]{}|]/g, "\\$&");
+						return term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 				});
 				const pattern = escapedTerms.map((term) => `(?=.*${term})`).join("");
 				

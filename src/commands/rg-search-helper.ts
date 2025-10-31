@@ -76,7 +76,7 @@ interface SearchParams {
  * Example: "file.txt" -> "file\.txt" (so "." matches a literal dot, not any character)
  */
 function escapeRegexSpecialChars(str: string): string {
-	return str.replace(/[\.\^$*+?()\[\]{}|]/g, "\\$&");
+	return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /**
@@ -146,7 +146,7 @@ function main() {
 			stdio: i === 0 ? ["ignore", "pipe", "pipe"] : ["pipe", "pipe", "pipe"],
 		});
 		
-		if (currentProcess && currentProcess.stdout && currentProcess.stderr && rg.stdin) {
+		if (currentProcess?.stdout && currentProcess.stderr && rg.stdin) {
 			currentProcess.stdout.pipe(rg.stdin);
 			currentProcess.stderr.pipe(process.stderr);
 		}
@@ -156,7 +156,7 @@ function main() {
 	}
 	
 	// Output from the last process goes to stdout
-		if (currentProcess && currentProcess.stdout && currentProcess.stderr) {
+		if (currentProcess?.stdout && currentProcess.stderr) {
 			currentProcess.stdout.pipe(process.stdout);
 			currentProcess.stderr.pipe(process.stderr);
 		}
