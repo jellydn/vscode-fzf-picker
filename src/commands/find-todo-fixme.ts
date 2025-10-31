@@ -47,6 +47,7 @@ export async function findTodoFixme(
 			"--smart-case",
 			"--glob",
 			"!**/.git/",
+			"--no-ignore-parent",
 			searchPattern,
 		];
 

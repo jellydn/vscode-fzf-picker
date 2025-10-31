@@ -32,7 +32,7 @@ export async function liveGrep(
 		if (paths.length === 1) {
 			singleDirRoot = paths[0];
 			process.chdir(singleDirRoot);
-			paths = [];
+			paths = ["."];
 		}
 
 		// Base rg args that are always used
@@ -44,6 +44,7 @@ export async function liveGrep(
 			"--smart-case",
 			"--glob",
 			"!**/.git/",
+			"--no-ignore-parent",
 		];
 
 		if (fileTypes) {
@@ -53,21 +54,21 @@ export async function liveGrep(
 			}
 		}
 
-		baseRgArgs.push(...paths);
-
 		// Create search commands for both gitignore states
 		const rgArgsWithIgnore = [...baseRgArgs];
 		const rgArgsWithoutIgnore = [...baseRgArgs, "--no-ignore"];
 
-		const createSearchCommand = (args: string[]) => {
-			const rgArgsString = args
-				.map((arg) => `'${arg.replace(/'/g, "'\\''")}'`)
+		const createSearchCommand = (args: string[], searchPaths: string[]) => {
+			const rgArgsString = args.join(" ");
+			const quotedPaths = searchPaths
+				.map((p) => `'${p.replace(/'/g, "'\\''")}'`)
 				.join(" ");
-			return `rg ${rgArgsString} {q} || true`;
+			const cmd = `sh -c 'q="$1"; shift; [ -n "$q" ] || exit 0; printf "%s\n" "$q" | rg ${rgArgsString} -f - -- "$@" || true' _ '{q}'${quotedPaths ? ` ${quotedPaths}` : ""}`;
+			return cmd;
 		};
 
-		const searchCommandWithIgnore = createSearchCommand(rgArgsWithIgnore);
-		const searchCommandWithoutIgnore = createSearchCommand(rgArgsWithoutIgnore);
+		const searchCommandWithIgnore = createSearchCommand(rgArgsWithIgnore, paths);
+		const searchCommandWithoutIgnore = createSearchCommand(rgArgsWithoutIgnore, paths);
 
 		// Use current gitignore setting for initial search
 		const searchCommand = useGitignore
@@ -83,12 +84,12 @@ export async function liveGrep(
 			previewCommand,
 			"--preview-window",
 			previewWindow,
-			"--phony",
+			"--disabled",
 			"--query",
 			initialQuery || "",
 			"--print-query",
 			"--bind",
-			`change:reload:[ ! -z {q} ] && sleep 0.1 && ${searchCommand}`, // Only run if query is not empty
+			`change:reload:${searchCommand}`,
 			"--layout=reverse",
 			"--bind",
 			"ctrl-g:toggle-preview",
@@ -99,16 +100,11 @@ export async function liveGrep(
 
 		fzfArgs.push(
 			"--bind",
-			`ctrl-t:execute-silent([ -f ${toggleFile} ] && rm ${toggleFile} || touch ${toggleFile})+reload([ -f ${toggleFile} ] && [ ! -z {q} ] && ${searchCommandWithoutIgnore} || [ ! -z {q} ] && ${searchCommandWithIgnore} || true)`,
+			`ctrl-t:execute-silent([ -f ${toggleFile} ] && rm ${toggleFile} || touch ${toggleFile})+reload([ -f ${toggleFile} ] && ${searchCommandWithoutIgnore} || ${searchCommandWithIgnore})`,
 		);
 
 		if (initialQuery) {
 			fzfArgs.push("--bind", `start:reload:${searchCommand}`);
-		}
-
-		if (DEBUG) {
-			console.log("FZF command:", "fzf", fzfArgs.join(" "));
-			console.log("Search command:", searchCommand);
 		}
 
 		const fzf = spawn("fzf", fzfArgs, {
@@ -117,35 +113,25 @@ export async function liveGrep(
 
 		// If there's an initial query, perform the search immediately
 		if (initialQuery) {
-			if (DEBUG) {
-				console.log("Executing initial search with query:", initialQuery);
-			}
+			const escapedInitialQuery = initialQuery.replace(/'/g, "'\\''");
+			const actualSearchCommand = searchCommand.replace("{q}", escapedInitialQuery);
 			const initialSearch = spawn("sh", [
 				"-c",
-				searchCommand.replace("{q}", initialQuery),
+				actualSearchCommand,
 			]);
-			initialSearch.stdout.pipe(fzf.stdin);
 			initialSearch.stderr.pipe(process.stderr);
-
-			if (DEBUG) {
-				initialSearch.stderr.on("data", (data) => {
-					console.error("Initial search stderr:", data.toString());
-				});
-			}
+			initialSearch.stdout.pipe(fzf.stdin);
 		} else {
 			// Don't run initial rg command when there's no query
-			if (DEBUG) console.log("No initial query, waiting for user input");
 			fzf.stdin.end();
 		}
 
 		let output = "";
 		fzf.stdout.on("data", (data) => {
 			output += data.toString();
-			if (DEBUG) console.log("FZF stdout:", data.toString());
 		});
 
 		fzf.on("close", async (code) => {
-			if (DEBUG) console.log("FZF process closed with code:", code);
 			if (code === 0) {
 				const lines = output.trim().split("\n");
 
@@ -154,9 +140,21 @@ export async function liveGrep(
 				let selectedFiles = lines.slice(1).filter((line) => line.trim() !== ""); // Filter out empty lines
 
 				if (singleDirRoot) {
-					selectedFiles = selectedFiles.map(
-						(file) => `${singleDirRoot}/${file}`,
-					);
+					selectedFiles = selectedFiles.map((line) => {
+						// Split on ':' - format is file:line:column:match
+						const parts = line.split(":");
+						if (parts.length < 3) return line; // Malformed, return as-is
+
+						let filePath = parts[0];
+						// Strip './' prefix if present
+						if (filePath.startsWith("./")) {
+							filePath = filePath.slice(2);
+						}
+						// Prepend singleDirRoot to file path only
+						const fullPath = `${singleDirRoot}/${filePath}`;
+						// Reconstruct the line with new file path
+						return `${fullPath}:${parts.slice(1).join(":")}`;
+					});
 				}
 
 				// Save the actual query entered by user for future resume
@@ -177,13 +175,11 @@ export async function liveGrep(
 			} else {
 				// Even when the user cancels, we need to resolve with an empty array
 				// to ensure the terminal is properly hidden
-				if (DEBUG) console.log("FZF process was canceled by user");
 				resolve([]);
 			}
 		});
 
 		fzf.on("error", (error) => {
-			if (DEBUG) console.error("FZF error:", error);
 			reject(new Error(`Failed to start fzf: ${error.message}`));
 		});
 	});

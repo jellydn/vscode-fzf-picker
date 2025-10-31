@@ -167,7 +167,14 @@ async function selectTypeFilter() {
 function updateConfigWithUserSettings() {
 	CFG.useEditorSelectionAsQuery = config["advanced.useEditorSelectionAsQuery"];
 	CFG.batTheme = config["general.batTheme"];
-	CFG.openCommand = config["general.openCommand"];
+	const configOpenCommand = config["general.openCommand"];
+	// If config is the default "code -g", auto-detect editor. Otherwise use user's explicit setting.
+	const appName = vscode.env.appName;
+	const isCursor = appName.includes("Cursor");
+	CFG.openCommand = (configOpenCommand === "code -g")
+		? (isCursor ? "cursor -g" : "code -g")
+		: configOpenCommand;
+	logger.info(`Editor detection: appName="${appName}", detected="${isCursor ? "Cursor" : "VS Code"}", using command="${CFG.openCommand}"`);
 	CFG.findFilesPreviewEnabled = config["findFiles.showPreview"];
 	CFG.findFilesPreviewCommand = config["findFiles.previewCommand"];
 	CFG.findFilesPreviewWindowConfig = config["findFiles.previewWindowConfig"];

@@ -32,14 +32,14 @@ export async function findFiles(
 		let singleDirRoot = "";
 		if (paths.length === 1) {
 			singleDirRoot = paths[0];
-			paths = [];
+			paths = ["."];
 			process.chdir(singleDirRoot);
 		}
 
 		const query = initialQuery || "";
 
 		// Base rg args that are always used
-		const baseRgArgs = ["--files", "--hidden", "--glob", "!**/.git/"];
+		const baseRgArgs = ["--files", "--hidden", "--glob", "!**/.git/", "--no-ignore-parent"];
 		if (fileTypes) {
 			// Split file type `:` and add to baseRgArgs
 			const fileTypesArray = fileTypes.split(":");
