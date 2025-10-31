@@ -156,6 +156,10 @@ export async function liveGrep(
 					cwd: singleDirRoot || undefined,
 				});
 				initialSearch.stderr.pipe(process.stderr);
+				initialSearch.on("error", (error) => {
+					if (DEBUG) console.error("Initial search failed:", error);
+					fzf.stdin.end();
+				});
 				initialSearch.stdout.pipe(fzf.stdin);
 			} else {
 				fzf.stdin.end();
@@ -182,7 +186,7 @@ export async function liveGrep(
 					selectedFiles = selectedFiles.map((line) => {
 						// Split on ':' - format is file:line:column:match
 						const parts = line.split(":");
-						if (parts.length < 3) return line; // Malformed, return as-is
+						if (parts.length < 4) return line; // Malformed, return as-is (expected: file:line:column:match)
 
 						let filePath = parts[0];
 						// Strip './' prefix if present

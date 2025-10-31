@@ -197,9 +197,17 @@ function updateConfigWithUserSettings() {
  * @returns true if the command is available, false otherwise
  */
 async function checkCommandAvailable(command: string): Promise<boolean> {
+	// Validate command name (alphanumeric, dash, underscore only)
+	if (!/^[a-zA-Z0-9_-]+$/.test(command)) {
+		logger.warn(`Invalid command name: ${command}`);
+		return false;
+	}
+
 	try {
-		// Use 'command -v' which works in sh/bash and is POSIX compliant
-		await execAsync(`command -v ${command}`, { encoding: "utf8" });
+		// Cross-platform command checking
+		const isWindows = platform() === "win32";
+		const checkCmd = isWindows ? `where ${command}` : `command -v ${command}`;
+		await execAsync(checkCmd, { encoding: "utf8" });
 		return true;
 	} catch {
 		return false;
