@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import path, { join, dirname } from "node:path";
+import { join } from "node:path";
 import { DEBUG } from "../utils/debug";
 import { getLastQuery, saveLastQuery } from "../utils/search-cache";
 
@@ -190,7 +190,7 @@ export async function liveGrep(
 							filePath = filePath.slice(2);
 						}
 						// Prepend singleDirRoot to file path only
-                        const fullPath = path.join(singleDirRoot, filePath);
+                        const fullPath = join(singleDirRoot, filePath);
 						// Reconstruct the line with new file path
 						return `${fullPath}:${parts.slice(1).join(":")}`;
 					});

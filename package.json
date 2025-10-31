@@ -32,7 +32,7 @@
 	"activationEvents": [],
 	"main": "./out/extension.js",
 	"files": [
-		"out/*",
+		"out/**/*",
 		"res/*",
 		"LICENSE.txt"
 	],
