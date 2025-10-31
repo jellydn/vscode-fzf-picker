@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { join, dirname } from "node:path";
+import path, { join, dirname } from "node:path";
 import { DEBUG } from "../utils/debug";
 import { getLastQuery, saveLastQuery } from "../utils/search-cache";
 
