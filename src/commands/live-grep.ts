@@ -151,7 +151,7 @@ export async function liveGrep(
 							filePath = filePath.slice(2);
 						}
 						// Prepend singleDirRoot to file path only
-						const fullPath = `${singleDirRoot}/${filePath}`;
+                        const fullPath = path.join(singleDirRoot, filePath);
 						// Reconstruct the line with new file path
 						return `${fullPath}:${parts.slice(1).join(":")}`;
 					});
