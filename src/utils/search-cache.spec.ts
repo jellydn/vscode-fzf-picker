@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import * as os from "node:os";
-import { join } from "node:path";
+import { join, normalize } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearCache, getLastQuery, saveLastQuery } from "./search-cache";
 
@@ -230,11 +230,14 @@ describe("search-cache", () => {
 
 			await saveLastQuery("test query", testProjectPath);
 
-			expect(mockFs.mkdir).toHaveBeenCalledWith("/custom/env/cache", {
-				recursive: true,
-			});
+			expect(mockFs.mkdir).toHaveBeenCalledWith(
+				normalize("/custom/env/cache"),
+				{
+					recursive: true,
+				},
+			);
 			expect(mockFs.writeFile).toHaveBeenCalledWith(
-				`${expectedCustomCacheFile}.tmp`,
+				normalize(`${expectedCustomCacheFile}.tmp`),
 				expect.any(String),
 				"utf-8",
 			);
@@ -251,11 +254,14 @@ describe("search-cache", () => {
 
 			await saveLastQuery("test query", testProjectPath);
 
-			expect(mockFs.mkdir).toHaveBeenCalledWith("/custom/config/cache", {
-				recursive: true,
-			});
+			expect(mockFs.mkdir).toHaveBeenCalledWith(
+				normalize("/custom/config/cache"),
+				{
+					recursive: true,
+				},
+			);
 			expect(mockFs.writeFile).toHaveBeenCalledWith(
-				`${expectedCustomCacheFile}.tmp`,
+				normalize(`${expectedCustomCacheFile}.tmp`),
 				expect.any(String),
 				"utf-8",
 			);
@@ -272,11 +278,14 @@ describe("search-cache", () => {
 
 			await saveLastQuery("test query", testProjectPath);
 
-			expect(mockFs.mkdir).toHaveBeenCalledWith("/priority/env/cache", {
-				recursive: true,
-			});
+			expect(mockFs.mkdir).toHaveBeenCalledWith(
+				normalize("/priority/env/cache"),
+				{
+					recursive: true,
+				},
+			);
 			expect(mockFs.writeFile).toHaveBeenCalledWith(
-				`${expectedEnvCacheFile}.tmp`,
+				normalize(`${expectedEnvCacheFile}.tmp`),
 				expect.any(String),
 				"utf-8",
 			);

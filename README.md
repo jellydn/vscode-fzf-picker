@@ -108,7 +108,7 @@ The extension caches search queries to improve user experience by allowing you t
 ### Default Cache Locations (OS-specific)
 
 - **Windows**: `%APPDATA%\fzf-picker` (e.g., `C:\Users\YourName\AppData\Roaming\fzf-picker`)
-- **macOS**: `~/Library/Caches/fzf-picker` (e.g., `/Users/YourName/Library/Caches/fzf-picker`)  
+- **macOS**: `~/Library/Caches/fzf-picker` (e.g., `/Users/YourName/Library/Caches/fzf-picker`)
 - **Linux**: `~/.cache/fzf-picker` (or `$XDG_CACHE_HOME/fzf-picker` if XDG is configured)
 
 ### Configuration Options
