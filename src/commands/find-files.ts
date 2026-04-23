@@ -39,7 +39,13 @@ export async function findFiles(
 		const query = initialQuery || "";
 
 		// Base rg args that are always used
-		const baseRgArgs = ["--files", "--hidden", "--glob", "!**/.git/", "--no-ignore-parent"];
+		const baseRgArgs = [
+			"--files",
+			"--hidden",
+			"--glob",
+			"!**/.git/",
+			"--no-ignore-parent",
+		];
 		if (fileTypes) {
 			// Split file type `:` and add to baseRgArgs
 			const fileTypesArray = fileTypes.split(":");

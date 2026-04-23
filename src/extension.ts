@@ -174,10 +174,15 @@ function updateConfigWithUserSettings() {
 	// If config is the default "code -g", auto-detect editor. Otherwise use user's explicit setting.
 	const appName = vscode.env.appName;
 	const isCursor = appName.includes("Cursor");
-	CFG.openCommand = (configOpenCommand === "code -g")
-		? (isCursor ? "cursor -g" : "code -g")
-		: configOpenCommand;
-	logger.info(`Editor detection: appName="${appName}", detected="${isCursor ? "Cursor" : "VS Code"}", using command="${CFG.openCommand}"`);
+	CFG.openCommand =
+		configOpenCommand === "code -g"
+			? isCursor
+				? "cursor -g"
+				: "code -g"
+			: configOpenCommand;
+	logger.info(
+		`Editor detection: appName="${appName}", detected="${isCursor ? "Cursor" : "VS Code"}", using command="${CFG.openCommand}"`,
+	);
 	CFG.findFilesPreviewEnabled = config["findFiles.showPreview"];
 	CFG.findFilesPreviewCommand = config["findFiles.previewCommand"];
 	CFG.findFilesPreviewWindowConfig = config["findFiles.previewWindowConfig"];
@@ -197,8 +202,8 @@ function updateConfigWithUserSettings() {
  * @returns true if the command is available, false otherwise
  */
 async function checkCommandAvailable(command: string): Promise<boolean> {
-	// Validate command name (alphanumeric, dash, underscore only)
-	if (!/^[a-zA-Z0-9_-]+$/.test(command)) {
+	// Validate command name (alphanumeric, dash, underscore, dot only)
+	if (!/^[a-zA-Z0-9_.-]+$/.test(command)) {
 		logger.warn(`Invalid command name: ${command}`);
 		return false;
 	}
@@ -219,15 +224,15 @@ async function checkCommandAvailable(command: string): Promise<boolean> {
  */
 async function checkDependencies() {
 	const missingCommands: string[] = [];
-	
+
 	if (!(await checkCommandAvailable("node"))) {
 		missingCommands.push("node");
 	}
-	
+
 	if (!(await checkCommandAvailable("fzf"))) {
 		missingCommands.push("fzf");
 	}
-	
+
 	if (missingCommands.length > 0) {
 		const commandsList = missingCommands.join(" and ");
 		const message = `fzf-picker: Required command${missingCommands.length > 1 ? "s" : ""} not found in PATH: ${commandsList}. Please install ${commandsList} to use this extension.`;
@@ -562,7 +567,7 @@ async function executeCommand({
 const { activate, deactivate } = defineExtension(async () => {
 	CFG.extensionPath = extensionContext.value?.extensionPath ?? "";
 	initialize();
-	
+
 	// Check for required dependencies
 	await checkDependencies();
 

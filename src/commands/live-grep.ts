@@ -65,19 +65,22 @@ export async function liveGrep(
 			const paramsJson = JSON.stringify({ paths: searchPaths, args });
 			const paramsB64 = Buffer.from(paramsJson).toString("base64");
 			const maxWords = 4;
-			const placeholderArgs = Array.from({ length: maxWords }, (_, i) => `"{q:${i + 1}}"`).join(" ");
+			const placeholderArgs = Array.from(
+				{ length: maxWords },
+				(_, i) => `"{q:${i + 1}}"`,
+			).join(" ");
 
 			// Minimal shell script: collect words, base64 encode each, pass to Node helper
 			const shellScript = [
 				'query="$1";',
-				'shift;',
+				"shift;",
 				'[ -n "$query" ] || exit 0;',
 				'words_b64="";',
 				'for w in "$@"; do',
 				'  [ -z "$w" ] && continue;',
 				'  w_b64=$(printf "%s" "$w" | base64 | tr -d "\\n");',
 				'  words_b64="$words_b64 $w_b64";',
-				'done;',
+				"done;",
 				'[ -z "$words_b64" ] && exit 0;',
 				`node "${helperPath}" "${paramsB64}" "$words_b64" 2>/dev/null || true`,
 			].join(" ");
@@ -85,8 +88,14 @@ export async function liveGrep(
 			return `sh -c '${shellScript.replace(/'/g, "'\\''")}' _ '{q}' ${placeholderArgs}`;
 		};
 
-		const searchCommandWithIgnore = createSearchCommand(rgArgsWithIgnore, paths);
-		const searchCommandWithoutIgnore = createSearchCommand(rgArgsWithoutIgnore, paths);
+		const searchCommandWithIgnore = createSearchCommand(
+			rgArgsWithIgnore,
+			paths,
+		);
+		const searchCommandWithoutIgnore = createSearchCommand(
+			rgArgsWithoutIgnore,
+			paths,
+		);
 
 		// Use current gitignore setting for initial search
 		const searchCommand = useGitignore
@@ -132,29 +141,30 @@ export async function liveGrep(
 		// If there's an initial query, perform the search immediately
 		if (initialQuery) {
 			// Split initial query by whitespace to get individual words
-			const queryWords = initialQuery.trim().split(/\s+/).filter((w) => w.length > 0);
-			
+			const queryWords = initialQuery
+				.trim()
+				.split(/\s+/)
+				.filter((w) => w.length > 0);
+
 			if (queryWords.length > 0) {
 				// Build the regex pattern with lookaheads for AND search
 				const escapedTerms = queryWords.map((term) => {
 					// Escape regex special characters
-						return term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+					return term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 				});
 				const pattern = escapedTerms.map((term) => `(?=.*${term})`).join("");
-				
+
 				// Use the appropriate args based on gitignore setting
 				const rgArgs = useGitignore ? rgArgsWithIgnore : rgArgsWithoutIgnore;
-				
+
 				// Execute rg directly with the pattern
-				const initialSearch = spawn("rg", [
-					...rgArgs,
-					"-e",
-					pattern,
-					"--",
-					...paths,
-				], {
-					cwd: singleDirRoot || undefined,
-				});
+				const initialSearch = spawn(
+					"rg",
+					[...rgArgs, "-e", pattern, "--", ...paths],
+					{
+						cwd: singleDirRoot || undefined,
+					},
+				);
 				initialSearch.stderr.pipe(process.stderr);
 				initialSearch.on("error", (error) => {
 					if (DEBUG) console.error("Initial search failed:", error);
@@ -194,7 +204,7 @@ export async function liveGrep(
 							filePath = filePath.slice(2);
 						}
 						// Prepend singleDirRoot to file path only
-                        const fullPath = join(singleDirRoot, filePath);
+						const fullPath = join(singleDirRoot, filePath);
 						// Reconstruct the line with new file path
 						return `${fullPath}:${parts.slice(1).join(":")}`;
 					});
