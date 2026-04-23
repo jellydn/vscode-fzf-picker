@@ -1,9 +1,12 @@
-import { execSync } from "node:child_process";
+import { exec, execSync } from "node:child_process";
 import { unlinkSync, watch, writeFileSync } from "node:fs";
 import { platform } from "node:os";
 import { join } from "node:path";
+import { promisify } from "node:util";
 import { defineExtension, extensionContext, useCommand } from "reactive-vscode";
 import * as vscode from "vscode";
+
+const execAsync = promisify(exec);
 
 import { CFG, config } from "./config";
 import * as Meta from "./generated/meta";
@@ -167,7 +170,14 @@ async function selectTypeFilter() {
 function updateConfigWithUserSettings() {
 	CFG.useEditorSelectionAsQuery = config["advanced.useEditorSelectionAsQuery"];
 	CFG.batTheme = config["general.batTheme"];
-	CFG.openCommand = config["general.openCommand"];
+	const configOpenCommand = config["general.openCommand"];
+	// If config is the default "code -g", auto-detect editor. Otherwise use user's explicit setting.
+	const appName = vscode.env.appName;
+	const isCursor = appName.includes("Cursor");
+	CFG.openCommand = (configOpenCommand === "code -g")
+		? (isCursor ? "cursor -g" : "code -g")
+		: configOpenCommand;
+	logger.info(`Editor detection: appName="${appName}", detected="${isCursor ? "Cursor" : "VS Code"}", using command="${CFG.openCommand}"`);
 	CFG.findFilesPreviewEnabled = config["findFiles.showPreview"];
 	CFG.findFilesPreviewCommand = config["findFiles.previewCommand"];
 	CFG.findFilesPreviewWindowConfig = config["findFiles.previewWindowConfig"];
@@ -179,6 +189,51 @@ function updateConfigWithUserSettings() {
 	CFG.customTasks = config.customTasks;
 	CFG.cacheDirectory = config["cache.directory"];
 	CFG.runtime = config["general.runtime"];
+}
+
+/**
+ * Check if a command is available in PATH
+ * @param command - The command to check
+ * @returns true if the command is available, false otherwise
+ */
+async function checkCommandAvailable(command: string): Promise<boolean> {
+	// Validate command name (alphanumeric, dash, underscore only)
+	if (!/^[a-zA-Z0-9_-]+$/.test(command)) {
+		logger.warn(`Invalid command name: ${command}`);
+		return false;
+	}
+
+	try {
+		// Cross-platform command checking
+		const isWindows = platform() === "win32";
+		const checkCmd = isWindows ? `where ${command}` : `command -v ${command}`;
+		await execAsync(checkCmd, { encoding: "utf8" });
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Check for required dependencies and show a warning if missing
+ */
+async function checkDependencies() {
+	const missingCommands: string[] = [];
+	
+	if (!(await checkCommandAvailable("node"))) {
+		missingCommands.push("node");
+	}
+	
+	if (!(await checkCommandAvailable("fzf"))) {
+		missingCommands.push("fzf");
+	}
+	
+	if (missingCommands.length > 0) {
+		const commandsList = missingCommands.join(" and ");
+		const message = `fzf-picker: Required command${missingCommands.length > 1 ? "s" : ""} not found in PATH: ${commandsList}. Please install ${commandsList} to use this extension.`;
+		vscode.window.showWarningMessage(message);
+		logger.error(message);
+	}
 }
 
 /**
@@ -504,9 +559,12 @@ async function executeCommand({
 	});
 }
 
-const { activate, deactivate } = defineExtension(() => {
+const { activate, deactivate } = defineExtension(async () => {
 	CFG.extensionPath = extensionContext.value?.extensionPath ?? "";
 	initialize();
+	
+	// Check for required dependencies
+	await checkDependencies();
 
 	useCommand(Meta.commands.findFiles, async () => {
 		await executeTerminalCommand("findFiles");

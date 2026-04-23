@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { join } from "node:path";
 import { DEBUG } from "../utils/debug";
 import { getLastQuery, saveLastQuery } from "../utils/search-cache";
 
@@ -32,7 +33,7 @@ export async function liveGrep(
 		if (paths.length === 1) {
 			singleDirRoot = paths[0];
 			process.chdir(singleDirRoot);
-			paths = [];
+			paths = ["."];
 		}
 
 		// Base rg args that are always used
@@ -42,8 +43,10 @@ export async function liveGrep(
 			"--no-heading",
 			"--color=always",
 			"--smart-case",
+			"--pcre2", // Enable PCRE2 for regex lookaheads
 			"--glob",
 			"!**/.git/",
+			"--no-ignore-parent",
 		];
 
 		if (fileTypes) {
@@ -53,21 +56,37 @@ export async function liveGrep(
 			}
 		}
 
-		baseRgArgs.push(...paths);
-
 		// Create search commands for both gitignore states
 		const rgArgsWithIgnore = [...baseRgArgs];
 		const rgArgsWithoutIgnore = [...baseRgArgs, "--no-ignore"];
 
-		const createSearchCommand = (args: string[]) => {
-			const rgArgsString = args
-				.map((arg) => `'${arg.replace(/'/g, "'\\''")}'`)
-				.join(" ");
-			return `rg ${rgArgsString} {q} || true`;
+		const createSearchCommand = (args: string[], searchPaths: string[]) => {
+			const helperPath = join(__dirname, "commands", "rg-search-helper.js");
+			const paramsJson = JSON.stringify({ paths: searchPaths, args });
+			const paramsB64 = Buffer.from(paramsJson).toString("base64");
+			const maxWords = 4;
+			const placeholderArgs = Array.from({ length: maxWords }, (_, i) => `"{q:${i + 1}}"`).join(" ");
+
+			// Minimal shell script: collect words, base64 encode each, pass to Node helper
+			const shellScript = [
+				'query="$1";',
+				'shift;',
+				'[ -n "$query" ] || exit 0;',
+				'words_b64="";',
+				'for w in "$@"; do',
+				'  [ -z "$w" ] && continue;',
+				'  w_b64=$(printf "%s" "$w" | base64 | tr -d "\\n");',
+				'  words_b64="$words_b64 $w_b64";',
+				'done;',
+				'[ -z "$words_b64" ] && exit 0;',
+				`node "${helperPath}" "${paramsB64}" "$words_b64" 2>/dev/null || true`,
+			].join(" ");
+
+			return `sh -c '${shellScript.replace(/'/g, "'\\''")}' _ '{q}' ${placeholderArgs}`;
 		};
 
-		const searchCommandWithIgnore = createSearchCommand(rgArgsWithIgnore);
-		const searchCommandWithoutIgnore = createSearchCommand(rgArgsWithoutIgnore);
+		const searchCommandWithIgnore = createSearchCommand(rgArgsWithIgnore, paths);
+		const searchCommandWithoutIgnore = createSearchCommand(rgArgsWithoutIgnore, paths);
 
 		// Use current gitignore setting for initial search
 		const searchCommand = useGitignore
@@ -83,12 +102,12 @@ export async function liveGrep(
 			previewCommand,
 			"--preview-window",
 			previewWindow,
-			"--phony",
+			"--disabled",
 			"--query",
 			initialQuery || "",
 			"--print-query",
 			"--bind",
-			`change:reload:[ ! -z {q} ] && sleep 0.1 && ${searchCommand}`, // Only run if query is not empty
+			`change:reload:${searchCommand}`,
 			"--layout=reverse",
 			"--bind",
 			"ctrl-g:toggle-preview",
@@ -99,16 +118,11 @@ export async function liveGrep(
 
 		fzfArgs.push(
 			"--bind",
-			`ctrl-t:execute-silent([ -f ${toggleFile} ] && rm ${toggleFile} || touch ${toggleFile})+reload([ -f ${toggleFile} ] && [ ! -z {q} ] && ${searchCommandWithoutIgnore} || [ ! -z {q} ] && ${searchCommandWithIgnore} || true)`,
+			`ctrl-t:execute-silent([ -f ${toggleFile} ] && rm ${toggleFile} || touch ${toggleFile})+reload([ -f ${toggleFile} ] && ${searchCommandWithoutIgnore} || ${searchCommandWithIgnore})`,
 		);
 
 		if (initialQuery) {
 			fzfArgs.push("--bind", `start:reload:${searchCommand}`);
-		}
-
-		if (DEBUG) {
-			console.log("FZF command:", "fzf", fzfArgs.join(" "));
-			console.log("Search command:", searchCommand);
 		}
 
 		const fzf = spawn("fzf", fzfArgs, {
@@ -117,35 +131,50 @@ export async function liveGrep(
 
 		// If there's an initial query, perform the search immediately
 		if (initialQuery) {
-			if (DEBUG) {
-				console.log("Executing initial search with query:", initialQuery);
-			}
-			const initialSearch = spawn("sh", [
-				"-c",
-				searchCommand.replace("{q}", initialQuery),
-			]);
-			initialSearch.stdout.pipe(fzf.stdin);
-			initialSearch.stderr.pipe(process.stderr);
-
-			if (DEBUG) {
-				initialSearch.stderr.on("data", (data) => {
-					console.error("Initial search stderr:", data.toString());
+			// Split initial query by whitespace to get individual words
+			const queryWords = initialQuery.trim().split(/\s+/).filter((w) => w.length > 0);
+			
+			if (queryWords.length > 0) {
+				// Build the regex pattern with lookaheads for AND search
+				const escapedTerms = queryWords.map((term) => {
+					// Escape regex special characters
+						return term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 				});
+				const pattern = escapedTerms.map((term) => `(?=.*${term})`).join("");
+				
+				// Use the appropriate args based on gitignore setting
+				const rgArgs = useGitignore ? rgArgsWithIgnore : rgArgsWithoutIgnore;
+				
+				// Execute rg directly with the pattern
+				const initialSearch = spawn("rg", [
+					...rgArgs,
+					"-e",
+					pattern,
+					"--",
+					...paths,
+				], {
+					cwd: singleDirRoot || undefined,
+				});
+				initialSearch.stderr.pipe(process.stderr);
+				initialSearch.on("error", (error) => {
+					if (DEBUG) console.error("Initial search failed:", error);
+					fzf.stdin.end();
+				});
+				initialSearch.stdout.pipe(fzf.stdin);
+			} else {
+				fzf.stdin.end();
 			}
 		} else {
 			// Don't run initial rg command when there's no query
-			if (DEBUG) console.log("No initial query, waiting for user input");
 			fzf.stdin.end();
 		}
 
 		let output = "";
 		fzf.stdout.on("data", (data) => {
 			output += data.toString();
-			if (DEBUG) console.log("FZF stdout:", data.toString());
 		});
 
 		fzf.on("close", async (code) => {
-			if (DEBUG) console.log("FZF process closed with code:", code);
 			if (code === 0) {
 				const lines = output.trim().split("\n");
 
@@ -154,9 +183,21 @@ export async function liveGrep(
 				let selectedFiles = lines.slice(1).filter((line) => line.trim() !== ""); // Filter out empty lines
 
 				if (singleDirRoot) {
-					selectedFiles = selectedFiles.map(
-						(file) => `${singleDirRoot}/${file}`,
-					);
+					selectedFiles = selectedFiles.map((line) => {
+						// Split on ':' - format is file:line:column:match
+						const parts = line.split(":");
+						if (parts.length < 4) return line; // Malformed, return as-is (expected: file:line:column:match)
+
+						let filePath = parts[0];
+						// Strip './' prefix if present
+						if (filePath.startsWith("./")) {
+							filePath = filePath.slice(2);
+						}
+						// Prepend singleDirRoot to file path only
+                        const fullPath = join(singleDirRoot, filePath);
+						// Reconstruct the line with new file path
+						return `${fullPath}:${parts.slice(1).join(":")}`;
+					});
 				}
 
 				// Save the actual query entered by user for future resume
@@ -177,13 +218,11 @@ export async function liveGrep(
 			} else {
 				// Even when the user cancels, we need to resolve with an empty array
 				// to ensure the terminal is properly hidden
-				if (DEBUG) console.log("FZF process was canceled by user");
 				resolve([]);
 			}
 		});
 
 		fzf.on("error", (error) => {
-			if (DEBUG) console.error("FZF error:", error);
 			reject(new Error(`Failed to start fzf: ${error.message}`));
 		});
 	});
