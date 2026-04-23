@@ -209,6 +209,7 @@
 						"codium -g",
 						"codium-insiders -g",
 						"windsurf -g",
+						"surf -g",
 						"trae -g",
 						"kiro -g",
 						"agy -g"
@@ -220,6 +221,7 @@
 						"VSCodium",
 						"VSCodium Insiders",
 						"Windsurf",
+						"Windsurf (surf CLI)",
 						"Trae",
 						"Kiro",
 						"Antigravity"
