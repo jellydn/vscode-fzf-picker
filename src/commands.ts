@@ -187,7 +187,6 @@ if (require.main === module) {
 						originalPath: filePath,
 						parsedFile: file,
 						selection,
-						escapedFile,
 						finalCommand,
 					});
 
