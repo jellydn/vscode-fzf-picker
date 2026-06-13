@@ -1,11 +1,9 @@
-import { defineConfigObject } from "reactive-vscode";
+import { defineConfig } from "reactive-vscode";
+
 import * as Meta from "./generated/meta";
 import type { RuntimeType } from "./utils/runtime";
 
-export const config = defineConfigObject<Meta.ScopedConfigKeyTypeMap>(
-	Meta.scopedConfigs.scope,
-	Meta.scopedConfigs.defaults,
-);
+export const config = defineConfig(Meta.scopedConfigs.scope);
 
 export interface CustomTask {
 	name: string;

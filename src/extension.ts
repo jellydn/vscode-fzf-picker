@@ -8,6 +8,7 @@ import * as vscode from "vscode";
 import { CFG, config } from "./config";
 import * as Meta from "./generated/meta";
 import { logger } from "./logger";
+import type { RuntimeType } from "./utils/runtime";
 import { clearRuntimeCache, getRuntime } from "./utils/runtime";
 import { getResolvedCacheDirectory } from "./utils/search-cache";
 
@@ -165,20 +166,43 @@ async function selectTypeFilter() {
  * Map settings from the user-configurable settings to our internal data structure
  */
 function updateConfigWithUserSettings() {
-	CFG.useEditorSelectionAsQuery = config["advanced.useEditorSelectionAsQuery"];
-	CFG.batTheme = config["general.batTheme"];
-	CFG.openCommand = config["general.openCommand"];
-	CFG.findFilesPreviewEnabled = config["findFiles.showPreview"];
-	CFG.findFilesPreviewCommand = config["findFiles.previewCommand"];
-	CFG.findFilesPreviewWindowConfig = config["findFiles.previewWindowConfig"];
-	CFG.findWithinFilesPreviewEnabled = config["findWithinFiles.showPreview"];
-	CFG.findWithinFilesPreviewCommand = config["findWithinFiles.previewCommand"];
-	CFG.findWithinFilesPreviewWindowConfig =
-		config["findWithinFiles.previewWindowConfig"];
-	CFG.findTodoFixmeSearchPattern = config["findTodoFixme.searchPattern"];
-	CFG.customTasks = config.customTasks;
-	CFG.cacheDirectory = config["cache.directory"];
-	CFG.runtime = config["general.runtime"];
+	CFG.useEditorSelectionAsQuery = config.get(
+		"advanced.useEditorSelectionAsQuery",
+		true,
+	) as boolean;
+	CFG.batTheme = config.get("general.batTheme", "") as string;
+	CFG.openCommand = config.get("general.openCommand", "code -g") as string;
+	CFG.findFilesPreviewEnabled = config.get(
+		"findFiles.showPreview",
+		true,
+	) as boolean;
+	CFG.findFilesPreviewCommand = config.get(
+		"findFiles.previewCommand",
+		"",
+	) as string;
+	CFG.findFilesPreviewWindowConfig = config.get(
+		"findFiles.previewWindowConfig",
+		"",
+	) as string;
+	CFG.findWithinFilesPreviewEnabled = config.get(
+		"findWithinFiles.showPreview",
+		true,
+	) as boolean;
+	CFG.findWithinFilesPreviewCommand = config.get(
+		"findWithinFiles.previewCommand",
+		"",
+	) as string;
+	CFG.findWithinFilesPreviewWindowConfig = config.get(
+		"findWithinFiles.previewWindowConfig",
+		"",
+	) as string;
+	CFG.findTodoFixmeSearchPattern = config.get(
+		"findTodoFixme.searchPattern",
+		"(TODO|FIXME|HACK|FIX):\\s",
+	) as string;
+	CFG.customTasks = config.get("customTasks", []) as CustomTask[];
+	CFG.cacheDirectory = config.get("cache.directory", "") as string;
+	CFG.runtime = config.get("general.runtime", "auto") as RuntimeType;
 }
 
 /**
@@ -222,7 +246,7 @@ function getOrCreateTerminal() {
 			BAT_THEME: CFG.batTheme,
 			FIND_TODO_FIXME_SEARCH_PATTERN: CFG.findTodoFixmeSearchPattern,
 			OPEN_COMMAND_CLI: CFG.openCommand,
-			DEBUG_FZF_PICKER: config["general.debugMode"] ? "1" : "0",
+			DEBUG_FZF_PICKER: config.get("general.debugMode", false) ? "1" : "0",
 			// Cache configuration
 			FZF_PICKER_CACHE_DIR: getResolvedCacheDirectory(CFG.cacheDirectory),
 		},
