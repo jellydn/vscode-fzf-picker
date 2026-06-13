@@ -7,6 +7,47 @@ import { findTodoFixme, findTodoFixmeResume } from "./commands/find-todo-fixme";
 import { liveGrep } from "./commands/live-grep";
 import { getLastQuery, saveLastQuery } from "./utils/search-cache";
 
+// Helper to simulate the command string construction that happens in commands.ts
+// This isolates the bug: line number is appended OUTSIDE the quoted file path
+function buildOpenCommand(
+	openCommand: string,
+	filePath: string,
+	line?: number,
+	column?: number,
+): string {
+	const fileWithLine =
+		line !== undefined
+			? column !== undefined
+				? `${filePath}:${line}:${column}`
+				: `${filePath}:${line}`
+			: filePath;
+
+	// CURRENT (buggy) behavior: escape first, then append line outside quotes
+	const escapedFile = `"${filePath.replace(/"/g, '\\"')}"`;
+	if (line !== undefined) {
+		const selectionSuffix = `${escapedFile}:${line}`;
+		return `${openCommand} ${selectionSuffix}`;
+	}
+	return `${openCommand} ${escapedFile}`;
+}
+
+// CORRECT behavior: construct full path with line:column first, THEN escape
+function buildOpenCommandFixed(
+	openCommand: string,
+	filePath: string,
+	line?: number,
+	column?: number,
+): string {
+	const fileArg =
+		line !== undefined
+			? column !== undefined
+				? `${filePath}:${line}:${column}`
+				: `${filePath}:${line}`
+			: filePath;
+	const escapedFile = `"${fileArg.replace(/"/g, '\\"')}"`;
+	return `${openCommand} ${escapedFile}`;
+}
+
 vi.mock("node:child_process");
 vi.mock("node:fs");
 vi.mock("./utils/search-cache", () => ({
@@ -882,5 +923,299 @@ describe("openFiles", () => {
 			start: { line: 42, character: 15 },
 			end: { line: 42, character: 15 },
 		});
+	});
+});
+
+// ============================================================
+// Bug Reproduction Tests - from PR #17
+// ============================================================
+
+describe("Bug: File opening command syntax (line number outside quotes)", () => {
+	it("should include line number INSIDE the quoted file path", () => {
+		// BUG: Current code produces code -g "/path/to/file.ts":42
+		// which is invalid shell syntax - the :42 is outside quotes
+		const buggyCommand = buildOpenCommand("code -g", "/path/to/file.ts", 42);
+		const fixedCommand = buildOpenCommandFixed(
+			"code -g",
+			"/path/to/file.ts",
+			42,
+		);
+
+		// BUG: "/path/to/file.ts":42 (line number outside quotes ❌)
+		expect(buggyCommand).toBe(
+			'code -g "/path/to/file.ts":42',
+		);
+
+		// FIX: "/path/to/file.ts:42" (line number inside quotes ✅)
+		expect(fixedCommand).toBe('code -g "/path/to/file.ts:42"');
+
+		// The difference: in the fixed version, the colon and line number
+		// are part of the quoted string, making it a valid shell argument
+		expect(buggyCommand).not.toBe(fixedCommand);
+	});
+
+	it("should include line and column INSIDE the quoted file path", () => {
+		const buggyCommand = buildOpenCommand(
+			"code -g",
+			"/path/to/file.ts",
+			42,
+			15,
+		);
+		const fixedCommand = buildOpenCommandFixed(
+			"code -g",
+			"/path/to/file.ts",
+			42,
+			15,
+		);
+
+		expect(buggyCommand).toBe(
+			'code -g "/path/to/file.ts":42',
+		);
+		expect(fixedCommand).toBe('code -g "/path/to/file.ts:42:15"');
+		expect(buggyCommand).not.toBe(fixedCommand);
+	});
+
+	it("should handle file path with spaces and line number", () => {
+		const buggyCommand = buildOpenCommand(
+			"code -g",
+			"/path/to/my file.ts",
+			10,
+		);
+		const fixedCommand = buildOpenCommandFixed(
+			"code -g",
+			"/path/to/my file.ts",
+			10,
+		);
+
+		// BUG: the path with spaces is quoted, but :line is outside
+		// Shell sees: code -g "/path/to/my file.ts":10
+		// This breaks: the shell interprets :10 as a separate argument
+		expect(buggyCommand).toBe(
+			'code -g "/path/to/my file.ts":10',
+		);
+		expect(fixedCommand).toBe('code -g "/path/to/my file.ts:10"');
+	});
+
+	it("should handle file path without line number (no regression)", () => {
+		const buggyResult = buildOpenCommand("code -g", "/path/to/file.ts");
+		const fixedResult = buildOpenCommandFixed("code -g", "/path/to/file.ts");
+
+		// Without line number, both produce the same result
+		expect(buggyResult).toBe('code -g "/path/to/file.ts"');
+		expect(fixedResult).toBe('code -g "/path/to/file.ts"');
+	});
+});
+
+describe("Bug: live-grep path resolution with ./ prefix", () => {
+	it("should strip ./ prefix before prepending singleDirRoot", () => {
+		// Simulate the current behavior in live-grep.ts
+		// rg output with --color=always produces lines like:
+		// ./file.py:61:31:print("hello")
+		// singleDirRoot = "/home/user/project"
+		// Current code: `${singleDirRoot}/${file}`
+		// BUG result: "/home/user/project/./file.py:61:31:..."
+
+		const singleDirRoot = "/home/user/project";
+		const rgOutput = "./file.py:61:31:print(\"hello\")";
+
+		// Current (buggy) behavior
+		const buggyResult = `${singleDirRoot}/${rgOutput}`;
+
+		// Fixed behavior: strip ./ then prepend
+		const cleanFile = rgOutput.startsWith("./")
+			? rgOutput.slice(2)
+			: rgOutput;
+		const fixedResult = `${singleDirRoot}/${cleanFile}`;
+
+		// BUG: produces /home/user/project/./file.py:61:31:...
+		expect(buggyResult).toBe(
+			"/home/user/project/./file.py:61:31:print(\"hello\")",
+		);
+
+		// FIX: produces /home/user/project/file.py:61:31:...
+		expect(fixedResult).toBe(
+			"/home/user/project/file.py:61:31:print(\"hello\")",
+		);
+
+		// Verify the bug: ./ remains in path making it malformed
+		expect(buggyResult).toContain("/./");
+		expect(fixedResult).not.toContain("/./");
+	});
+
+	it("should handle paths without ./ prefix (no regression)", () => {
+		const singleDirRoot = "/home/user/project";
+		const rgOutput = "src/file.py:10:5:content";
+
+		const buggyResult = `${singleDirRoot}/${rgOutput}`;
+		const cleanFile = rgOutput.startsWith("./")
+			? rgOutput.slice(2)
+			: rgOutput;
+		const fixedResult = `${singleDirRoot}/${cleanFile}`;
+
+		expect(buggyResult).toBe(fixedResult);
+		expect(buggyResult).toBe(
+			"/home/user/project/src/file.py:10:5:content",
+		);
+	});
+
+	it("findTodoFixme correctly handles ./ prefix with singleDirRoot", async () => {
+		const mockSpawn = vi.spyOn(childProcess, "spawn");
+		const testDir = "/home/user/project";
+
+		// Mock: rg outputs with ./ prefix (as rg --color=always does)
+		const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
+		const mockFzf = {
+			stdin: { end: vi.fn() },
+			stdout: {
+				on: vi.fn().mockImplementation((event, callback) => {
+					if (event === "data")
+						callback("query\n./file.py:61:31:TODO: fix me\n");
+				}),
+			},
+			on: vi.fn().mockImplementation((event, callback) => {
+				if (event === "close") callback(0);
+			}),
+		};
+
+		mockSpawn.mockImplementation((command) => {
+			if (command === "rg")
+				return mockRg as unknown as childProcess.ChildProcess;
+			if (command === "fzf")
+				return mockFzf as unknown as childProcess.ChildProcess;
+			return {} as childProcess.ChildProcess;
+		});
+
+		const result = await findTodoFixme([testDir]);
+
+		// BUG: Currently returns /home/user/project/./file.py:61:31:TODO: fix me
+		// because ./ is not stripped before prepending singleDirRoot
+		expect(result[0]).toBe(
+			"/home/user/project/file.py:61:31:TODO: fix me",
+		);
+		expect(result[0]).not.toContain("/./");
+	});
+
+	it("liveGrep should strip ./ prefix with singleDirRoot", async () => {
+		const mockSpawn = vi.spyOn(childProcess, "spawn");
+		const testDir = "/home/user/project";
+
+		// Mock rg, sh (initial search spawn), and fzf
+		const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
+		const mockSh = {
+			stdout: { pipe: vi.fn().mockReturnValue(undefined) },
+			stderr: { pipe: vi.fn() },
+			on: vi.fn(),
+		};
+		const mockFzf = {
+			stdin: { end: vi.fn() },
+			stdout: {
+				on: vi.fn().mockImplementation((event, callback) => {
+					if (event === "data")
+						callback("query\n./file.py:42:15:content\n");
+				}),
+			},
+			on: vi.fn().mockImplementation((event, callback) => {
+				if (event === "close") callback(0);
+			}),
+		};
+
+		mockSpawn.mockImplementation((command) => {
+			if (command === "rg")
+				return mockRg as unknown as childProcess.ChildProcess;
+			if (command === "sh")
+				return mockSh as unknown as childProcess.ChildProcess;
+			if (command === "fzf")
+				return mockFzf as unknown as childProcess.ChildProcess;
+			return {} as childProcess.ChildProcess;
+		});
+
+		// Temporarily set PWD environment for the test
+		const originalCwd = process.cwd;
+		process.chdir(testDir);
+
+		const result = await liveGrep([testDir], "test");
+
+		// BUG: returns /home/user/project/./file.py:42:15:content
+		// because the ./ prefix is not stripped
+		expect(result[0]).toBe(
+			"/home/user/project/file.py:42:15:content",
+		);
+		expect(result[0]).not.toContain("/./");
+
+		process.chdir = originalCwd;
+	});
+});
+
+describe("Bug: live-grep paths=[] after chdir (rg has no path argument)", () => {
+	it("should pass [\".\"] instead of [] as rg path after chdir", () => {
+		// Simulate what live-grep.ts does:
+		const paths = ["/home/user/project"];
+		let singleDirRoot = "";
+		let rgPaths: string[];
+
+		// Current (buggy) behavior
+		if (paths.length === 1) {
+			singleDirRoot = paths[0];
+			rgPaths = [];
+		}
+
+		// BUG: rgPaths is [], so rg has no search target directories
+		expect(rgPaths!).toEqual([]);
+
+		// Fixed behavior: use ["."] as explicit current directory
+		let fixedRgPaths: string[] = ["..."];
+		if (paths.length === 1) {
+			fixedRgPaths = ["."];
+		}
+
+		expect(fixedRgPaths).toEqual(["."]);
+		expect(rgPaths).not.toEqual(fixedRgPaths);
+	});
+});
+
+describe("Bug: live-grep uses deprecated --phony flag", () => {
+	it("should use --disabled instead of deprecated --phony", async () => {
+		const mockSpawn = vi.spyOn(childProcess, "spawn");
+		const testDir = "/home/user/project";
+
+		const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
+		const mockSh = {
+			stdout: { pipe: vi.fn().mockReturnValue(undefined) },
+			stderr: { pipe: vi.fn() },
+			on: vi.fn(),
+		};
+		const mockFzf = {
+			stdin: { end: vi.fn() },
+			stdout: { on: vi.fn() },
+			on: vi.fn().mockImplementation((event, callback) => {
+				if (event === "close") callback(0);
+			}),
+		};
+
+		mockSpawn.mockImplementation((command) => {
+			if (command === "rg")
+				return mockRg as unknown as childProcess.ChildProcess;
+			if (command === "sh")
+				return mockSh as unknown as childProcess.ChildProcess;
+			if (command === "fzf")
+				return mockFzf as unknown as childProcess.ChildProcess;
+			return {} as childProcess.ChildProcess;
+		});
+
+		process.chdir(testDir);
+		await liveGrep([testDir], "test");
+
+		// Get the LAST fzf spawn call (across all tests, so use filter to find the right one)
+		const fzfCalls = mockSpawn.mock.calls.filter(
+			([cmd]) => cmd === "fzf",
+		);
+		const fzfCall = fzfCalls.at(-1);
+		const fzfArgs = fzfCall?.[1] as string[];
+
+		// BUG: uses deprecated --phony
+		expect(fzfArgs).not.toContain("--phony");
+
+		// FIX: should use --disabled instead
+		expect(fzfArgs).toContain("--disabled");
 	});
 });

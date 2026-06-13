@@ -83,7 +83,7 @@ export async function liveGrep(
 			previewCommand,
 			"--preview-window",
 			previewWindow,
-			"--phony",
+			"--disabled",
 			"--query",
 			initialQuery || "",
 			"--print-query",
@@ -154,9 +154,13 @@ export async function liveGrep(
 				let selectedFiles = lines.slice(1).filter((line) => line.trim() !== ""); // Filter out empty lines
 
 				if (singleDirRoot) {
-					selectedFiles = selectedFiles.map(
-						(file) => `${singleDirRoot}/${file}`,
-					);
+					selectedFiles = selectedFiles.map((file) => {
+						// Strip "./" prefix if present to avoid paths like /root/./file
+						const cleanFile = file.startsWith("./")
+							? file.slice(2)
+							: file;
+						return `${singleDirRoot}/${cleanFile}`;
+					});
 				}
 
 				// Save the actual query entered by user for future resume

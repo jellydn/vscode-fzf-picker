@@ -55,9 +55,9 @@ export function openFiles(filePath: string) {
 	if (lineTmp !== undefined) {
 		let char = 0;
 		if (charTmp !== undefined) {
-			char = Number.parseInt(charTmp);
+			char = Number.parseInt(charTmp, 10);
 		}
-		const line = Number.parseInt(lineTmp);
+		const line = Number.parseInt(lineTmp, 10);
 		if (line >= 0 && char >= 0) {
 			selection = {
 				start: {
@@ -150,10 +150,12 @@ if (require.main === module) {
 			const openPromises = files.map((filePath, index) => {
 				return new Promise<void>((resolve, reject) => {
 					const { file, selection } = openFiles(filePath);
-					const escapedFile = escapeShellPath(file);
-					const finalCommand = `${openCommand} ${
-						selection ? `${escapedFile}:${selection.start.line}` : escapedFile
-					}`;
+					let fileArg = file;
+					if (selection) {
+						fileArg = `${file}:${selection.start.line}${selection.start.character > 0 ? `:${selection.start.character}` : ""}`;
+					}
+					const escapedFile = escapeShellPath(fileArg);
+					const finalCommand = `${openCommand} ${escapedFile}`;
 
 					logDebug(`Opening file ${index + 1}/${files.length}`, {
 						originalPath: filePath,
