@@ -1,14 +1,14 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	],
-	"settings": {
-		"terminal.integrated.automationProfile.linux": {
-			"path": "/bin/bash",
-			"icon": "terminal-bash",
-			"args": ["-l"]
-		}
-	}
+  "folders": [
+    {
+      "path": ".",
+    },
+  ],
+  "settings": {
+    "terminal.integrated.automationProfile.linux": {
+      "path": "/bin/bash",
+      "icon": "terminal-bash",
+      "args": ["-l"],
+    },
+  },
 }
