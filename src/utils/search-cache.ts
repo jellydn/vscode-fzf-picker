@@ -8,11 +8,11 @@ import { DEBUG } from "./debug";
 // VS Code extension passes configuration via environment variables
 
 interface SearchCache {
-  findTodoFixme: {
-    lastQuery: string;
-    timestamp: number;
-    projectPath: string;
-  };
+	findTodoFixme: {
+		lastQuery: string;
+		timestamp: number;
+		projectPath: string;
+	};
 }
 
 /**
@@ -22,26 +22,26 @@ interface SearchCache {
  * - Linux: ~/.cache/fzf-picker (XDG_CACHE_HOME or fallback)
  */
 function getDefaultCacheDirectory(): string {
-  const home = homedir();
-  const currentPlatform = platform();
+	const home = homedir();
+	const currentPlatform = platform();
 
-  switch (currentPlatform) {
-    case "win32":
-      // Windows: Use %APPDATA% or fallback to %USERPROFILE%\AppData\Roaming
-      return process.env.APPDATA
-        ? join(process.env.APPDATA, "fzf-picker")
-        : join(home, "AppData", "Roaming", "fzf-picker");
+	switch (currentPlatform) {
+		case "win32":
+			// Windows: Use %APPDATA% or fallback to %USERPROFILE%\AppData\Roaming
+			return process.env.APPDATA
+				? join(process.env.APPDATA, "fzf-picker")
+				: join(home, "AppData", "Roaming", "fzf-picker");
 
-    case "darwin":
-      // macOS: Use ~/Library/Caches following Apple conventions
-      return join(home, "Library", "Caches", "fzf-picker");
+		case "darwin":
+			// macOS: Use ~/Library/Caches following Apple conventions
+			return join(home, "Library", "Caches", "fzf-picker");
 
-    default:
-      // Linux/Unix: Use XDG_CACHE_HOME or ~/.cache following XDG Base Directory Specification
-      return process.env.XDG_CACHE_HOME
-        ? join(process.env.XDG_CACHE_HOME, "fzf-picker")
-        : join(home, ".cache", "fzf-picker");
-  }
+		default:
+			// Linux/Unix: Use XDG_CACHE_HOME or ~/.cache following XDG Base Directory Specification
+			return process.env.XDG_CACHE_HOME
+				? join(process.env.XDG_CACHE_HOME, "fzf-picker")
+				: join(home, ".cache", "fzf-picker");
+	}
 }
 
 /**
@@ -52,138 +52,138 @@ function getDefaultCacheDirectory(): string {
  * VS Code extension handles the configuration hierarchy and sets FZF_PICKER_CACHE_DIR accordingly
  */
 function getCacheDirectory(): string {
-  // Priority 1: Environment variable (includes VS Code extension configuration)
-  const envCacheDir = process.env.FZF_PICKER_CACHE_DIR;
-  if (envCacheDir && envCacheDir.trim() !== "") {
-    if (DEBUG)
-      console.log("Using cache directory from environment:", envCacheDir);
-    return envCacheDir.trim();
-  }
+	// Priority 1: Environment variable (includes VS Code extension configuration)
+	const envCacheDir = process.env.FZF_PICKER_CACHE_DIR;
+	if (envCacheDir && envCacheDir.trim() !== "") {
+		if (DEBUG)
+			console.log("Using cache directory from environment:", envCacheDir);
+		return envCacheDir.trim();
+	}
 
-  // Priority 2: OS-specific default location
-  const defaultCacheDir = getDefaultCacheDirectory();
-  if (DEBUG)
-    console.log("Using OS-specific default cache directory:", defaultCacheDir);
-  return defaultCacheDir;
+	// Priority 2: OS-specific default location
+	const defaultCacheDir = getDefaultCacheDirectory();
+	if (DEBUG)
+		console.log("Using OS-specific default cache directory:", defaultCacheDir);
+	return defaultCacheDir;
 }
 
 /**
  * Get the cache file path for search state
  */
 function getCacheFilePath(): string {
-  const cacheDir = getCacheDirectory();
-  return join(cacheDir, "search-cache.json");
+	const cacheDir = getCacheDirectory();
+	return join(cacheDir, "search-cache.json");
 }
 
 /**
  * Ensure cache directory exists
  */
 async function ensureCacheDir(): Promise<void> {
-  const cacheFilePath = getCacheFilePath();
-  const cacheDir = dirname(cacheFilePath);
+	const cacheFilePath = getCacheFilePath();
+	const cacheDir = dirname(cacheFilePath);
 
-  try {
-    await fs.mkdir(cacheDir, { recursive: true });
-  } catch (error) {
-    if (DEBUG) console.error("Failed to create cache directory:", error);
-    // Silently fail - cache is optional
-  }
+	try {
+		await fs.mkdir(cacheDir, { recursive: true });
+	} catch (error) {
+		if (DEBUG) console.error("Failed to create cache directory:", error);
+		// Silently fail - cache is optional
+	}
 }
 
 /**
  * Read cache from file system
  */
 async function readCache(): Promise<SearchCache | null> {
-  try {
-    const cacheFilePath = getCacheFilePath();
-    const data = await fs.readFile(cacheFilePath, "utf-8");
-    return JSON.parse(data) as SearchCache;
-  } catch (error) {
-    if (DEBUG) console.error("Failed to read cache:", error);
-    return null;
-  }
+	try {
+		const cacheFilePath = getCacheFilePath();
+		const data = await fs.readFile(cacheFilePath, "utf-8");
+		return JSON.parse(data) as SearchCache;
+	} catch (error) {
+		if (DEBUG) console.error("Failed to read cache:", error);
+		return null;
+	}
 }
 
 /**
  * Write cache to file system atomically
  */
 async function writeCache(cache: SearchCache): Promise<void> {
-  try {
-    await ensureCacheDir();
-    const cacheFilePath = getCacheFilePath();
-    const tempPath = `${cacheFilePath}.tmp`;
+	try {
+		await ensureCacheDir();
+		const cacheFilePath = getCacheFilePath();
+		const tempPath = `${cacheFilePath}.tmp`;
 
-    // Write to temporary file first for atomic operation
-    await fs.writeFile(tempPath, JSON.stringify(cache, null, 2), "utf-8");
+		// Write to temporary file first for atomic operation
+		await fs.writeFile(tempPath, JSON.stringify(cache, null, 2), "utf-8");
 
-    // Atomic rename
-    await fs.rename(tempPath, cacheFilePath);
+		// Atomic rename
+		await fs.rename(tempPath, cacheFilePath);
 
-    if (DEBUG) console.log("Cache saved successfully");
-  } catch (error) {
-    if (DEBUG) console.error("Failed to write cache:", error);
-    // Silently fail - cache is optional
-  }
+		if (DEBUG) console.log("Cache saved successfully");
+	} catch (error) {
+		if (DEBUG) console.error("Failed to write cache:", error);
+		// Silently fail - cache is optional
+	}
 }
 
 /**
  * Save the last search query for findTodoFixme
  */
 export async function saveLastQuery(
-  query: string,
-  projectPath: string = process.cwd(),
+	query: string,
+	projectPath: string = process.cwd(),
 ): Promise<void> {
-  // Don't save empty queries
-  if (!query || query.trim() === "") {
-    return;
-  }
+	// Don't save empty queries
+	if (!query || query.trim() === "") {
+		return;
+	}
 
-  const cache = (await readCache()) || {
-    findTodoFixme: { lastQuery: "", timestamp: 0, projectPath: "" },
-  };
+	const cache = (await readCache()) || {
+		findTodoFixme: { lastQuery: "", timestamp: 0, projectPath: "" },
+	};
 
-  cache.findTodoFixme = {
-    lastQuery: query,
-    timestamp: Date.now(),
-    projectPath,
-  };
+	cache.findTodoFixme = {
+		lastQuery: query,
+		timestamp: Date.now(),
+		projectPath,
+	};
 
-  await writeCache(cache);
+	await writeCache(cache);
 }
 
 /**
  * Get the last search query for findTodoFixme
  */
 export async function getLastQuery(
-  projectPath: string = process.cwd(),
+	projectPath: string = process.cwd(),
 ): Promise<string | null> {
-  const cache = await readCache();
+	const cache = await readCache();
 
-  if (!cache || !cache.findTodoFixme) {
-    return null;
-  }
+	if (!cache || !cache.findTodoFixme) {
+		return null;
+	}
 
-  // Return query if it's from the same project or if project path matches
-  const cachedData = cache.findTodoFixme;
-  if (cachedData.projectPath === projectPath) {
-    return cachedData.lastQuery;
-  }
+	// Return query if it's from the same project or if project path matches
+	const cachedData = cache.findTodoFixme;
+	if (cachedData.projectPath === projectPath) {
+		return cachedData.lastQuery;
+	}
 
-  return null;
+	return null;
 }
 
 /**
  * Clear all cached search data
  */
 export async function clearCache(): Promise<void> {
-  try {
-    const cacheFilePath = getCacheFilePath();
-    await fs.unlink(cacheFilePath);
-    if (DEBUG) console.log("Cache cleared successfully");
-  } catch (error) {
-    if (DEBUG) console.error("Failed to clear cache:", error);
-    // Silently fail - cache might not exist
-  }
+	try {
+		const cacheFilePath = getCacheFilePath();
+		await fs.unlink(cacheFilePath);
+		if (DEBUG) console.log("Cache cleared successfully");
+	} catch (error) {
+		if (DEBUG) console.error("Failed to clear cache:", error);
+		// Silently fail - cache might not exist
+	}
 }
 
 /**
@@ -191,13 +191,13 @@ export async function clearCache(): Promise<void> {
  * This resolves the user configuration to the actual directory path
  */
 export function getResolvedCacheDirectory(
-  userConfigDirectory: string = "",
+	userConfigDirectory: string = "",
 ): string {
-  // If user has set a custom directory, use it
-  if (userConfigDirectory && userConfigDirectory.trim() !== "") {
-    return userConfigDirectory.trim();
-  }
+	// If user has set a custom directory, use it
+	if (userConfigDirectory && userConfigDirectory.trim() !== "") {
+		return userConfigDirectory.trim();
+	}
 
-  // Otherwise return the OS-specific default
-  return getDefaultCacheDirectory();
+	// Otherwise return the OS-specific default
+	return getDefaultCacheDirectory();
 }

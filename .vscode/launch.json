@@ -1,24 +1,24 @@
 {
-  "configurations": [
-    {
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
-      "name": "Launch Extension",
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
-      "preLaunchTask": "npm: compile",
-      "request": "launch",
-      "type": "extensionHost"
-    },
-    {
-      "name": "Extension Tests",
-      "type": "extensionHost",
-      "request": "launch",
-      "args": [
-        "--disable-extensions",
-        "--extensionDevelopmentPath=${workspaceFolder}",
-        "--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
-      ],
-      "outFiles": ["${workspaceFolder}/out/test/**/*.js"],
-      "preLaunchTask": "npm: compile"
-    }
-  ]
+	"configurations": [
+		{
+			"args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+			"name": "Launch Extension",
+			"outFiles": ["${workspaceFolder}/out/**/*.js"],
+			"preLaunchTask": "npm: compile",
+			"request": "launch",
+			"type": "extensionHost"
+		},
+		{
+			"name": "Extension Tests",
+			"type": "extensionHost",
+			"request": "launch",
+			"args": [
+				"--disable-extensions",
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
+			],
+			"outFiles": ["${workspaceFolder}/out/test/**/*.js"],
+			"preLaunchTask": "npm: compile"
+		}
+	]
 }

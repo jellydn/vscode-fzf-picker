@@ -6,52 +6,52 @@ import type { RuntimeType } from "./utils/runtime";
 export const config = defineConfig(Meta.scopedConfigs.scope);
 
 export interface CustomTask {
-  name: string;
-  command: string;
+	name: string;
+	command: string;
 }
 
 export interface Config {
-  useEditorSelectionAsQuery: boolean;
-  findFilesPreviewEnabled: boolean;
-  findFilesPreviewCommand: string;
-  findFilesPreviewWindowConfig: string;
-  findWithinFilesPreviewEnabled: boolean;
-  findWithinFilesPreviewCommand: string;
-  findWithinFilesPreviewWindowConfig: string;
-  findWithinFilesFilter: Set<string>;
-  workspaceSettings: {
-    folders: string[];
-  };
-  extensionPath: string;
-  useTypeFilter: boolean;
-  lastCommand: string;
-  batTheme: string;
-  findTodoFixmeSearchPattern: string;
-  customTasks: CustomTask[];
-  openCommand: string;
-  cacheDirectory: string;
-  runtime: RuntimeType;
+	useEditorSelectionAsQuery: boolean;
+	findFilesPreviewEnabled: boolean;
+	findFilesPreviewCommand: string;
+	findFilesPreviewWindowConfig: string;
+	findWithinFilesPreviewEnabled: boolean;
+	findWithinFilesPreviewCommand: string;
+	findWithinFilesPreviewWindowConfig: string;
+	findWithinFilesFilter: Set<string>;
+	workspaceSettings: {
+		folders: string[];
+	};
+	extensionPath: string;
+	useTypeFilter: boolean;
+	lastCommand: string;
+	batTheme: string;
+	findTodoFixmeSearchPattern: string;
+	customTasks: CustomTask[];
+	openCommand: string;
+	cacheDirectory: string;
+	runtime: RuntimeType;
 }
 
 export const CFG: Config = {
-  useEditorSelectionAsQuery: true,
-  findFilesPreviewEnabled: true,
-  findFilesPreviewCommand: "",
-  findFilesPreviewWindowConfig: "",
-  findWithinFilesPreviewEnabled: true,
-  findWithinFilesPreviewCommand: "",
-  findWithinFilesPreviewWindowConfig: "",
-  findWithinFilesFilter: new Set(),
-  workspaceSettings: {
-    folders: [],
-  },
-  extensionPath: "",
-  useTypeFilter: false,
-  lastCommand: "",
-  batTheme: "",
-  findTodoFixmeSearchPattern: "(TODO|FIXME|HACK|FIX):\\s",
-  customTasks: [],
-  openCommand: "code -g",
-  cacheDirectory: "",
-  runtime: "auto",
+	useEditorSelectionAsQuery: true,
+	findFilesPreviewEnabled: true,
+	findFilesPreviewCommand: "",
+	findFilesPreviewWindowConfig: "",
+	findWithinFilesPreviewEnabled: true,
+	findWithinFilesPreviewCommand: "",
+	findWithinFilesPreviewWindowConfig: "",
+	findWithinFilesFilter: new Set(),
+	workspaceSettings: {
+		folders: [],
+	},
+	extensionPath: "",
+	useTypeFilter: false,
+	lastCommand: "",
+	batTheme: "",
+	findTodoFixmeSearchPattern: "(TODO|FIXME|HACK|FIX):\\s",
+	customTasks: [],
+	openCommand: "code -g",
+	cacheDirectory: "",
+	runtime: "auto",
 };

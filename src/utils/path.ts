@@ -12,11 +12,11 @@
  * Also handles "././" and similar degenerate prefixes.
  */
 export function normalizeRgPath(file: string): string {
-  let result = file;
-  while (result.startsWith("./")) {
-    result = result.slice(2);
-  }
-  return result;
+	let result = file;
+	while (result.startsWith("./")) {
+		result = result.slice(2);
+	}
+	return result;
 }
 
 /**
@@ -29,5 +29,5 @@ export function normalizeRgPath(file: string): string {
  * @returns The resolved absolute-style path
  */
 export function resolveFilePath(file: string, rootDir: string): string {
-  return `${rootDir}/${normalizeRgPath(file)}`;
+	return `${rootDir}/${normalizeRgPath(file)}`;
 }

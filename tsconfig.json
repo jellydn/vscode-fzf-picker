@@ -1,15 +1,15 @@
 {
-  "compilerOptions": {
-    "target": "es2017",
-    "lib": ["esnext"],
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "strict": true,
-    "strictNullChecks": true,
-    "esModuleInterop": true,
-    "skipDefaultLibCheck": true,
-    "skipLibCheck": true,
-    "types": ["node"]
-  }
+	"compilerOptions": {
+		"target": "es2017",
+		"lib": ["esnext"],
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"resolveJsonModule": true,
+		"strict": true,
+		"strictNullChecks": true,
+		"esModuleInterop": true,
+		"skipDefaultLibCheck": true,
+		"skipLibCheck": true,
+		"types": ["node"]
+	}
 }

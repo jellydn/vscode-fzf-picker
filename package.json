@@ -1,288 +1,288 @@
 {
-  "name": "fzf-picker",
-  "displayName": "Fzf Picker",
-  "publisher": "jellydn",
-  "icon": "res/icon.png",
-  "repository": {
-    "url": "https://github.com/jellydn/vscode-fzf-picker"
-  },
-  "description": "File Picker with fzf and rg",
-  "keywords": [
-    "fzf",
-    "rg",
-    "ripgrep",
-    "picker",
-    "files",
-    "find",
-    "finder",
-    "fuzzy",
-    "grep",
-    "open",
-    "search",
-    "within"
-  ],
-  "version": "1.6.1",
-  "engines": {
-    "vscode": "^1.93.0"
-  },
-  "packageManager": "pnpm@10.22.0+sha512.bf049efe995b28f527fd2b41ae0474ce29186f7edcb3bf545087bd61fbbebb2bf75362d1307fda09c2d288e1e499787ac12d4fcb617a974718a6051f2eee741c",
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [],
-  "main": "./out/extension.js",
-  "files": [
-    "out/*",
-    "res/*",
-    "LICENSE.txt"
-  ],
-  "contributes": {
-    "commands": [
-      {
-        "command": "fzf-picker.findFiles",
-        "title": "Find It Faster: search file"
-      },
-      {
-        "command": "fzf-picker.findFilesWithType",
-        "title": "Find It Faster: search file (with type filter)"
-      },
-      {
-        "command": "fzf-picker.findWithinFiles",
-        "title": "Find It Faster: search within files"
-      },
-      {
-        "command": "fzf-picker.findWithinFilesWithType",
-        "title": "Find It Faster: search within files (with type filter)"
-      },
-      {
-        "command": "fzf-picker.resumeSearch",
-        "title": "Find It Faster: resume last search"
-      },
-      {
-        "command": "fzf-picker.pickFileFromGitStatus",
-        "title": "Find It Faster: Pick file from git status"
-      },
-      {
-        "command": "fzf-picker.findTodoFixme",
-        "title": "Find It Faster: Find TODO/FIXME comments"
-      },
-      {
-        "command": "fzf-picker.runCustomTask",
-        "title": "Find It Faster: Run Custom Task"
-      }
-    ],
-    "keybindings": [
-      {
-        "command": "fzf-picker.findFiles",
-        "mac": "cmd+shift+j",
-        "linux": "ctrl+shift+j"
-      },
-      {
-        "command": "fzf-picker.findWithinFiles",
-        "mac": "cmd+shift+u",
-        "linux": "ctrl+shift+u"
-      },
-      {
-        "command": "fzf-picker.findWithinFilesWithType",
-        "mac": "ctrl+cmd+shift+u",
-        "linux": "ctrl+shift+alt+u"
-      },
-      {
-        "command": "fzf-picker.pickFileFromGitStatus",
-        "mac": "cmd+shift+alt+f",
-        "linux": "ctrl+shift+alt+f",
-        "win": "ctrl+shift+alt+f"
-      },
-      {
-        "command": "fzf-picker.findTodoFixme",
-        "mac": "cmd+shift+alt+t",
-        "linux": "ctrl+shift+alt+t",
-        "win": "ctrl+shift+alt+t"
-      }
-    ],
-    "configuration": {
-      "title": "Fzf Picker",
-      "properties": {
-        "fzf-picker.general.batTheme": {
-          "markdownDescription": "The color theme to use for `bat` (see `bat --list-themes`)",
-          "type": "string",
-          "default": "1337"
-        },
-        "fzf-picker.findFiles.showPreview": {
-          "markdownDescription": "Show a preview window when searching files",
-          "type": "boolean",
-          "default": true
-        },
-        "fzf-picker.findFiles.previewCommand": {
-          "markdownDescription": "When populated: Used by `fzf` to produce the preview. Use `{}` to indicate the filename. Example: `bat {}`.",
-          "type": "string",
-          "default": ""
-        },
-        "fzf-picker.findFiles.previewWindowConfig": {
-          "markdownDescription": "When populated: Used by `fzf` to determine position and look of the preview window. See the `fzf` documentation. Example for a horizontal split: `top,50%`.",
-          "type": "string",
-          "default": ""
-        },
-        "fzf-picker.findWithinFiles.showPreview": {
-          "markdownDescription": "Show a preview window when searching within files",
-          "type": "boolean",
-          "default": true
-        },
-        "fzf-picker.findWithinFiles.previewCommand": {
-          "markdownDescription": "When populated: Used by `fzf` to produce the preview when searching within files. Use `{1}` to indicate the filename, `{2}` for the line number",
-          "type": "string",
-          "default": ""
-        },
-        "fzf-picker.findWithinFiles.previewWindowConfig": {
-          "markdownDescription": "When populated: Used by `fzf` to determine position and look of the preview window. See the `fzf` documentation. Example for a horizontal split: `top,50%,border-bottom,+{2}+3/3,~3`.",
-          "type": "string",
-          "default": ""
-        },
-        "fzf-picker.advanced.useEditorSelectionAsQuery": {
-          "markdownDescription": "By default, if you have an active editor with a text selection, we'll use that to populate the prompt in `fzf` such that it will start filtering text directly. Uncheck to disable.",
-          "type": "boolean",
-          "default": true
-        },
-        "fzf-picker.pickFileFromGitStatus.showPreview": {
-          "markdownDescription": "Show a preview window when picking a file from git status",
-          "type": "boolean",
-          "default": true
-        },
-        "fzf-picker.pickFileFromGitStatus.previewCommand": {
-          "markdownDescription": "When populated: Used by `fzf` to produce the preview when picking a file from git status. Use `{}` to indicate the filename. Example: `git diff --color=always -- {}`.",
-          "type": "string",
-          "default": ""
-        },
-        "fzf-picker.pickFileFromGitStatus.previewWindowConfig": {
-          "markdownDescription": "When populated: Used by `fzf` to determine position and look of the preview window when picking a file from git status. See the `fzf` documentation. Example: `right:50%:border-left`.",
-          "type": "string",
-          "default": ""
-        },
-        "fzf-picker.findTodoFixme.previewEnabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable preview for TODO/FIXME search results"
-        },
-        "fzf-picker.findTodoFixme.previewCommand": {
-          "type": "string",
-          "default": "bat --decorations=always --color=always {1} --highlight-line {2} --style=header,grid",
-          "description": "Preview command for TODO/FIXME search results"
-        },
-        "fzf-picker.findTodoFixme.previewWindowConfig": {
-          "type": "string",
-          "default": "right:border-left:50%:+{2}+3/3:~3",
-          "description": "Preview window configuration for TODO/FIXME search results"
-        },
-        "fzf-picker.findTodoFixme.searchPattern": {
-          "type": "string",
-          "default": "(TODO|FIXME|HACK|FIX):\\s",
-          "description": "Regular expression pattern for searching TODO/FIXME/HACK comments. Matches keywords followed by a colon and optional space."
-        },
-        "fzf-picker.customTasks": {
-          "type": "array",
-          "items": {
-            "properties": {
-              "name": {
-                "type": "string",
-                "description": "Name of the custom task"
-              },
-              "command": {
-                "type": "string",
-                "description": "Command to execute for the custom task"
-              }
-            },
-            "required": [
-              "name",
-              "command"
-            ]
-          },
-          "default": [],
-          "description": "Custom tasks that can be executed by the extension"
-        },
-        "fzf-picker.general.openCommand": {
-          "type": "string",
-          "enum": [
-            "code -g",
-            "code-insiders -g",
-            "cursor -g",
-            "codium -g",
-            "codium-insiders -g",
-            "windsurf -g",
-            "surf -g",
-            "trae -g",
-            "kiro -g",
-            "agy-ide -g"
-          ],
-          "enumDescriptions": [
-            "Visual Studio Code",
-            "Visual Studio Code Insiders",
-            "Cursor",
-            "VSCodium",
-            "VSCodium Insiders",
-            "Windsurf",
-            "Windsurf (surf CLI)",
-            "Trae",
-            "Kiro",
-            "Antigravity IDE"
-          ],
-          "default": "code -g",
-          "description": "Select the command to open files base on your current editor"
-        },
-        "fzf-picker.cache.directory": {
-          "type": "string",
-          "default": "",
-          "description": "Custom directory for cache storage. If empty, uses OS-specific default: Windows: %APPDATA%\\fzf-picker, macOS: ~/Library/Caches/fzf-picker, Linux: ~/.cache/fzf-picker (or $XDG_CACHE_HOME/fzf-picker). Set this for systems with immutable extension directories (e.g., NixOS). Environment variable FZF_PICKER_CACHE_DIR overrides this setting."
-        },
-        "fzf-picker.general.debugMode": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable debug mode for the extension. This will log additional information to the console."
-        },
-        "fzf-picker.general.runtime": {
-          "type": "string",
-          "enum": [
-            "auto",
-            "bun",
-            "node"
-          ],
-          "enumDescriptions": [
-            "Automatically detect and use the fastest available runtime (Bun if available, otherwise Node.js)",
-            "Force use of Bun runtime (falls back to Node.js if Bun is not available)",
-            "Force use of Node.js runtime"
-          ],
-          "default": "auto",
-          "description": "Select the JavaScript runtime to use for command execution. Bun provides faster startup times which improves performance in large projects."
-        }
-      }
-    }
-  },
-  "scripts": {
-    "build": "tsup --external vscode",
-    "dev": "nr build --watch",
-    "lint": "biome lint src",
-    "pack": "vsce package --no-dependencies",
-    "prepare": "nr update",
-    "publish": "vsce publish --no-dependencies",
-    "release": "bumpp && nr publish",
-    "test": "vitest",
-    "typecheck": "tsc --noEmit",
-    "update": "vscode-ext-gen --output src/generated/meta.ts",
-    "vscode:prepublish": "nr build"
-  },
-  "devDependencies": {
-    "@antfu/ni": "30.1.0",
-    "@biomejs/biome": "2.5.0",
-    "@types/node": "25.9.3",
-    "@types/vscode": "1.93.0",
-    "@vscode/vsce": "3.9.2",
-    "bumpp": "11.1.0",
-    "oxlint": "^1.69.0",
-    "pnpm": "10.22.0",
-    "reactive-vscode": "1.0.2",
-    "tsup": "8.5.1",
-    "typescript": "6.0.3",
-    "vite": "8.0.16",
-    "vitest": "4.1.8",
-    "vscode-ext-gen": "1.6.0"
-  }
+	"name": "fzf-picker",
+	"displayName": "Fzf Picker",
+	"publisher": "jellydn",
+	"icon": "res/icon.png",
+	"repository": {
+		"url": "https://github.com/jellydn/vscode-fzf-picker"
+	},
+	"description": "File Picker with fzf and rg",
+	"keywords": [
+		"fzf",
+		"rg",
+		"ripgrep",
+		"picker",
+		"files",
+		"find",
+		"finder",
+		"fuzzy",
+		"grep",
+		"open",
+		"search",
+		"within"
+	],
+	"version": "1.6.1",
+	"engines": {
+		"vscode": "^1.93.0"
+	},
+	"packageManager": "pnpm@10.22.0+sha512.bf049efe995b28f527fd2b41ae0474ce29186f7edcb3bf545087bd61fbbebb2bf75362d1307fda09c2d288e1e499787ac12d4fcb617a974718a6051f2eee741c",
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [],
+	"main": "./out/extension.js",
+	"files": [
+		"out/*",
+		"res/*",
+		"LICENSE.txt"
+	],
+	"contributes": {
+		"commands": [
+			{
+				"command": "fzf-picker.findFiles",
+				"title": "Find It Faster: search file"
+			},
+			{
+				"command": "fzf-picker.findFilesWithType",
+				"title": "Find It Faster: search file (with type filter)"
+			},
+			{
+				"command": "fzf-picker.findWithinFiles",
+				"title": "Find It Faster: search within files"
+			},
+			{
+				"command": "fzf-picker.findWithinFilesWithType",
+				"title": "Find It Faster: search within files (with type filter)"
+			},
+			{
+				"command": "fzf-picker.resumeSearch",
+				"title": "Find It Faster: resume last search"
+			},
+			{
+				"command": "fzf-picker.pickFileFromGitStatus",
+				"title": "Find It Faster: Pick file from git status"
+			},
+			{
+				"command": "fzf-picker.findTodoFixme",
+				"title": "Find It Faster: Find TODO/FIXME comments"
+			},
+			{
+				"command": "fzf-picker.runCustomTask",
+				"title": "Find It Faster: Run Custom Task"
+			}
+		],
+		"keybindings": [
+			{
+				"command": "fzf-picker.findFiles",
+				"mac": "cmd+shift+j",
+				"linux": "ctrl+shift+j"
+			},
+			{
+				"command": "fzf-picker.findWithinFiles",
+				"mac": "cmd+shift+u",
+				"linux": "ctrl+shift+u"
+			},
+			{
+				"command": "fzf-picker.findWithinFilesWithType",
+				"mac": "ctrl+cmd+shift+u",
+				"linux": "ctrl+shift+alt+u"
+			},
+			{
+				"command": "fzf-picker.pickFileFromGitStatus",
+				"mac": "cmd+shift+alt+f",
+				"linux": "ctrl+shift+alt+f",
+				"win": "ctrl+shift+alt+f"
+			},
+			{
+				"command": "fzf-picker.findTodoFixme",
+				"mac": "cmd+shift+alt+t",
+				"linux": "ctrl+shift+alt+t",
+				"win": "ctrl+shift+alt+t"
+			}
+		],
+		"configuration": {
+			"title": "Fzf Picker",
+			"properties": {
+				"fzf-picker.general.batTheme": {
+					"markdownDescription": "The color theme to use for `bat` (see `bat --list-themes`)",
+					"type": "string",
+					"default": "1337"
+				},
+				"fzf-picker.findFiles.showPreview": {
+					"markdownDescription": "Show a preview window when searching files",
+					"type": "boolean",
+					"default": true
+				},
+				"fzf-picker.findFiles.previewCommand": {
+					"markdownDescription": "When populated: Used by `fzf` to produce the preview. Use `{}` to indicate the filename. Example: `bat {}`.",
+					"type": "string",
+					"default": ""
+				},
+				"fzf-picker.findFiles.previewWindowConfig": {
+					"markdownDescription": "When populated: Used by `fzf` to determine position and look of the preview window. See the `fzf` documentation. Example for a horizontal split: `top,50%`.",
+					"type": "string",
+					"default": ""
+				},
+				"fzf-picker.findWithinFiles.showPreview": {
+					"markdownDescription": "Show a preview window when searching within files",
+					"type": "boolean",
+					"default": true
+				},
+				"fzf-picker.findWithinFiles.previewCommand": {
+					"markdownDescription": "When populated: Used by `fzf` to produce the preview when searching within files. Use `{1}` to indicate the filename, `{2}` for the line number",
+					"type": "string",
+					"default": ""
+				},
+				"fzf-picker.findWithinFiles.previewWindowConfig": {
+					"markdownDescription": "When populated: Used by `fzf` to determine position and look of the preview window. See the `fzf` documentation. Example for a horizontal split: `top,50%,border-bottom,+{2}+3/3,~3`.",
+					"type": "string",
+					"default": ""
+				},
+				"fzf-picker.advanced.useEditorSelectionAsQuery": {
+					"markdownDescription": "By default, if you have an active editor with a text selection, we'll use that to populate the prompt in `fzf` such that it will start filtering text directly. Uncheck to disable.",
+					"type": "boolean",
+					"default": true
+				},
+				"fzf-picker.pickFileFromGitStatus.showPreview": {
+					"markdownDescription": "Show a preview window when picking a file from git status",
+					"type": "boolean",
+					"default": true
+				},
+				"fzf-picker.pickFileFromGitStatus.previewCommand": {
+					"markdownDescription": "When populated: Used by `fzf` to produce the preview when picking a file from git status. Use `{}` to indicate the filename. Example: `git diff --color=always -- {}`.",
+					"type": "string",
+					"default": ""
+				},
+				"fzf-picker.pickFileFromGitStatus.previewWindowConfig": {
+					"markdownDescription": "When populated: Used by `fzf` to determine position and look of the preview window when picking a file from git status. See the `fzf` documentation. Example: `right:50%:border-left`.",
+					"type": "string",
+					"default": ""
+				},
+				"fzf-picker.findTodoFixme.previewEnabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enable preview for TODO/FIXME search results"
+				},
+				"fzf-picker.findTodoFixme.previewCommand": {
+					"type": "string",
+					"default": "bat --decorations=always --color=always {1} --highlight-line {2} --style=header,grid",
+					"description": "Preview command for TODO/FIXME search results"
+				},
+				"fzf-picker.findTodoFixme.previewWindowConfig": {
+					"type": "string",
+					"default": "right:border-left:50%:+{2}+3/3:~3",
+					"description": "Preview window configuration for TODO/FIXME search results"
+				},
+				"fzf-picker.findTodoFixme.searchPattern": {
+					"type": "string",
+					"default": "(TODO|FIXME|HACK|FIX):\\s",
+					"description": "Regular expression pattern for searching TODO/FIXME/HACK comments. Matches keywords followed by a colon and optional space."
+				},
+				"fzf-picker.customTasks": {
+					"type": "array",
+					"items": {
+						"properties": {
+							"name": {
+								"type": "string",
+								"description": "Name of the custom task"
+							},
+							"command": {
+								"type": "string",
+								"description": "Command to execute for the custom task"
+							}
+						},
+						"required": [
+							"name",
+							"command"
+						]
+					},
+					"default": [],
+					"description": "Custom tasks that can be executed by the extension"
+				},
+				"fzf-picker.general.openCommand": {
+					"type": "string",
+					"enum": [
+						"code -g",
+						"code-insiders -g",
+						"cursor -g",
+						"codium -g",
+						"codium-insiders -g",
+						"windsurf -g",
+						"surf -g",
+						"trae -g",
+						"kiro -g",
+						"agy-ide -g"
+					],
+					"enumDescriptions": [
+						"Visual Studio Code",
+						"Visual Studio Code Insiders",
+						"Cursor",
+						"VSCodium",
+						"VSCodium Insiders",
+						"Windsurf",
+						"Windsurf (surf CLI)",
+						"Trae",
+						"Kiro",
+						"Antigravity IDE"
+					],
+					"default": "code -g",
+					"description": "Select the command to open files base on your current editor"
+				},
+				"fzf-picker.cache.directory": {
+					"type": "string",
+					"default": "",
+					"description": "Custom directory for cache storage. If empty, uses OS-specific default: Windows: %APPDATA%\\fzf-picker, macOS: ~/Library/Caches/fzf-picker, Linux: ~/.cache/fzf-picker (or $XDG_CACHE_HOME/fzf-picker). Set this for systems with immutable extension directories (e.g., NixOS). Environment variable FZF_PICKER_CACHE_DIR overrides this setting."
+				},
+				"fzf-picker.general.debugMode": {
+					"type": "boolean",
+					"default": false,
+					"description": "Enable debug mode for the extension. This will log additional information to the console."
+				},
+				"fzf-picker.general.runtime": {
+					"type": "string",
+					"enum": [
+						"auto",
+						"bun",
+						"node"
+					],
+					"enumDescriptions": [
+						"Automatically detect and use the fastest available runtime (Bun if available, otherwise Node.js)",
+						"Force use of Bun runtime (falls back to Node.js if Bun is not available)",
+						"Force use of Node.js runtime"
+					],
+					"default": "auto",
+					"description": "Select the JavaScript runtime to use for command execution. Bun provides faster startup times which improves performance in large projects."
+				}
+			}
+		}
+	},
+	"scripts": {
+		"build": "tsup --external vscode",
+		"dev": "nr build --watch",
+		"lint": "biome lint src",
+		"pack": "vsce package --no-dependencies",
+		"prepare": "nr update",
+		"publish": "vsce publish --no-dependencies",
+		"release": "bumpp && nr publish",
+		"test": "vitest",
+		"typecheck": "tsc --noEmit",
+		"update": "vscode-ext-gen --output src/generated/meta.ts",
+		"vscode:prepublish": "nr build"
+	},
+	"devDependencies": {
+		"@antfu/ni": "30.1.0",
+		"@biomejs/biome": "2.5.0",
+		"@types/node": "25.9.3",
+		"@types/vscode": "1.93.0",
+		"@vscode/vsce": "3.9.2",
+		"bumpp": "11.1.0",
+		"oxlint": "^1.69.0",
+		"pnpm": "10.22.0",
+		"reactive-vscode": "1.0.2",
+		"tsup": "8.5.1",
+		"typescript": "6.0.3",
+		"vite": "8.0.16",
+		"vitest": "4.1.8",
+		"vscode-ext-gen": "1.6.0"
+	}
 }
