@@ -6,6 +6,7 @@ import { findFiles } from "./commands/find-files";
 import { findTodoFixme, findTodoFixmeResume } from "./commands/find-todo-fixme";
 import { liveGrep } from "./commands/live-grep";
 import { getLastQuery, saveLastQuery } from "./utils/search-cache";
+
 vi.mock("node:child_process");
 vi.mock("node:fs");
 vi.mock("./utils/search-cache", () => ({
