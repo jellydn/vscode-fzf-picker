@@ -3,9 +3,9 @@ id: task-2
 title: Add missing git status preview configuration to terminal environment
 status: Done
 assignee:
-  - '@claude'
-created_date: '2025-07-11'
-updated_date: '2025-07-11'
+  - "@claude"
+created_date: "2025-07-11"
+updated_date: "2025-07-11"
 labels: []
 dependencies:
   - task-1
@@ -33,6 +33,7 @@ The git status preview settings defined in package.json are not being passed to 
 Added the missing git status preview configuration to the extension's configuration system. The settings were already defined in package.json but weren't being loaded or passed to the terminal environment.
 
 Modified files:
+
 - src/config.ts: Added pickFileFromGitStatusPreviewEnabled, pickFileFromGitStatusPreviewCommand, and pickFileFromGitStatusPreviewWindowConfig to Config interface and CFG object
 - src/extension.ts: Updated updateConfigWithUserSettings() to load git status preview settings
-- src/extension.ts: Added PICK_FILE_FROM_GIT_STATUS_PREVIEW_* environment variables to terminalOptions
+- src/extension.ts: Added PICK*FILE_FROM_GIT_STATUS_PREVIEW*\* environment variables to terminalOptions

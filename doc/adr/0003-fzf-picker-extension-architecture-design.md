@@ -11,6 +11,7 @@ Accepted
 The Find It Faster (FZF Picker) VSCode extension is a sophisticated file search and navigation tool that integrates the powerful command-line tools `fzf` (fuzzy finder) and `rg` (ripgrep) into the VSCode environment. This extension was originally forked from vscode-finditfaster to provide enhanced functionality and better integration with fuzzy finding workflows.
 
 The extension needs to provide:
+
 - Fast file searching across large codebases
 - Text search within files with live preview
 - Git status integration for modified files
@@ -25,6 +26,7 @@ We have adopted a **layered architecture** with **command-terminal hybrid execut
 ### Architecture Components
 
 #### 1. **Extension Layer** (`extension.ts`)
+
 - **Primary Role**: VSCode API integration and lifecycle management
 - **Key Responsibilities**:
   - Command registration and activation
@@ -34,6 +36,7 @@ We have adopted a **layered architecture** with **command-terminal hybrid execut
   - Environment variable coordination between VSCode and shell commands
 
 #### 2. **Command Orchestration Layer** (`commands.ts`)
+
 - **Primary Role**: Bridge between VSCode commands and shell execution
 - **Key Responsibilities**:
   - Command parsing and argument handling
@@ -43,6 +46,7 @@ We have adopted a **layered architecture** with **command-terminal hybrid execut
   - Error handling and graceful degradation
 
 #### 3. **Search Implementation Layer** (`commands/`)
+
 - **Primary Role**: Specialized search implementations
 - **Key Components**:
   - `find-files.ts`: File discovery using `rg --files` + `fzf`
@@ -52,12 +56,14 @@ We have adopted a **layered architecture** with **command-terminal hybrid execut
 - **Common Pattern**: Spawn processes, pipe data, handle user selections
 
 #### 4. **Utility Layer** (`utils/`)
+
 - **Primary Role**: Shared functionality and cross-cutting concerns
 - **Key Components**:
   - `search-cache.ts`: Unified caching system for search queries
   - Configuration helpers and path utilities
 
 #### 5. **Configuration Layer** (`config.ts`)
+
 - **Primary Role**: Centralized configuration management
 - **Key Responsibilities**:
   - User setting synchronization
@@ -68,14 +74,16 @@ We have adopted a **layered architecture** with **command-terminal hybrid execut
 ### Key Architectural Decisions
 
 #### **1. Terminal-Based Execution Model**
+
 - **Decision**: Execute search commands in VSCode terminal instead of hidden processes
-- **Rationale**: 
+- **Rationale**:
   - Provides visual feedback to users
   - Allows interactive fzf usage (preview toggles, key bindings)
   - Enables easy debugging and transparency
   - Maintains process isolation
 
 #### **2. Hybrid Process Management**
+
 - **Decision**: Combine VSCode terminal commands with Node.js child processes
 - **Rationale**:
   - Terminal for interactive fzf sessions
@@ -83,6 +91,7 @@ We have adopted a **layered architecture** with **command-terminal hybrid execut
   - Best of both worlds: interactivity + control
 
 #### **3. Environment Variable Configuration**
+
 - **Decision**: Pass configuration through environment variables
 - **Rationale**:
   - Decouples VSCode configuration from shell commands
@@ -90,6 +99,7 @@ We have adopted a **layered architecture** with **command-terminal hybrid execut
   - Supports both Windows and Unix-like systems
 
 #### **4. Reactive Configuration System**
+
 - **Decision**: Use reactive-vscode for configuration management
 - **Rationale**:
   - Automatic configuration updates
@@ -97,6 +107,7 @@ We have adopted a **layered architecture** with **command-terminal hybrid execut
   - Reduced boilerplate code
 
 #### **5. Unified Search Cache**
+
 - **Decision**: Centralized cache system for all search commands
 - **Rationale**:
   - Consistent resume functionality across all search types
@@ -104,6 +115,7 @@ We have adopted a **layered architecture** with **command-terminal hybrid execut
   - Atomic cache operations
 
 #### **6. Command Pattern Implementation**
+
 - **Decision**: Standardized command structure with pre/post callbacks
 - **Rationale**:
   - Consistent command lifecycle
@@ -121,18 +133,21 @@ Configuration System ←→ Environment Variables ←→ Search Cache ←→ Sea
 ### External Tool Integration
 
 #### **FZF Integration**
+
 - **Preview System**: Dynamic preview commands based on file type
 - **Key Bindings**: Ctrl+G for preview toggle, standard fzf navigation
 - **Configuration**: Flexible preview window positioning and styling
 - **Multi-selection**: Support for opening multiple files simultaneously
 
 #### **Ripgrep Integration**
+
 - **File Discovery**: `rg --files` with gitignore support
 - **Text Search**: `rg` with live filtering and syntax highlighting
 - **Type Filtering**: File type restrictions for targeted searches
 - **Pattern Matching**: Regex support for TODO/FIXME discovery
 
 #### **Git Integration**
+
 - **Status Tracking**: Integration with `git status` for modified files
 - **Diff Previews**: Live diff display in fzf preview window
 - **Ignored Files**: Respect .gitignore patterns by default
@@ -140,11 +155,13 @@ Configuration System ←→ Environment Variables ←→ Search Cache ←→ Sea
 ### Security Considerations
 
 #### **Shell Command Injection Prevention**
+
 - **File Path Escaping**: Proper shell escaping for file paths with spaces/special characters
 - **Command Sanitization**: Controlled command construction with predefined patterns
 - **Environment Isolation**: Separate environment variables prevent cross-contamination
 
 #### **Process Management**
+
 - **Resource Cleanup**: Proper terminal and process disposal
 - **Error Handling**: Graceful degradation on external tool failures
 - **Timeout Management**: Process lifecycle monitoring
@@ -152,16 +169,19 @@ Configuration System ←→ Environment Variables ←→ Search Cache ←→ Sea
 ### Performance Optimizations
 
 #### **Lazy Loading**
+
 - **Command Registration**: Commands registered only when needed
 - **Configuration Loading**: Reactive configuration updates
 - **Process Spawning**: On-demand process creation
 
 #### **Caching Strategy**
+
 - **Query Caching**: Recent search queries cached per project
 - **Configuration Caching**: In-memory configuration state
 - **Result Streaming**: Pipe-based data transfer between processes
 
 #### **Memory Management**
+
 - **Process Cleanup**: Automatic terminal disposal after use
 - **Stream Management**: Proper pipe closure and cleanup
 - **Cache Expiration**: Time-based cache invalidation
@@ -169,6 +189,7 @@ Configuration System ←→ Environment Variables ←→ Search Cache ←→ Sea
 ## Consequences
 
 ### Positive
+
 - **Scalability**: Handles large codebases efficiently through external tools
 - **Flexibility**: Highly configurable search workflows
 - **Performance**: Leverages optimized external tools (fzf, ripgrep)
@@ -177,6 +198,7 @@ Configuration System ←→ Environment Variables ←→ Search Cache ←→ Sea
 - **Maintainability**: Clear separation of concerns and modular design
 
 ### Negative
+
 - **External Dependencies**: Requires fzf, ripgrep, and bat to be installed
 - **Platform Complexity**: Different behavior on Windows vs Unix-like systems
 - **Process Management**: Complex terminal and process lifecycle management
@@ -184,12 +206,14 @@ Configuration System ←→ Environment Variables ←→ Search Cache ←→ Sea
 - **Debugging Complexity**: Harder to debug across multiple processes and tools
 
 ### Risks
+
 - **Tool Availability**: Extension fails if external tools are not installed
 - **Process Leaks**: Potential resource leaks if cleanup fails
 - **Configuration Drift**: Environment variables may become inconsistent
 - **Platform Differences**: Behavior differences across operating systems
 
 ### Mitigations
+
 - **Graceful Degradation**: Clear error messages when tools are missing
 - **Resource Monitoring**: Proper cleanup and disposal patterns
 - **Configuration Validation**: Type-safe configuration with validation
@@ -200,20 +224,21 @@ Configuration System ←→ Environment Variables ←→ Search Cache ←→ Sea
 
 ### Key Files and Responsibilities
 
-| File | Primary Responsibility | Key Patterns |
-|------|----------------------|--------------|
-| `extension.ts` | VSCode integration | Command registration, reactive configuration |
-| `commands.ts` | Command orchestration | Process spawning, file opening |
-| `commands/find-files.ts` | File search | rg + fzf pipeline |
-| `commands/live-grep.ts` | Text search | Live filtering with fzf --phony |
-| `commands/git-status.ts` | Git integration | Git status parsing |
-| `commands/find-todo-fixme.ts` | Comment discovery | Pattern-based search |
-| `utils/search-cache.ts` | Cache management | Atomic file operations |
-| `config.ts` | Configuration | Reactive configuration state |
+| File                          | Primary Responsibility | Key Patterns                                 |
+| ----------------------------- | ---------------------- | -------------------------------------------- |
+| `extension.ts`                | VSCode integration     | Command registration, reactive configuration |
+| `commands.ts`                 | Command orchestration  | Process spawning, file opening               |
+| `commands/find-files.ts`      | File search            | rg + fzf pipeline                            |
+| `commands/live-grep.ts`       | Text search            | Live filtering with fzf --phony              |
+| `commands/git-status.ts`      | Git integration        | Git status parsing                           |
+| `commands/find-todo-fixme.ts` | Comment discovery      | Pattern-based search                         |
+| `utils/search-cache.ts`       | Cache management       | Atomic file operations                       |
+| `config.ts`                   | Configuration          | Reactive configuration state                 |
 
 ### Configuration Architecture
 
 The extension uses a three-tier configuration system:
+
 1. **VSCode Settings**: User-configurable settings in settings.json
 2. **Runtime Configuration**: In-memory state managed by reactive-vscode
 3. **Environment Variables**: Bridge between VSCode and shell commands
@@ -231,12 +256,14 @@ The extension uses a three-tier configuration system:
 ## Future Considerations
 
 ### Planned Enhancements
+
 - **Workspace Multi-root Support**: Enhanced multi-workspace search
 - **Custom Preview Commands**: User-defined preview commands
 - **Search History**: Extended search history and favorites
 - **Integration Plugins**: Support for additional external tools
 
 ### Architectural Evolution
+
 - **Plugin Architecture**: Support for third-party search providers
 - **Language Server Integration**: Semantic search capabilities
 - **Performance Monitoring**: Built-in performance metrics

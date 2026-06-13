@@ -3,9 +3,9 @@ id: task-5
 title: Fix file opening for paths with special characters and spaces
 status: Done
 assignee:
-  - '@claude'
-created_date: '2025-07-11'
-updated_date: '2025-07-11'
+  - "@claude"
+created_date: "2025-07-11"
+updated_date: "2025-07-11"
 labels: []
 dependencies: []
 ---
@@ -32,21 +32,26 @@ File opening fails when file paths contain special characters (spaces, hyphens, 
 Fixed file opening for paths with special characters and spaces by implementing proper shell path escaping.
 
 ## Root Cause
+
 The issue was in the exec() call in src/commands.ts where file paths were directly interpolated into shell commands without proper quoting, causing the shell to split paths on spaces and treat special characters as shell metacharacters.
 
 ## Solution Implemented
+
 1. Added escapeShellPath() function that wraps file paths in double quotes and escapes any existing quotes within the path
 2. Updated the exec() command to use the escaped file path
 3. Added proper TypeScript typing for the selection variable
 
 ## Technical Details
+
 - The escapeShellPath() function handles both simple and complex file paths
 - Supports files with spaces, hyphens, parentheses, ampersands, and other special characters
 - Maintains compatibility with line:column jumping format
 - Cross-platform compatible (Windows, macOS, Linux)
 
 ## Testing
+
 Verified with test files containing:
+
 - Spaces: 'test file with spaces.txt'
 - Parentheses: 'test-file-(with-parentheses).txt'
 - Mixed special chars: 'test file - (mixed & special).txt'

@@ -3,9 +3,9 @@ id: task-4
 title: Fix preview command for files with complex names and special characters
 status: Done
 assignee:
-  - '@claude'
-created_date: '2025-07-11'
-updated_date: '2025-07-11'
+  - "@claude"
+created_date: "2025-07-11"
+updated_date: "2025-07-11"
 labels: []
 dependencies: []
 ---
@@ -35,11 +35,12 @@ Fixed the preview command for files with complex names containing spaces, hyphen
 Fixed the preview command for files with complex names in multiple steps:
 
 1. Initial issue: Variable assignment file="{}" broke with parentheses in filenames
-2. First fix: Used {} directly but still had shell parsing issues 
+2. First fix: Used {} directly but still had shell parsing issues
 3. Second fix: Used bash -c with positional parameters (-- {}) for proper parameter handling
 4. Final fix: Added unquoteGitFilename() function to handle quotes that git adds around filenames with special characters in git status --porcelain output
 
 The complete solution now properly handles:
+
 - Files with spaces, hyphens, parentheses, and other special characters
 - Git's automatic quoting of filenames with special characters
 - Cross-platform compatibility (Windows PowerShell and Unix bash)

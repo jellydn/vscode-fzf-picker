@@ -3,8 +3,8 @@ id: task-14
 title: Support configurable cache directory for immutable filesystems
 status: Done
 assignee: []
-created_date: '2025-09-11 23:44'
-updated_date: '2025-09-11 23:57'
+created_date: "2025-09-11 23:44"
+updated_date: "2025-09-11 23:57"
 labels: []
 dependencies: []
 ---
@@ -14,16 +14,18 @@ dependencies: []
 Enable users to configure cache directory location to support systems like NixOS where extension directory is read-only
 
 ## Acceptance Criteria
+
 <!-- AC:BEGIN -->
+
 - [ ] #1 Cache directory can be configured via VS Code settings,Environment variable FZF_PICKER_CACHE_DIR overrides settings,Cache falls back gracefully when directory is not writable,Cache can be disabled entirely when needed
 <!-- AC:END -->
-
 
 ## Implementation Notes
 
 Successfully implemented configurable cache directory feature with comprehensive testing and OS-specific default paths.
 
 **Implementation:**
+
 1. Added VS Code configuration settings:
    - fzf-picker.cache.enabled: Enable/disable caching
    - fzf-picker.cache.directory: Custom cache directory path
@@ -58,6 +60,7 @@ Successfully implemented configurable cache directory feature with comprehensive
    - All existing cache functionality
 
 **Files modified:**
+
 - package.json: Added cache configuration schema with OS-specific documentation
 - src/config.ts: Added cache properties to Config interface
 - src/extension.ts: Configuration mapping and environment variables
@@ -65,15 +68,17 @@ Successfully implemented configurable cache directory feature with comprehensive
 - src/utils/search-cache.spec.ts: Comprehensive test suite with platform tests
 
 **OS-Specific Cache Locations:**
+
 - Windows: C:\Users\[user]\AppData\Roaming\fzf-picker
-- macOS: /Users/[user]/Library/Caches/fzf-picker  
+- macOS: /Users/[user]/Library/Caches/fzf-picker
 - Linux: /home/[user]/.cache/fzf-picker
 - Linux with XDG: $XDG_CACHE_HOME/fzf-picker
 
 **Testing:**
+
 - All 23 cache tests pass including new OS-specific tests
 - Environment variable override works correctly
 - VS Code configuration integration working
-- Cache disable functionality working  
+- Cache disable functionality working
 - Platform-specific cache directory selection working
 - Graceful fallback to OS-appropriate default directories

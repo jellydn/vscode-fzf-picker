@@ -9,6 +9,7 @@ The git preview system in vscode-fzf-picker provides a preview pane when browsin
 ### Git Status File Picker
 
 The git status file picker (`pickFilesFromGitStatus`) shows all files with git changes including:
+
 - Modified files (M)
 - Added files (A)
 - Deleted files (D)
@@ -26,6 +27,7 @@ The preview is implemented using fzf's `--preview` flag with these components:
 ### File Status Detection
 
 Files are categorized based on `git status --porcelain` output:
+
 - First two characters indicate the file status
 - `??` indicates untracked files
 - Other codes indicate various tracked file states
@@ -45,6 +47,7 @@ Files are categorized based on `git status --porcelain` output:
 ### Environment Variables
 
 The git status picker reads these environment variables:
+
 - `PICK_FILE_FROM_GIT_STATUS_PREVIEW_ENABLED`: "1" or "0"
 - `PICK_FILE_FROM_GIT_STATUS_PREVIEW_COMMAND`: Preview command template
 - `PICK_FILE_FROM_GIT_STATUS_PREVIEW_WINDOW_CONFIG`: fzf preview window config
@@ -54,18 +57,21 @@ The git status picker reads these environment variables:
 ### Default Behavior
 
 The default preview command is `git diff --color=always -- {}` which:
+
 - Shows colored diff for tracked files with changes
 - Shows nothing for untracked files (limitation)
 
 ### Smart Preview Command
 
 A smart preview command should:
+
 1. Detect if the file is tracked or untracked
 2. Use `git diff` for tracked files
 3. Use `cat` or similar for untracked files
 4. Handle special cases (deleted files, binary files, etc.)
 
 Example smart preview command:
+
 ```bash
 if git ls-files --error-unmatch {} 2>/dev/null; then
   git diff --color=always -- {}

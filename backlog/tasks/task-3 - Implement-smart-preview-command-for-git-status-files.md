@@ -3,9 +3,9 @@ id: task-3
 title: Implement smart preview command for git status files
 status: Done
 assignee:
-  - '@claude'
-created_date: '2025-07-11'
-updated_date: '2025-07-11'
+  - "@claude"
+created_date: "2025-07-11"
+updated_date: "2025-07-11"
 labels: []
 dependencies:
   - task-1
@@ -36,6 +36,7 @@ Create a preview command that intelligently handles both tracked and untracked f
 Enhanced the smart preview command to be more robust and user-friendly. The improved command handles multiple scenarios gracefully including binary files, large files, and missing commands.
 
 Implementation details:
+
 - Uses conditional logic to detect tracked vs untracked files
 - Prefers bat for syntax highlighting when available
 - Falls back to head for plain text preview

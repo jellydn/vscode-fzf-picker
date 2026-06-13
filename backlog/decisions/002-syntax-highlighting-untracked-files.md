@@ -1,6 +1,7 @@
 # Decision: Syntax Highlighting for Untracked Files
 
 ## Status
+
 Proposed
 
 ## Context
@@ -21,12 +22,14 @@ Implement syntax highlighting for untracked file previews using `bat` as the pri
 ## Consequences
 
 ### Positive
+
 - Enhanced readability for code files and structured content
 - Better user experience when reviewing untracked files
 - Consistent with modern terminal tool standards
 - Maintains compatibility with systems without `bat`
 
 ### Negative
+
 - Additional dependency on `bat` (though optional)
 - Slight performance overhead for syntax parsing
 - Need to handle edge cases (binary files, unsupported file types)
@@ -35,22 +38,30 @@ Implement syntax highlighting for untracked file previews using `bat` as the pri
 ## Alternatives Considered
 
 ### 1. Always Use Plain Text
+
 Continue using `cat` for all untracked files.
+
 - **Pros**: Simple, no dependencies, fast
 - **Cons**: Poor readability for code files, suboptimal user experience
 
 ### 2. Multiple Tool Support
+
 Support multiple syntax highlighting tools (bat, highlight, pygmentize).
+
 - **Pros**: Maximum compatibility and user choice
 - **Cons**: Complex configuration, harder to maintain
 
 ### 3. VSCode Integration
+
 Use VSCode's built-in syntax highlighting via extensions.
+
 - **Pros**: Consistent with VSCode experience
 - **Cons**: Complex implementation, performance concerns, dependency on VSCode APIs
 
 ### 4. User Configuration Only
+
 Require users to manually configure their preferred syntax highlighting.
+
 - **Pros**: Full user control, no assumptions
 - **Cons**: Poor default experience, manual setup required
 
@@ -81,32 +92,38 @@ fi
 ### Additional Considerations:
 
 #### Tool Detection
+
 - Check for `bat` availability using `command -v bat`
 - Graceful fallback to `cat` when `bat` is unavailable or fails
 - Consider system-specific installation paths
 
 #### Performance Optimizations
+
 - Use `--style=plain` to minimize `bat` overhead (no line numbers, grid)
 - Handle large files appropriately (bat has built-in limits)
 - Consider file size limits to prevent hanging
 
 #### File Type Handling
+
 - Let `bat` handle file type detection automatically
 - Graceful handling of binary files (bat detects and shows appropriate message)
 - Support for common file types (.js, .ts, .py, .md, .json, .yml, etc.)
 
 #### Configuration Options
+
 - Allow users to override via environment variables:
   - `PICK_FILE_FROM_GIT_STATUS_PREVIEW_COMMAND`
   - `FIND_FILES_PREVIEW_COMMAND`
 - Maintain backward compatibility with existing configurations
 
 #### Error Handling
+
 - Handle permission errors gracefully
 - Fallback to `cat` if `bat` fails for any reason
 - Show meaningful error messages for inaccessible files
 
 #### Cross-Platform Support
+
 - Ensure compatibility across Linux, macOS, and Windows
 - Handle different `bat` installation methods (package managers, cargo, etc.)
 - Test with various terminal environments
@@ -114,6 +131,7 @@ fi
 ## Related Issues
 
 This decision builds upon:
+
 - Decision 001: Git Preview for Untracked Files
 - The need for better developer experience when reviewing code changes
 - User feedback about poor readability of plain text previews
