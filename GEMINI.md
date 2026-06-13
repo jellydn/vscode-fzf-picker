@@ -1,5 +1,5 @@
-
 <!-- BACKLOG.MD GUIDELINES START -->
+
 # Instructions for the usage of Backlog.md CLI Tool
 
 ## 1. Source of Truth
@@ -25,7 +25,7 @@ should explain the purpose and context of the task. Code snippets should be avoi
 List specific, measurable outcomes that define what means to reach the goal from the description. Use checkboxes (`- [ ]`) for tracking.
 When defining `## Acceptance Criteria` for a task, focus on **outcomes, behaviors, and verifiable requirements** rather
 than step-by-step implementation details.
-Acceptance Criteria (AC) define *what* conditions must be met for the task to be considered complete.
+Acceptance Criteria (AC) define _what_ conditions must be met for the task to be considered complete.
 They should be testable and confirm that the core purpose of the task is achieved.
 **Key Principles for Good ACs:**
 
@@ -35,9 +35,9 @@ They should be testable and confirm that the core purpose of the task is achieve
 - **Complete:** Collectively, ACs should cover the scope of the task.
 - **User-Focused (where applicable):** Frame ACs from the perspective of the end-user or the system's external behavior.
 
-    - *Good Example:* "- [ ] User can successfully log in with valid credentials."
-    - *Good Example:* "- [ ] System processes 1000 requests per second without errors."
-    - *Bad Example (Implementation Step):* "- [ ] Add a new function `handleLogin()` in `auth.ts`."
+  - _Good Example:_ "- [ ] User can successfully log in with valid credentials."
+  - _Good Example:_ "- [ ] System processes 1000 requests per second without errors."
+  - _Bad Example (Implementation Step):_ "- [ ] Add a new function `handleLogin()` in `auth.ts`."
 
 ### Task file
 
@@ -53,7 +53,7 @@ Once a task is created it will be stored in `backlog/tasks/` directory as a Mark
   previous
   tasks (id < current task id).
 
-- When creating multiple tasks, ensure they are **independent** and they do not depend on future tasks.   
+- When creating multiple tasks, ensure they are **independent** and they do not depend on future tasks.  
   Example of wrong tasks splitting: task 1: "Add API endpoint for user data", task 2: "Define the user model and DB
   schema".  
   Example of correct tasks splitting: task 1: "Add system for handling API requests", task 2: "Add user model and DB
@@ -146,12 +146,12 @@ A task is **Done** only when **ALL** of the following are complete:
 3. **Automated tests** (unit + integration) cover new logic.
 4. **Static analysis**: linter & formatter succeed.
 5. **Documentation**:
-    - All relevant docs updated (any relevant README file, backlog/docs, backlog/decisions, etc.).
-    - Task file **MUST** have an `## Implementation Notes` section added summarising:
-        - Approach taken
-        - Features implemented or modified
-        - Technical decisions and trade-offs
-        - Modified or added files
+   - All relevant docs updated (any relevant README file, backlog/docs, backlog/decisions, etc.).
+   - Task file **MUST** have an `## Implementation Notes` section added summarising:
+     - Approach taken
+     - Features implemented or modified
+     - Technical decisions and trade-offs
+     - Modified or added files
 6. **Review**: self review code.
 7. **Task hygiene**: status set to **Done** via CLI (`backlog task edit <id> -s Done`).
 8. **No regressions**: performance, security and licence checks green.
@@ -161,7 +161,7 @@ A task is **Done** only when **ALL** of the following are complete:
 ## 9. Handy CLI Commands
 
 | Purpose          | Command                                                                |
-|------------------|------------------------------------------------------------------------|
+| ---------------- | ---------------------------------------------------------------------- |
 | Create task      | `backlog task create "Add OAuth"`                                      |
 | Create with desc | `backlog task create "Feature" -d "Enables users to use this feature"` |
 | Create with AC   | `backlog task create "Feature" --ac "Must work,Must be tested"`        |

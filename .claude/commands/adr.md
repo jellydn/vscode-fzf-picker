@@ -41,7 +41,9 @@ You are the ADR Manager Agent responsible for:
 ## ADR Principles
 
 ### What are ADRs?
+
 Architecture Decision Records (ADRs) are short documents that capture important architectural decisions made during project development. They help teams:
+
 - Record the context and reasoning behind decisions
 - Track the evolution of architectural choices
 - Onboard new team members
@@ -49,7 +51,9 @@ Architecture Decision Records (ADRs) are short documents that capture important 
 - Learn from past decisions
 
 ### ADR Structure
+
 Each ADR typically contains:
+
 - **Title**: Brief description of the decision
 - **Status**: Proposed, Accepted, Deprecated, Superseded
 - **Context**: The situation requiring a decision
@@ -61,6 +65,7 @@ Each ADR typically contains:
 Based on the action requested in $ARGUMENTS:
 
 ### For "init [DIRECTORY]":
+
 1. **Initialize ADR Structure**:
    - Run `adr init [directory]` (defaults to doc/adr)
    - Create directory structure if it doesn't exist
@@ -74,8 +79,9 @@ Based on the action requested in $ARGUMENTS:
    - Suggest integration with project documentation
 
 ### For "new <TITLE>":
+
 1. **Create New ADR**:
-   - Run `adr new "<TITLE>"` 
+   - Run `adr new "<TITLE>"`
    - Open created ADR file for editing
    - Provide template guidance
    - Explain ADR sections and best practices
@@ -87,6 +93,7 @@ Based on the action requested in $ARGUMENTS:
    - Recommend status and context information
 
 ### For "supersede <NUMBER> <TITLE>":
+
 1. **Create Superseding ADR**:
    - Run `adr new -s <NUMBER> "<TITLE>"`
    - Link to superseded ADR
@@ -100,6 +107,7 @@ Based on the action requested in $ARGUMENTS:
    - Ensure continuity of decision context
 
 ### For "list":
+
 1. **List All ADRs**:
    - Find ADR directory (doc/adr, docs/adr, etc.)
    - Use `find` or `ls` to show all ADR files
@@ -113,6 +121,7 @@ Based on the action requested in $ARGUMENTS:
    - Highlight important decisions
 
 ### For "search <TERM>":
+
 1. **Search ADR Content**:
    - Use Grep to search within ADR files
    - Search titles, content, and metadata
@@ -126,6 +135,7 @@ Based on the action requested in $ARGUMENTS:
    - Suggest related searches
 
 ### For "view <NUMBER>":
+
 1. **Display ADR Content**:
    - Find and read ADR file by number
    - Show full ADR content formatted
@@ -141,6 +151,7 @@ Based on the action requested in $ARGUMENTS:
 ## ADR Directory Detection
 
 Common ADR locations to check:
+
 - `doc/adr/` (default)
 - `docs/adr/`
 - `docs/architecture/decisions/`
@@ -150,6 +161,7 @@ Common ADR locations to check:
 ## ADR Templates
 
 ### Basic ADR Template:
+
 ```markdown
 # [NUMBER]. [TITLE]
 
@@ -170,15 +182,18 @@ Date: [DATE]
 ## Consequences
 
 ### Positive
+
 - [Positive outcome 1]
 - [Positive outcome 2]
 
 ### Negative
+
 - [Negative outcome 1]
 - [Risk or trade-off]
 ```
 
 ### Decision Categories:
+
 - **Technology Choices**: Frameworks, libraries, tools
 - **Architecture Patterns**: Design patterns, architectural styles
 - **Process Decisions**: Development workflows, deployment strategies
@@ -188,6 +203,7 @@ Date: [DATE]
 ## Best Practices
 
 ### Writing Good ADRs:
+
 1. **Be Specific**: Clear, concrete decisions rather than vague principles
 2. **Include Context**: Explain why the decision was necessary
 3. **Document Alternatives**: Show what was considered and why rejected
@@ -197,12 +213,14 @@ Date: [DATE]
 7. **Link Related Decisions**: Show decision relationships
 
 ### ADR Lifecycle:
+
 1. **Proposed**: Decision under consideration
 2. **Accepted**: Decision approved and implemented
 3. **Deprecated**: Decision no longer recommended
 4. **Superseded**: Replaced by newer decision
 
 ### Maintenance:
+
 - Review ADRs regularly
 - Update status as decisions evolve
 - Archive obsolete decisions
@@ -211,12 +229,14 @@ Date: [DATE]
 ## Integration with Project
 
 ### Documentation Links:
+
 - Link ADRs in project README
 - Reference ADRs in code comments
 - Include ADRs in architecture documentation
 - Cross-reference with technical specifications
 
 ### Development Workflow:
+
 - Create ADRs before major technical decisions
 - Review ADRs during architecture discussions
 - Update ADRs when implementations change
@@ -225,6 +245,7 @@ Date: [DATE]
 ## Example Workflows
 
 ### New Architecture Decision:
+
 ```bash
 # 1. Initialize ADR structure (if not done)
 /adr init
@@ -237,6 +258,7 @@ Date: [DATE]
 ```
 
 ### Superseding Previous Decision:
+
 ```bash
 # 1. Create superseding ADR
 /adr supersede 5 "Migrate from microservices to monolithic architecture"
@@ -246,6 +268,7 @@ Date: [DATE]
 ```
 
 ### Decision Research:
+
 ```bash
 # 1. Search for related decisions
 /adr search "database"
@@ -276,24 +299,28 @@ Date: [DATE]
 ## Common Use Cases
 
 ### Technology Selection:
+
 - Framework choice (React vs Vue vs Angular)
 - Database selection (SQL vs NoSQL)
 - Cloud provider decision
 - Programming language choice
 
 ### Architecture Patterns:
+
 - Monolithic vs microservices
 - Event-driven vs request-response
 - Database per service vs shared database
 - API design patterns
 
 ### Quality Decisions:
+
 - Performance optimization strategies
 - Security implementation approaches
 - Scalability patterns
 - Monitoring and observability
 
 ### Process Decisions:
+
 - CI/CD pipeline design
 - Testing strategies
 - Deployment approaches

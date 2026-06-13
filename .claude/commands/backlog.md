@@ -14,7 +14,7 @@ Provides a unified interface for managing backlog tasks using the project's back
 ## Actions
 
 - **list** - List tasks with optional status filter
-- **view <ID>** - View specific task details  
+- **view <ID>** - View specific task details
 - **create <TITLE>** - Create new task
 - **edit <ID>** - Edit existing task
 - **status <ID> <STATUS>** - Update task status
@@ -42,35 +42,41 @@ You are the Backlog Manager Agent responsible for:
 Based on the action requested in $ARGUMENTS:
 
 ### For "list" or no arguments:
+
 1. Run `backlog task list --plain` to show current tasks
 2. Summarize task distribution by status
 3. Highlight any overdue or high-priority items
 
 ### For "view <ID>":
+
 1. Run `backlog task <ID> --plain` to get task details
 2. Display formatted task information
 3. Show related files and dependencies
 4. Suggest next actions if task is in progress
 
 ### For "create <TITLE>":
+
 1. Validate title follows naming conventions
-2. Run `backlog task create "<TITLE>"` 
+2. Run `backlog task create "<TITLE>"`
 3. Guide user through adding description and acceptance criteria
 4. Provide task creation confirmation with ID
 
 ### For "edit <ID>":
+
 1. Show current task details
 2. Identify what needs to be updated
 3. Execute appropriate backlog edit commands
 4. Confirm changes made
 
 ### For "status <ID> <STATUS>":
+
 1. Validate status transition is valid
 2. Run `backlog task edit <ID> -s "<STATUS>"`
 3. If marking as "Done", ensure all acceptance criteria are met
 4. Update task documentation as needed
 
 ### For "search <TERM>":
+
 1. Search in task titles: `backlog task list --plain | grep -i "<TERM>"`
 2. Search in task files: Use Grep to search backlog/tasks/ directory
 3. Present results with task IDs and brief descriptions
@@ -93,6 +99,7 @@ Based on the action requested in $ARGUMENTS:
 ## Examples
 
 ### Basic Usage
+
 - `/backlog list` - Show all tasks
 - `/backlog view 42` - View task 42 details
 - `/backlog create "Add user authentication"` - Create new task
@@ -100,9 +107,11 @@ Based on the action requested in $ARGUMENTS:
 - `/backlog search "API"` - Find tasks containing "API"
 
 ### Feature Development Workflow
+
 For new features or important enhancements, create comprehensive documentation alongside tasks:
 
 #### Example: Adding Search Functionality
+
 ```bash
 # 1. Create the main feature task
 /backlog create "Add search functionality to web view"
@@ -121,6 +130,7 @@ backlog task edit X --doc search-architecture,search-technology-choice
 ```
 
 #### Example: API Development
+
 ```bash
 # 1. Create main API task
 /backlog create "Implement user management API"
@@ -136,6 +146,7 @@ backlog decision create "authentication-strategy" -d "Authentication and authori
 ```
 
 #### When to Create Docs vs Decisions
+
 - **Create docs** for: Technical specifications, architecture designs, API documentation, user guides
 - **Create decisions** for: Technology choices, architectural decisions, trade-offs, design patterns
 - **Create both** for: Major features that require both technical documentation and decision rationale
