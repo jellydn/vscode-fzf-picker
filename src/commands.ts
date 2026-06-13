@@ -29,11 +29,38 @@ function logDebug(message: string, data?: unknown) {
  * Properly escapes a file path for shell execution by wrapping it in quotes
  * and escaping any existing quotes within the path.
  */
-function escapeShellPath(filePath: string): string {
+export function escapeShellPath(filePath: string): string {
 	// Replace any existing double quotes with escaped quotes
 	const escapedPath = filePath.replace(/"/g, '\\"');
 	// Wrap the entire path in double quotes
 	return `"${escapedPath}"`;
+}
+
+/**
+ * Constructs the shell command to open a file at an optional line/column.
+ *
+ * Constructs the full file:line:column string BEFORE quoting, so that
+ * the line/column indicators are part of the quoted argument. This avoids
+ * the bug where code -g "/path/file.ts":42 would put :42 outside quotes.
+ *
+ * @param openCommand - The editor CLI command (e.g. "code -g")
+ * @param file - The file path (already parsed, no ANSI codes)
+ * @param selection - Optional line/column selection
+ * @returns The complete shell command string
+ */
+export function buildOpenFileCommand(
+	openCommand: string,
+	file: string,
+	selection?: {
+		start: { line: number; character: number };
+		end: { line: number; character: number };
+	},
+): string {
+	let fileArg = file;
+	if (selection) {
+		fileArg = `${file}:${selection.start.line}:${selection.start.character}`;
+	}
+	return `${openCommand} ${escapeShellPath(fileArg)}`;
 }
 
 export function openFiles(filePath: string) {
@@ -150,12 +177,11 @@ if (require.main === module) {
 			const openPromises = files.map((filePath, index) => {
 				return new Promise<void>((resolve, reject) => {
 					const { file, selection } = openFiles(filePath);
-					let fileArg = file;
-					if (selection) {
-						fileArg = `${file}:${selection.start.line}${selection.start.character > 0 ? `:${selection.start.character}` : ""}`;
-					}
-					const escapedFile = escapeShellPath(fileArg);
-					const finalCommand = `${openCommand} ${escapedFile}`;
+					const finalCommand = buildOpenFileCommand(
+						openCommand,
+						file,
+						selection,
+					);
 
 					logDebug(`Opening file ${index + 1}/${files.length}`, {
 						originalPath: filePath,

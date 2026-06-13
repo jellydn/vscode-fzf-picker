@@ -1,53 +1,11 @@
 import * as childProcess from "node:child_process";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { openFiles } from "./commands";
+import { buildOpenFileCommand, openFiles } from "./commands";
 import { findFiles } from "./commands/find-files";
 import { findTodoFixme, findTodoFixmeResume } from "./commands/find-todo-fixme";
 import { liveGrep } from "./commands/live-grep";
 import { getLastQuery, saveLastQuery } from "./utils/search-cache";
-
-// Helper to simulate the command string construction that happens in commands.ts
-// This isolates the bug: line number is appended OUTSIDE the quoted file path
-function buildOpenCommand(
-	openCommand: string,
-	filePath: string,
-	line?: number,
-	column?: number,
-): string {
-	const fileWithLine =
-		line !== undefined
-			? column !== undefined
-				? `${filePath}:${line}:${column}`
-				: `${filePath}:${line}`
-			: filePath;
-
-	// CURRENT (buggy) behavior: escape first, then append line outside quotes
-	const escapedFile = `"${filePath.replace(/"/g, '\\"')}"`;
-	if (line !== undefined) {
-		const selectionSuffix = `${escapedFile}:${line}`;
-		return `${openCommand} ${selectionSuffix}`;
-	}
-	return `${openCommand} ${escapedFile}`;
-}
-
-// CORRECT behavior: construct full path with line:column first, THEN escape
-function buildOpenCommandFixed(
-	openCommand: string,
-	filePath: string,
-	line?: number,
-	column?: number,
-): string {
-	const fileArg =
-		line !== undefined
-			? column !== undefined
-				? `${filePath}:${line}:${column}`
-				: `${filePath}:${line}`
-			: filePath;
-	const escapedFile = `"${fileArg.replace(/"/g, '\\"')}"`;
-	return `${openCommand} ${escapedFile}`;
-}
-
 vi.mock("node:child_process");
 vi.mock("node:fs");
 vi.mock("./utils/search-cache", () => ({
@@ -55,26 +13,58 @@ vi.mock("./utils/search-cache", () => ({
 	getLastQuery: vi.fn(),
 	clearCache: vi.fn(),
 }));
-
+describe("buildOpenFileCommand", () => {
+	it("includes line and column inside the quoted file path string", () => {
+		const cmd = buildOpenFileCommand("code -g", "/path/to/file.ts", {
+			start: { line: 42, character: 15 },
+			end: { line: 42, character: 15 },
+		});
+		// The full file:line:col string must be inside the quotes
+		expect(cmd).toBe('code -g "/path/to/file.ts:42:15"');
+		// No colons outside quotes
+		expect(cmd).toMatch(/"[^"]+"$/);
+	});
+	it("includes line and column when character is 0", () => {
+		const cmd = buildOpenFileCommand("code -g", "/path/to/file.ts", {
+			start: { line: 42, character: 0 },
+			end: { line: 42, character: 0 },
+		});
+		expect(cmd).toBe('code -g "/path/to/file.ts:42:0"');
+	});
+	it("handles file path with spaces", () => {
+		const cmd = buildOpenFileCommand("code -g", "/path/to/my file.ts", {
+			start: { line: 10, character: 5 },
+			end: { line: 10, character: 5 },
+		});
+		expect(cmd).toBe('code -g "/path/to/my file.ts:10:5"');
+	});
+	it("handles file path without selection (no regression)", () => {
+		const cmd = buildOpenFileCommand("code -g", "/path/to/file.ts");
+		expect(cmd).toBe('code -g "/path/to/file.ts"');
+	});
+	it("escapes existing double quotes in the path", () => {
+		const cmd = buildOpenFileCommand("cursor -g", '/path/with"quote/file.ts', {
+			start: { line: 10, character: 0 },
+			end: { line: 10, character: 0 },
+		});
+		expect(cmd).toBe('cursor -g "/path/with\\"quote/file.ts:10:0"');
+	});
+});
 describe("findFiles", () => {
 	const cwd = process.cwd();
 	const testDir = path.join(cwd, "src");
-
 	beforeEach(() => {
 		vi.resetAllMocks();
 		vi.resetModules();
 		vi.spyOn(process, "chdir").mockImplementation(() => {});
 		process.chdir(testDir);
 	});
-
 	afterEach(() => {
 		vi.clearAllMocks();
 		process.chdir(cwd);
 	});
-
 	it("should use gitignore by default", async () => {
 		const mockSpawn = vi.spyOn(childProcess, "spawn");
-
 		// Mock rg and fzf processes
 		const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
 		const mockFzf = {
@@ -84,7 +74,6 @@ describe("findFiles", () => {
 				if (event === "close") callback(0);
 			}),
 		};
-
 		mockSpawn.mockImplementation((command) => {
 			if (command === "rg")
 				return mockRg as unknown as childProcess.ChildProcess;
@@ -92,20 +81,15 @@ describe("findFiles", () => {
 				return mockFzf as unknown as childProcess.ChildProcess;
 			return {} as childProcess.ChildProcess;
 		});
-
 		await findFiles([testDir]);
-
 		expect(mockSpawn).toHaveBeenCalledWith(
 			"rg",
 			expect.not.arrayContaining(["--no-ignore"]),
 		);
 	});
-
 	it("should not use gitignore when USE_GITIGNORE is set to 0", async () => {
 		process.env.USE_GITIGNORE = "0";
 		const mockSpawn = vi.spyOn(childProcess, "spawn");
-
-		// Mock rg and fzf processes
 		const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
 		const mockFzf = {
 			stdin: { end: vi.fn() },
@@ -114,7 +98,6 @@ describe("findFiles", () => {
 				if (event === "close") callback(0);
 			}),
 		};
-
 		mockSpawn.mockImplementation((command) => {
 			if (command === "rg")
 				return mockRg as unknown as childProcess.ChildProcess;
@@ -122,20 +105,15 @@ describe("findFiles", () => {
 				return mockFzf as unknown as childProcess.ChildProcess;
 			return {} as childProcess.ChildProcess;
 		});
-
 		await findFiles([testDir]);
-
 		expect(mockSpawn).toHaveBeenCalledWith(
 			"rg",
 			expect.arrayContaining(["--no-ignore"]),
 		);
 	});
-
 	it("should handle file type filtering", async () => {
 		process.env.TYPE_FILTER = "ts:js";
 		const mockSpawn = vi.spyOn(childProcess, "spawn");
-
-		// Mock rg and fzf processes
 		const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
 		const mockFzf = {
 			stdin: { end: vi.fn() },
@@ -144,7 +122,6 @@ describe("findFiles", () => {
 				if (event === "close") callback(0);
 			}),
 		};
-
 		mockSpawn.mockImplementation((command) => {
 			if (command === "rg")
 				return mockRg as unknown as childProcess.ChildProcess;
@@ -152,81 +129,55 @@ describe("findFiles", () => {
 				return mockFzf as unknown as childProcess.ChildProcess;
 			return {} as childProcess.ChildProcess;
 		});
-
 		await findFiles([testDir]);
-
 		expect(mockSpawn).toHaveBeenCalledWith(
 			"rg",
 			expect.arrayContaining(["--type", "ts", "--type", "js"]),
 		);
 	});
-
 	it("should return an empty array when fzf process exits with non-zero code", async () => {
 		const mockSpawn = vi.spyOn(childProcess, "spawn");
-
-		// Mock rg process
 		const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
-
-		// Mock fzf process with non-zero exit code
 		const mockFzf = {
 			stdin: { end: vi.fn() },
 			stdout: { on: vi.fn() },
 			on: vi.fn().mockImplementation((event, callback) => {
-				if (event === "close") {
-					callback(1);
-				}
+				if (event === "close") callback(1);
 			}),
 		};
-
 		mockSpawn.mockImplementation((command) => {
 			if (command === "fzf")
 				return mockFzf as unknown as childProcess.ChildProcess;
 			return mockRg as unknown as childProcess.ChildProcess;
 		});
-
 		const result = await findFiles([testDir]);
 		expect(result).toEqual([]);
 	});
-
-	// Edge cases for file selection without search query
 	describe("arrow key selection edge cases", () => {
 		it("should handle file selection via arrow keys without search query", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
-
-			// Mock rg process
 			const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
-
-			// Mock fzf process that simulates user selecting file via arrow keys (no search input)
 			const mockFzf = {
 				stdin: { end: vi.fn() },
 				stdout: {
 					on: vi.fn().mockImplementation((event, callback) => {
-						if (event === "data") {
-							// Simulate fzf output: empty query line + selected file
-							// When user selects via arrow keys without typing: empty query + newline + filename
-							callback("\nfile1.txt");
-						}
+						if (event === "data") callback("\nfile1.txt");
 					}),
 				},
 				on: vi.fn().mockImplementation((event, callback) => {
 					if (event === "close") callback(0);
 				}),
 			};
-
 			mockSpawn.mockImplementation((command) => {
 				if (command === "fzf")
 					return mockFzf as unknown as childProcess.ChildProcess;
 				return mockRg as unknown as childProcess.ChildProcess;
 			});
-
 			const result = await findFiles([testDir]);
 			expect(result).toEqual([`${testDir}/file1.txt`]);
 		});
-
 		it("should handle empty query without passing --query parameter to fzf", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
-
-			// Mock rg and fzf processes
 			const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
 			const mockFzf = {
 				stdin: { end: vi.fn() },
@@ -235,7 +186,6 @@ describe("findFiles", () => {
 					if (event === "close") callback(0);
 				}),
 			};
-
 			mockSpawn.mockImplementation((command) => {
 				if (command === "rg")
 					return mockRg as unknown as childProcess.ChildProcess;
@@ -243,9 +193,7 @@ describe("findFiles", () => {
 					return mockFzf as unknown as childProcess.ChildProcess;
 				return {} as childProcess.ChildProcess;
 			});
-
-			await findFiles([testDir], ""); // Empty initial query
-
+			await findFiles([testDir], "");
 			expect(mockSpawn).toHaveBeenCalledWith(
 				"fzf",
 				expect.arrayContaining(["--print-query"]),
@@ -257,83 +205,135 @@ describe("findFiles", () => {
 				expect.any(Object),
 			);
 		});
-
 		it("should filter out empty lines from selected files", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
-
-			// Mock rg process
 			const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
-
-			// Mock fzf process that returns files with empty lines
 			const mockFzf = {
 				stdin: { end: vi.fn() },
 				stdout: {
 					on: vi.fn().mockImplementation((event, callback) => {
-						if (event === "data") {
-							// Simulate fzf output with empty lines
+						if (event === "data")
 							callback("search query\nfile1.txt\n\nfile2.txt\n \n");
-						}
 					}),
 				},
 				on: vi.fn().mockImplementation((event, callback) => {
 					if (event === "close") callback(0);
 				}),
 			};
-
 			mockSpawn.mockImplementation((command) => {
 				if (command === "fzf")
 					return mockFzf as unknown as childProcess.ChildProcess;
 				return mockRg as unknown as childProcess.ChildProcess;
 			});
-
 			const result = await findFiles([testDir]);
 			expect(result).toEqual([`${testDir}/file1.txt`, `${testDir}/file2.txt`]);
 		});
 	});
 });
-
 describe("liveGrep", () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
+		vi.spyOn(process, "chdir").mockImplementation(() => {});
 	});
-
 	afterEach(() => {
 		vi.clearAllMocks();
 	});
-
 	it("should handle errors", async () => {
 		const mockSpawn = vi.spyOn(childProcess, "spawn");
 		mockSpawn.mockImplementation(() => {
 			throw new Error("Command failed");
 		});
-
 		await expect(liveGrep([process.cwd()], "searchText")).rejects.toThrow(
 			"Command failed",
 		);
 	});
+	describe("--disabled flag (not deprecated --phony)", () => {
+		beforeEach(() => {
+			vi.resetAllMocks();
+			vi.spyOn(process, "chdir").mockImplementation(() => {});
+		});
+		it("uses --disabled instead of deprecated --phony", async () => {
+			const mockSpawn = vi.spyOn(childProcess, "spawn");
+			const testDir = "/home/user/project";
+			const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
+			const mockSh = {
+				stdout: { pipe: vi.fn().mockReturnValue(undefined) },
+				stderr: { pipe: vi.fn() },
+				on: vi.fn(),
+			};
+			const mockFzf = {
+				stdin: { end: vi.fn() },
+				stdout: { on: vi.fn() },
+				on: vi.fn().mockImplementation((event, callback) => {
+					if (event === "close") callback(0);
+				}),
+			};
+			mockSpawn.mockImplementation((command) => {
+				if (command === "rg")
+					return mockRg as unknown as childProcess.ChildProcess;
+				if (command === "sh")
+					return mockSh as unknown as childProcess.ChildProcess;
+				if (command === "fzf")
+					return mockFzf as unknown as childProcess.ChildProcess;
+				return {} as childProcess.ChildProcess;
+			});
+			await liveGrep([testDir], "test");
+			const fzfCall = mockSpawn.mock.calls.find(([cmd]) => cmd === "fzf");
+			const fzfArgs = fzfCall?.[1] as string[];
+			expect(fzfArgs).not.toContain("--phony");
+			expect(fzfArgs).toContain("--disabled");
+		});
+		it("strips ./ prefix with singleDirRoot", async () => {
+			const mockSpawn = vi.spyOn(childProcess, "spawn");
+			const testDir = "/home/user/project";
+			const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
+			const mockSh = {
+				stdout: { pipe: vi.fn().mockReturnValue(undefined) },
+				stderr: { pipe: vi.fn() },
+				on: vi.fn(),
+			};
+			const mockFzf = {
+				stdin: { end: vi.fn() },
+				stdout: {
+					on: vi.fn().mockImplementation((event, callback) => {
+						if (event === "data") callback("query\n./file.py:42:15:content\n");
+					}),
+				},
+				on: vi.fn().mockImplementation((event, callback) => {
+					if (event === "close") callback(0);
+				}),
+			};
+			mockSpawn.mockImplementation((command) => {
+				if (command === "rg")
+					return mockRg as unknown as childProcess.ChildProcess;
+				if (command === "sh")
+					return mockSh as unknown as childProcess.ChildProcess;
+				if (command === "fzf")
+					return mockFzf as unknown as childProcess.ChildProcess;
+				return {} as childProcess.ChildProcess;
+			});
+			const result = await liveGrep([testDir], "test");
+			expect(result[0]).toBe("/home/user/project/file.py:42:15:content");
+			expect(result[0]).not.toContain("/./");
+		});
+	});
 });
-
 describe("findTodoFixme", () => {
 	const cwd = process.cwd();
 	const testDir = path.join(cwd, "src");
-
 	beforeEach(() => {
 		vi.resetAllMocks();
 		vi.resetModules();
 		vi.spyOn(process, "chdir").mockImplementation(() => {});
 		process.chdir(testDir);
 	});
-
 	afterEach(() => {
 		vi.clearAllMocks();
 		process.chdir(cwd);
 	});
-
 	it("should pass initialQuery to fzf when provided", async () => {
 		const mockSpawn = vi.spyOn(childProcess, "spawn");
 		const initialQuery = "test search";
-
-		// Mock rg and fzf processes
 		const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
 		const mockFzf = {
 			stdin: { end: vi.fn() },
@@ -342,7 +342,6 @@ describe("findTodoFixme", () => {
 				if (event === "close") callback(0);
 			}),
 		};
-
 		mockSpawn.mockImplementation((command) => {
 			if (command === "rg")
 				return mockRg as unknown as childProcess.ChildProcess;
@@ -350,20 +349,15 @@ describe("findTodoFixme", () => {
 				return mockFzf as unknown as childProcess.ChildProcess;
 			return {} as childProcess.ChildProcess;
 		});
-
 		await findTodoFixme([testDir], initialQuery);
-
 		expect(mockSpawn).toHaveBeenCalledWith(
 			"fzf",
 			expect.arrayContaining(["--query", initialQuery, "--print-query"]),
 			expect.any(Object),
 		);
 	});
-
 	it("should not pass query parameter when initialQuery is not provided", async () => {
 		const mockSpawn = vi.spyOn(childProcess, "spawn");
-
-		// Mock rg and fzf processes
 		const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
 		const mockFzf = {
 			stdin: { end: vi.fn() },
@@ -372,7 +366,6 @@ describe("findTodoFixme", () => {
 				if (event === "close") callback(0);
 			}),
 		};
-
 		mockSpawn.mockImplementation((command) => {
 			if (command === "rg")
 				return mockRg as unknown as childProcess.ChildProcess;
@@ -380,9 +373,7 @@ describe("findTodoFixme", () => {
 				return mockFzf as unknown as childProcess.ChildProcess;
 			return {} as childProcess.ChildProcess;
 		});
-
 		await findTodoFixme([testDir]);
-
 		expect(mockSpawn).toHaveBeenCalledWith(
 			"fzf",
 			expect.arrayContaining(["--print-query"]),
@@ -394,8 +385,6 @@ describe("findTodoFixme", () => {
 			expect.any(Object),
 		);
 	});
-
-	// Edge cases following JavaScript testing best practices
 	describe("initialQuery edge cases", () => {
 		it("should handle empty string initialQuery", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
@@ -407,7 +396,6 @@ describe("findTodoFixme", () => {
 					if (event === "close") callback(0);
 				}),
 			};
-
 			mockSpawn.mockImplementation((command) => {
 				if (command === "rg")
 					return mockRg as unknown as childProcess.ChildProcess;
@@ -415,16 +403,13 @@ describe("findTodoFixme", () => {
 					return mockFzf as unknown as childProcess.ChildProcess;
 				return {} as childProcess.ChildProcess;
 			});
-
 			await findTodoFixme([testDir], "");
-
 			expect(mockSpawn).toHaveBeenCalledWith(
 				"fzf",
 				expect.not.arrayContaining(["--query"]),
 				expect.any(Object),
 			);
 		});
-
 		it("should handle initialQuery with special characters", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
 			const specialQuery = "TODO: fix $var @user #123 (test)";
@@ -436,7 +421,6 @@ describe("findTodoFixme", () => {
 					if (event === "close") callback(0);
 				}),
 			};
-
 			mockSpawn.mockImplementation((command) => {
 				if (command === "rg")
 					return mockRg as unknown as childProcess.ChildProcess;
@@ -444,16 +428,13 @@ describe("findTodoFixme", () => {
 					return mockFzf as unknown as childProcess.ChildProcess;
 				return {} as childProcess.ChildProcess;
 			});
-
 			await findTodoFixme([testDir], specialQuery);
-
 			expect(mockSpawn).toHaveBeenCalledWith(
 				"fzf",
 				expect.arrayContaining(["--query", specialQuery]),
 				expect.any(Object),
 			);
 		});
-
 		it("should handle initialQuery with whitespace", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
 			const whitespaceQuery = "  TODO fix  \t\n  ";
@@ -465,7 +446,6 @@ describe("findTodoFixme", () => {
 					if (event === "close") callback(0);
 				}),
 			};
-
 			mockSpawn.mockImplementation((command) => {
 				if (command === "rg")
 					return mockRg as unknown as childProcess.ChildProcess;
@@ -473,16 +453,13 @@ describe("findTodoFixme", () => {
 					return mockFzf as unknown as childProcess.ChildProcess;
 				return {} as childProcess.ChildProcess;
 			});
-
 			await findTodoFixme([testDir], whitespaceQuery);
-
 			expect(mockSpawn).toHaveBeenCalledWith(
 				"fzf",
 				expect.arrayContaining(["--query", whitespaceQuery]),
 				expect.any(Object),
 			);
 		});
-
 		it("should handle very long initialQuery", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
 			const longQuery = `${"TODO: ".repeat(100)}fix this`;
@@ -494,7 +471,6 @@ describe("findTodoFixme", () => {
 					if (event === "close") callback(0);
 				}),
 			};
-
 			mockSpawn.mockImplementation((command) => {
 				if (command === "rg")
 					return mockRg as unknown as childProcess.ChildProcess;
@@ -502,9 +478,7 @@ describe("findTodoFixme", () => {
 					return mockFzf as unknown as childProcess.ChildProcess;
 				return {} as childProcess.ChildProcess;
 			});
-
 			await findTodoFixme([testDir], longQuery);
-
 			expect(mockSpawn).toHaveBeenCalledWith(
 				"fzf",
 				expect.arrayContaining(["--query", longQuery]),
@@ -512,8 +486,6 @@ describe("findTodoFixme", () => {
 			);
 		});
 	});
-
-	// Error handling edge cases
 	describe("error handling", () => {
 		it("should reject when rg spawn fails", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
@@ -523,18 +495,15 @@ describe("findTodoFixme", () => {
 					if (event === "error") callback(new Error("rg not found"));
 				}),
 			};
-
 			mockSpawn.mockImplementation((command) => {
 				if (command === "rg")
 					return mockRg as unknown as childProcess.ChildProcess;
 				return {} as childProcess.ChildProcess;
 			});
-
 			await expect(findTodoFixme([testDir])).rejects.toThrow(
 				"Failed to start rg: rg not found",
 			);
 		});
-
 		it("should reject when fzf spawn fails", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
 			const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
@@ -545,7 +514,6 @@ describe("findTodoFixme", () => {
 					if (event === "error") callback(new Error("fzf not found"));
 				}),
 			};
-
 			mockSpawn.mockImplementation((command) => {
 				if (command === "rg")
 					return mockRg as unknown as childProcess.ChildProcess;
@@ -553,12 +521,10 @@ describe("findTodoFixme", () => {
 					return mockFzf as unknown as childProcess.ChildProcess;
 				return {} as childProcess.ChildProcess;
 			});
-
 			await expect(findTodoFixme([testDir])).rejects.toThrow(
 				"Failed to start fzf: fzf not found",
 			);
 		});
-
 		it("should handle empty paths array", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
 			const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
@@ -569,7 +535,6 @@ describe("findTodoFixme", () => {
 					if (event === "close") callback(0);
 				}),
 			};
-
 			mockSpawn.mockImplementation((command) => {
 				if (command === "rg")
 					return mockRg as unknown as childProcess.ChildProcess;
@@ -577,11 +542,9 @@ describe("findTodoFixme", () => {
 					return mockFzf as unknown as childProcess.ChildProcess;
 				return {} as childProcess.ChildProcess;
 			});
-
 			const result = await findTodoFixme([]);
 			expect(result).toEqual([]);
 		});
-
 		it("should return empty array when user cancels (non-zero exit code)", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
 			const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
@@ -589,10 +552,9 @@ describe("findTodoFixme", () => {
 				stdin: { end: vi.fn() },
 				stdout: { on: vi.fn() },
 				on: vi.fn().mockImplementation((event, callback) => {
-					if (event === "close") callback(130); // SIGINT
+					if (event === "close") callback(130);
 				}),
 			};
-
 			mockSpawn.mockImplementation((command) => {
 				if (command === "rg")
 					return mockRg as unknown as childProcess.ChildProcess;
@@ -600,21 +562,16 @@ describe("findTodoFixme", () => {
 					return mockFzf as unknown as childProcess.ChildProcess;
 				return {} as childProcess.ChildProcess;
 			});
-
 			const result = await findTodoFixme([testDir]);
 			expect(result).toEqual([]);
 		});
 	});
-
-	// Query caching functionality
 	describe("query caching", () => {
 		const mockSaveLastQuery = vi.mocked(saveLastQuery);
 		const _mockGetLastQuery = vi.mocked(getLastQuery);
-
 		beforeEach(() => {
 			vi.clearAllMocks();
 		});
-
 		it("should save query when search is successful and has results", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
 			const initialQuery = "test query";
@@ -632,7 +589,6 @@ describe("findTodoFixme", () => {
 					if (event === "close") callback(0);
 				}),
 			};
-
 			mockSpawn.mockImplementation((command) => {
 				if (command === "rg")
 					return mockRg as unknown as childProcess.ChildProcess;
@@ -640,15 +596,11 @@ describe("findTodoFixme", () => {
 					return mockFzf as unknown as childProcess.ChildProcess;
 				return {} as childProcess.ChildProcess;
 			});
-
 			mockSaveLastQuery.mockResolvedValue();
-
 			const result = await findTodoFixme([testDir], initialQuery);
-
 			expect(result).toEqual([`${testDir}/result1:1:content`]);
 			expect(mockSaveLastQuery).toHaveBeenCalledWith(actualQuery);
 		});
-
 		it("should not save query when saveQuery is false", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
 			const initialQuery = "test query";
@@ -664,7 +616,6 @@ describe("findTodoFixme", () => {
 					if (event === "close") callback(0);
 				}),
 			};
-
 			mockSpawn.mockImplementation((command) => {
 				if (command === "rg")
 					return mockRg as unknown as childProcess.ChildProcess;
@@ -672,12 +623,9 @@ describe("findTodoFixme", () => {
 					return mockFzf as unknown as childProcess.ChildProcess;
 				return {} as childProcess.ChildProcess;
 			});
-
 			await findTodoFixme([testDir], initialQuery, false);
-
 			expect(mockSaveLastQuery).not.toHaveBeenCalled();
 		});
-
 		it("should not save query when no results are found", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
 			const initialQuery = "test query";
@@ -689,7 +637,6 @@ describe("findTodoFixme", () => {
 					if (event === "close") callback(0);
 				}),
 			};
-
 			mockSpawn.mockImplementation((command) => {
 				if (command === "rg")
 					return mockRg as unknown as childProcess.ChildProcess;
@@ -697,12 +644,9 @@ describe("findTodoFixme", () => {
 					return mockFzf as unknown as childProcess.ChildProcess;
 				return {} as childProcess.ChildProcess;
 			});
-
 			await findTodoFixme([testDir], initialQuery);
-
 			expect(mockSaveLastQuery).not.toHaveBeenCalled();
 		});
-
 		it("should handle cache save errors gracefully", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
 			const initialQuery = "test query";
@@ -720,7 +664,6 @@ describe("findTodoFixme", () => {
 					if (event === "close") callback(0);
 				}),
 			};
-
 			mockSpawn.mockImplementation((command) => {
 				if (command === "rg")
 					return mockRg as unknown as childProcess.ChildProcess;
@@ -728,23 +671,16 @@ describe("findTodoFixme", () => {
 					return mockFzf as unknown as childProcess.ChildProcess;
 				return {} as childProcess.ChildProcess;
 			});
-
 			mockSaveLastQuery.mockRejectedValue(new Error("Cache error"));
-
-			// Should not throw even if cache save fails
 			const result = await findTodoFixme([testDir], initialQuery);
 			expect(result).toEqual([`${testDir}/result1:1:content`]);
 		});
 	});
-
-	// Resume functionality
 	describe("findTodoFixmeResume", () => {
 		const _mockGetLastQuery = vi.mocked(getLastQuery);
-
 		beforeEach(() => {
 			vi.clearAllMocks();
 		});
-
 		it("should resume with last query when available", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
 			const lastQuery = "cached query";
@@ -762,7 +698,6 @@ describe("findTodoFixme", () => {
 					if (event === "close") callback(0);
 				}),
 			};
-
 			mockSpawn.mockImplementation((command) => {
 				if (command === "rg")
 					return mockRg as unknown as childProcess.ChildProcess;
@@ -770,11 +705,8 @@ describe("findTodoFixme", () => {
 					return mockFzf as unknown as childProcess.ChildProcess;
 				return {} as childProcess.ChildProcess;
 			});
-
 			_mockGetLastQuery.mockResolvedValue(lastQuery);
-
 			const result = await findTodoFixmeResume([testDir]);
-
 			expect(_mockGetLastQuery).toHaveBeenCalled();
 			expect(mockSpawn).toHaveBeenCalledWith(
 				"fzf",
@@ -783,7 +715,6 @@ describe("findTodoFixme", () => {
 			);
 			expect(result).toEqual([`${testDir}/result1:1:content`]);
 		});
-
 		it("should start fresh search when no last query exists", async () => {
 			const mockSpawn = vi.spyOn(childProcess, "spawn");
 			const actualQuery = "user entered query";
@@ -800,7 +731,6 @@ describe("findTodoFixme", () => {
 					if (event === "close") callback(0);
 				}),
 			};
-
 			mockSpawn.mockImplementation((command) => {
 				if (command === "rg")
 					return mockRg as unknown as childProcess.ChildProcess;
@@ -808,11 +738,8 @@ describe("findTodoFixme", () => {
 					return mockFzf as unknown as childProcess.ChildProcess;
 				return {} as childProcess.ChildProcess;
 			});
-
 			_mockGetLastQuery.mockResolvedValue(null);
-
 			const result = await findTodoFixmeResume([testDir]);
-
 			expect(_mockGetLastQuery).toHaveBeenCalled();
 			expect(mockSpawn).toHaveBeenCalledWith(
 				"fzf",
@@ -822,400 +749,141 @@ describe("findTodoFixme", () => {
 			expect(result).toEqual([`${testDir}/result1:1:content`]);
 		});
 	});
+	describe("./ prefix handling", () => {
+		beforeEach(() => {
+			vi.resetAllMocks();
+			vi.spyOn(process, "chdir").mockImplementation(() => {});
+		});
+		it("strips ./ prefix when prepending singleDirRoot", async () => {
+			const mockSpawn = vi.spyOn(childProcess, "spawn");
+			const testDir = "/home/user/project";
+			const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
+			const mockFzf = {
+				stdin: { end: vi.fn() },
+				stdout: {
+					on: vi.fn().mockImplementation((event, callback) => {
+						if (event === "data")
+							callback("query\n./file.py:61:31:TODO: fix me\n");
+					}),
+				},
+				on: vi.fn().mockImplementation((event, callback) => {
+					if (event === "close") callback(0);
+				}),
+			};
+			mockSpawn.mockImplementation((command) => {
+				if (command === "rg")
+					return mockRg as unknown as childProcess.ChildProcess;
+				if (command === "fzf")
+					return mockFzf as unknown as childProcess.ChildProcess;
+				return {} as childProcess.ChildProcess;
+			});
+			const result = await findTodoFixme([testDir]);
+			expect(result[0]).toBe("/home/user/project/file.py:61:31:TODO: fix me");
+			expect(result[0]).not.toContain("/./");
+		});
+		it("handles paths without ./ prefix", async () => {
+			const mockSpawn = vi.spyOn(childProcess, "spawn");
+			const testDir = "/home/user/project";
+			const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
+			const mockFzf = {
+				stdin: { end: vi.fn() },
+				stdout: {
+					on: vi.fn().mockImplementation((event, callback) => {
+						if (event === "data") callback("query\nsrc/file.py:10:5:content\n");
+					}),
+				},
+				on: vi.fn().mockImplementation((event, callback) => {
+					if (event === "close") callback(0);
+				}),
+			};
+			mockSpawn.mockImplementation((command) => {
+				if (command === "rg")
+					return mockRg as unknown as childProcess.ChildProcess;
+				if (command === "fzf")
+					return mockFzf as unknown as childProcess.ChildProcess;
+				return {} as childProcess.ChildProcess;
+			});
+			const result = await findTodoFixme([testDir]);
+			expect(result[0]).toBe("/home/user/project/src/file.py:10:5:content");
+		});
+	});
 });
-
 describe("openFiles", () => {
 	it("should parse simple file path without line/column", () => {
 		const result = openFiles("src/commands.ts");
-
 		expect(result.file).toBe("src/commands.ts");
 		expect(result.selection).toBeUndefined();
 	});
-
 	it("should parse file path with line number", () => {
 		const result = openFiles("src/commands.ts:42");
-
 		expect(result.file).toBe("src/commands.ts");
 		expect(result.selection).toEqual({
 			start: { line: 42, character: 0 },
 			end: { line: 42, character: 0 },
 		});
 	});
-
 	it("should parse file path with line and column numbers", () => {
 		const result = openFiles("src/commands.ts:42:15");
-
 		expect(result.file).toBe("src/commands.ts");
 		expect(result.selection).toEqual({
 			start: { line: 42, character: 15 },
 			end: { line: 42, character: 15 },
 		});
 	});
-
 	it("should handle file paths with ANSI color codes", () => {
-		// Simulate TODO/FIXME search output with ANSI color codes
 		const colorizedPath =
 			"\x1b[0m\x1b[35msrc/commands.ts\x1b[0m:\x1b[0m\x1b[32m42\x1b[0m:\x1b[0m15\x1b[0m:	// TODO: fix this";
 		const result = openFiles(colorizedPath);
-
 		expect(result.file).toBe("src/commands.ts");
 		expect(result.selection).toEqual({
 			start: { line: 42, character: 15 },
 			end: { line: 42, character: 15 },
 		});
 	});
-
 	it("should handle complex ANSI color codes with multiple escape sequences", () => {
-		// More complex ANSI sequences like those from rg --color=always output
 		const complexColorPath =
 			"\x1b[0m\x1b[35msrc/extension.ts\x1b[0m:\x1b[0m\x1b[32m208\x1b[0m:\x1b[0m7\x1b[0m:			// \x1b[1m\x1b[31mTODO\x1b[0m: Support those settings";
 		const result = openFiles(complexColorPath);
-
 		expect(result.file).toBe("src/extension.ts");
 		expect(result.selection).toEqual({
 			start: { line: 208, character: 7 },
 			end: { line: 208, character: 7 },
 		});
 	});
-
 	it("should handle file paths with spaces", () => {
 		const result = openFiles("src/my file.ts:10:5");
-
 		expect(result.file).toBe("src/my file.ts");
 		expect(result.selection).toEqual({
 			start: { line: 10, character: 5 },
 			end: { line: 10, character: 5 },
 		});
 	});
-
 	it("should handle invalid line numbers gracefully", () => {
 		const result = openFiles("src/commands.ts:invalid:15");
-
 		expect(result.file).toBe("src/commands.ts");
 		expect(result.selection).toBeUndefined();
 	});
-
 	it("should handle negative line numbers gracefully", () => {
 		const result = openFiles("src/commands.ts:-1:5");
-
 		expect(result.file).toBe("src/commands.ts");
 		expect(result.selection).toBeUndefined();
 	});
-
 	it("should strip ANSI codes but preserve file paths with colons in content", () => {
-		// Test case where the matched content contains colons
 		const pathWithContent =
 			"\x1b[0m\x1b[35msrc/config.ts\x1b[0m:\x1b[0m\x1b[32m42\x1b[0m:\x1b[0m8\x1b[0m:	const url = 'https://example.com:8080';";
 		const result = openFiles(pathWithContent);
-
 		expect(result.file).toBe("src/config.ts");
 		expect(result.selection).toEqual({
 			start: { line: 42, character: 8 },
 			end: { line: 42, character: 8 },
 		});
 	});
-
 	it("should trim whitespace from file paths", () => {
 		const result = openFiles("  src/commands.ts  :42:15");
-
 		expect(result.file).toBe("src/commands.ts");
 		expect(result.selection).toEqual({
 			start: { line: 42, character: 15 },
 			end: { line: 42, character: 15 },
 		});
-	});
-});
-
-// ============================================================
-// Bug Reproduction Tests - from PR #17
-// ============================================================
-
-describe("Bug: File opening command syntax (line number outside quotes)", () => {
-	it("should include line number INSIDE the quoted file path", () => {
-		// BUG: Current code produces code -g "/path/to/file.ts":42
-		// which is invalid shell syntax - the :42 is outside quotes
-		const buggyCommand = buildOpenCommand("code -g", "/path/to/file.ts", 42);
-		const fixedCommand = buildOpenCommandFixed(
-			"code -g",
-			"/path/to/file.ts",
-			42,
-		);
-
-		// BUG: "/path/to/file.ts":42 (line number outside quotes ❌)
-		expect(buggyCommand).toBe(
-			'code -g "/path/to/file.ts":42',
-		);
-
-		// FIX: "/path/to/file.ts:42" (line number inside quotes ✅)
-		expect(fixedCommand).toBe('code -g "/path/to/file.ts:42"');
-
-		// The difference: in the fixed version, the colon and line number
-		// are part of the quoted string, making it a valid shell argument
-		expect(buggyCommand).not.toBe(fixedCommand);
-	});
-
-	it("should include line and column INSIDE the quoted file path", () => {
-		const buggyCommand = buildOpenCommand(
-			"code -g",
-			"/path/to/file.ts",
-			42,
-			15,
-		);
-		const fixedCommand = buildOpenCommandFixed(
-			"code -g",
-			"/path/to/file.ts",
-			42,
-			15,
-		);
-
-		expect(buggyCommand).toBe(
-			'code -g "/path/to/file.ts":42',
-		);
-		expect(fixedCommand).toBe('code -g "/path/to/file.ts:42:15"');
-		expect(buggyCommand).not.toBe(fixedCommand);
-	});
-
-	it("should handle file path with spaces and line number", () => {
-		const buggyCommand = buildOpenCommand(
-			"code -g",
-			"/path/to/my file.ts",
-			10,
-		);
-		const fixedCommand = buildOpenCommandFixed(
-			"code -g",
-			"/path/to/my file.ts",
-			10,
-		);
-
-		// BUG: the path with spaces is quoted, but :line is outside
-		// Shell sees: code -g "/path/to/my file.ts":10
-		// This breaks: the shell interprets :10 as a separate argument
-		expect(buggyCommand).toBe(
-			'code -g "/path/to/my file.ts":10',
-		);
-		expect(fixedCommand).toBe('code -g "/path/to/my file.ts:10"');
-	});
-
-	it("should handle file path without line number (no regression)", () => {
-		const buggyResult = buildOpenCommand("code -g", "/path/to/file.ts");
-		const fixedResult = buildOpenCommandFixed("code -g", "/path/to/file.ts");
-
-		// Without line number, both produce the same result
-		expect(buggyResult).toBe('code -g "/path/to/file.ts"');
-		expect(fixedResult).toBe('code -g "/path/to/file.ts"');
-	});
-});
-
-describe("Bug: live-grep path resolution with ./ prefix", () => {
-	it("should strip ./ prefix before prepending singleDirRoot", () => {
-		// Simulate the current behavior in live-grep.ts
-		// rg output with --color=always produces lines like:
-		// ./file.py:61:31:print("hello")
-		// singleDirRoot = "/home/user/project"
-		// Current code: `${singleDirRoot}/${file}`
-		// BUG result: "/home/user/project/./file.py:61:31:..."
-
-		const singleDirRoot = "/home/user/project";
-		const rgOutput = "./file.py:61:31:print(\"hello\")";
-
-		// Current (buggy) behavior
-		const buggyResult = `${singleDirRoot}/${rgOutput}`;
-
-		// Fixed behavior: strip ./ then prepend
-		const cleanFile = rgOutput.startsWith("./")
-			? rgOutput.slice(2)
-			: rgOutput;
-		const fixedResult = `${singleDirRoot}/${cleanFile}`;
-
-		// BUG: produces /home/user/project/./file.py:61:31:...
-		expect(buggyResult).toBe(
-			"/home/user/project/./file.py:61:31:print(\"hello\")",
-		);
-
-		// FIX: produces /home/user/project/file.py:61:31:...
-		expect(fixedResult).toBe(
-			"/home/user/project/file.py:61:31:print(\"hello\")",
-		);
-
-		// Verify the bug: ./ remains in path making it malformed
-		expect(buggyResult).toContain("/./");
-		expect(fixedResult).not.toContain("/./");
-	});
-
-	it("should handle paths without ./ prefix (no regression)", () => {
-		const singleDirRoot = "/home/user/project";
-		const rgOutput = "src/file.py:10:5:content";
-
-		const buggyResult = `${singleDirRoot}/${rgOutput}`;
-		const cleanFile = rgOutput.startsWith("./")
-			? rgOutput.slice(2)
-			: rgOutput;
-		const fixedResult = `${singleDirRoot}/${cleanFile}`;
-
-		expect(buggyResult).toBe(fixedResult);
-		expect(buggyResult).toBe(
-			"/home/user/project/src/file.py:10:5:content",
-		);
-	});
-
-	it("findTodoFixme correctly handles ./ prefix with singleDirRoot", async () => {
-		const mockSpawn = vi.spyOn(childProcess, "spawn");
-		const testDir = "/home/user/project";
-
-		// Mock: rg outputs with ./ prefix (as rg --color=always does)
-		const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
-		const mockFzf = {
-			stdin: { end: vi.fn() },
-			stdout: {
-				on: vi.fn().mockImplementation((event, callback) => {
-					if (event === "data")
-						callback("query\n./file.py:61:31:TODO: fix me\n");
-				}),
-			},
-			on: vi.fn().mockImplementation((event, callback) => {
-				if (event === "close") callback(0);
-			}),
-		};
-
-		mockSpawn.mockImplementation((command) => {
-			if (command === "rg")
-				return mockRg as unknown as childProcess.ChildProcess;
-			if (command === "fzf")
-				return mockFzf as unknown as childProcess.ChildProcess;
-			return {} as childProcess.ChildProcess;
-		});
-
-		const result = await findTodoFixme([testDir]);
-
-		// BUG: Currently returns /home/user/project/./file.py:61:31:TODO: fix me
-		// because ./ is not stripped before prepending singleDirRoot
-		expect(result[0]).toBe(
-			"/home/user/project/file.py:61:31:TODO: fix me",
-		);
-		expect(result[0]).not.toContain("/./");
-	});
-
-	it("liveGrep should strip ./ prefix with singleDirRoot", async () => {
-		const mockSpawn = vi.spyOn(childProcess, "spawn");
-		const testDir = "/home/user/project";
-
-		// Mock rg, sh (initial search spawn), and fzf
-		const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
-		const mockSh = {
-			stdout: { pipe: vi.fn().mockReturnValue(undefined) },
-			stderr: { pipe: vi.fn() },
-			on: vi.fn(),
-		};
-		const mockFzf = {
-			stdin: { end: vi.fn() },
-			stdout: {
-				on: vi.fn().mockImplementation((event, callback) => {
-					if (event === "data")
-						callback("query\n./file.py:42:15:content\n");
-				}),
-			},
-			on: vi.fn().mockImplementation((event, callback) => {
-				if (event === "close") callback(0);
-			}),
-		};
-
-		mockSpawn.mockImplementation((command) => {
-			if (command === "rg")
-				return mockRg as unknown as childProcess.ChildProcess;
-			if (command === "sh")
-				return mockSh as unknown as childProcess.ChildProcess;
-			if (command === "fzf")
-				return mockFzf as unknown as childProcess.ChildProcess;
-			return {} as childProcess.ChildProcess;
-		});
-
-		// Temporarily set PWD environment for the test
-		const originalCwd = process.cwd;
-		process.chdir(testDir);
-
-		const result = await liveGrep([testDir], "test");
-
-		// BUG: returns /home/user/project/./file.py:42:15:content
-		// because the ./ prefix is not stripped
-		expect(result[0]).toBe(
-			"/home/user/project/file.py:42:15:content",
-		);
-		expect(result[0]).not.toContain("/./");
-
-		process.chdir = originalCwd;
-	});
-});
-
-describe("Bug: live-grep paths=[] after chdir (rg has no path argument)", () => {
-	it("should pass [\".\"] instead of [] as rg path after chdir", () => {
-		// Simulate what live-grep.ts does:
-		const paths = ["/home/user/project"];
-		let singleDirRoot = "";
-		let rgPaths: string[];
-
-		// Current (buggy) behavior
-		if (paths.length === 1) {
-			singleDirRoot = paths[0];
-			rgPaths = [];
-		}
-
-		// BUG: rgPaths is [], so rg has no search target directories
-		expect(rgPaths!).toEqual([]);
-
-		// Fixed behavior: use ["."] as explicit current directory
-		let fixedRgPaths: string[] = ["..."];
-		if (paths.length === 1) {
-			fixedRgPaths = ["."];
-		}
-
-		expect(fixedRgPaths).toEqual(["."]);
-		expect(rgPaths).not.toEqual(fixedRgPaths);
-	});
-});
-
-describe("Bug: live-grep uses deprecated --phony flag", () => {
-	it("should use --disabled instead of deprecated --phony", async () => {
-		const mockSpawn = vi.spyOn(childProcess, "spawn");
-		const testDir = "/home/user/project";
-
-		const mockRg = { stdout: { pipe: vi.fn() }, on: vi.fn() };
-		const mockSh = {
-			stdout: { pipe: vi.fn().mockReturnValue(undefined) },
-			stderr: { pipe: vi.fn() },
-			on: vi.fn(),
-		};
-		const mockFzf = {
-			stdin: { end: vi.fn() },
-			stdout: { on: vi.fn() },
-			on: vi.fn().mockImplementation((event, callback) => {
-				if (event === "close") callback(0);
-			}),
-		};
-
-		mockSpawn.mockImplementation((command) => {
-			if (command === "rg")
-				return mockRg as unknown as childProcess.ChildProcess;
-			if (command === "sh")
-				return mockSh as unknown as childProcess.ChildProcess;
-			if (command === "fzf")
-				return mockFzf as unknown as childProcess.ChildProcess;
-			return {} as childProcess.ChildProcess;
-		});
-
-		process.chdir(testDir);
-		await liveGrep([testDir], "test");
-
-		// Get the LAST fzf spawn call (across all tests, so use filter to find the right one)
-		const fzfCalls = mockSpawn.mock.calls.filter(
-			([cmd]) => cmd === "fzf",
-		);
-		const fzfCall = fzfCalls.at(-1);
-		const fzfArgs = fzfCall?.[1] as string[];
-
-		// BUG: uses deprecated --phony
-		expect(fzfArgs).not.toContain("--phony");
-
-		// FIX: should use --disabled instead
-		expect(fzfArgs).toContain("--disabled");
 	});
 });

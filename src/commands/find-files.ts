@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { DEBUG } from "../utils/debug";
+import { resolveFilePath } from "../utils/path";
 import { getLastQuery, saveLastQuery } from "../utils/search-cache";
 
 /**
@@ -121,9 +122,8 @@ export async function findFiles(
 				let selectedFiles = lines.slice(1).filter((line) => line.trim() !== ""); // Filter out empty lines
 
 				if (singleDirRoot) {
-					// Prepend the single directory root to each selected file
-					selectedFiles = selectedFiles.map(
-						(file) => `${singleDirRoot}/${file}`,
+					selectedFiles = selectedFiles.map((file) =>
+						resolveFilePath(file, singleDirRoot),
 					);
 				}
 

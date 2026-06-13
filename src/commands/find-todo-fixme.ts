@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { DEBUG } from "../utils/debug";
+import { resolveFilePath } from "../utils/path";
 import { getLastQuery, saveLastQuery } from "../utils/search-cache";
 
 /**
@@ -143,12 +144,7 @@ export async function findTodoFixme(
 				let results = lines.slice(1).filter((line) => line.trim() !== "");
 
 				if (singleDirRoot) {
-					// Prepend the single directory root to each selected file
-					results = results.map((file) => {
-						// Remove the leading "./" if present, then prepend the root
-						const cleanFile = file.startsWith("./") ? file.slice(2) : file;
-						return `${singleDirRoot}/${cleanFile}`;
-					});
+					results = results.map((file) => resolveFilePath(file, singleDirRoot));
 				}
 
 				// Save the actual query entered by user for future resume

@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { DEBUG } from "../utils/debug";
+import { resolveFilePath } from "../utils/path";
 import { getLastQuery, saveLastQuery } from "../utils/search-cache";
 
 /**
@@ -154,13 +155,9 @@ export async function liveGrep(
 				let selectedFiles = lines.slice(1).filter((line) => line.trim() !== ""); // Filter out empty lines
 
 				if (singleDirRoot) {
-					selectedFiles = selectedFiles.map((file) => {
-						// Strip "./" prefix if present to avoid paths like /root/./file
-						const cleanFile = file.startsWith("./")
-							? file.slice(2)
-							: file;
-						return `${singleDirRoot}/${cleanFile}`;
-					});
+					selectedFiles = selectedFiles.map((file) =>
+						resolveFilePath(file, singleDirRoot),
+					);
 				}
 
 				// Save the actual query entered by user for future resume
