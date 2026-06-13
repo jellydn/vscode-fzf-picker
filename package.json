@@ -212,7 +212,7 @@
 						"surf -g",
 						"trae -g",
 						"kiro -g",
-						"agy -g"
+						"agy-ide -g"
 					],
 					"enumDescriptions": [
 						"Visual Studio Code",
@@ -224,7 +224,7 @@
 						"Windsurf (surf CLI)",
 						"Trae",
 						"Kiro",
-						"Antigravity"
+						"Antigravity IDE"
 					],
 					"default": "code -g",
 					"description": "Select the command to open files base on your current editor"
@@ -272,10 +272,10 @@
 	},
 	"devDependencies": {
 		"@antfu/ni": "25.0.0",
-		"@biomejs/biome": "2.1.1",
+		"@biomejs/biome": "2.5.0",
 		"@types/node": "24.0.13",
 		"@types/vscode": "1.93.0",
-		"@vscode/vsce": "3.6.0",
+		"@vscode/vsce": "3.9.2",
 		"bumpp": "10.2.0",
 		"oxlint": "^1.6.0",
 		"pnpm": "^9.12.1",

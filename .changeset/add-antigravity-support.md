@@ -2,4 +2,4 @@
 "fzf-picker": minor
 ---
 
-Add support for Antigravity IDE with `agy -g` command option
+Add support for Antigravity IDE with `agy-ide -g` command option
