@@ -10,3 +10,4 @@ releases
 screencaps
 workspace2.code-workspace
 src/generated
+.commandcode/
