@@ -2,31 +2,85 @@
 
 Please refer to Github releases for the latest changes.
 
-## [0.3.0]
+## [1.6.1] - 2026-06-13
 
-- Added new "Custom Tasks" feature
-  - Supports task configuration through settings
-  - Executes selected tasks and displays output in VS Code
+- chore: sync lockfile with package.json
+- chore: add .commandcode to gitignore
+- fix: rename agy to agy-ide in openCommand options
+- feat: add surf CLI support for Windsurf IDE
+- docs: remove outdated open command options from README
 
-## [0.2.0]
+## [1.6.0] - 2026-05-24
 
-- Added new "Find TODO/FIXME comments" feature
-  - Searches for TODO, FIXME, HACK, and FIX comments in your project
-  - Uses `fzf` and `rg` for fast and interactive searching
-  - Supports both Unix-based systems (macOS, Linux) and Windows
-  - Customizable search pattern through settings
-  - Preview window support for quick code inspection
-- Improved Windows support for all features
+- feat: add surf CLI support for Windsurf IDE
 
-## [0.1.0]
+## [1.5.1] - 2026-05-22
 
-- Added new command: "Pick file from git status"
-  - Allows you to select files from the git status output using `fzf`
-  - New default keybinding:
-    - On macOS: Cmd+Shift+Alt+F
-    - On Linux and Windows: Ctrl+Shift+Alt+F
-- Added new configuration options for "Pick file from git status"
-- Add custom logger for the extension
+- feat: add support for Antigravity IDE
+
+## [1.5.0] - 2026-05-19
+
+- feat(runtime): add Bun support for faster command execution
+
+## [1.4.0] - 2026-05-12
+
+- refactor: clean up codebase and eliminate technical debt
+- feat: add configurable cache directory support
+
+## [1.3.3] - 2026-05-10
+
+- fix: make TODO/FIXME command display relative paths like other commands
+
+## [1.3.2] - 2026-05-09
+
+- docs: update README and enhance debugging features
+
+## [1.3.1] - 2026-05-08
+
+- fix: resolve single file selection parsing in git status and TODO/FIXME commands
+
+## [1.3.0] - 2026-05-06
+
+- feat: add Ctrl+T toggle for gitignore in FZF picker
+
+## [1.2.0] - 2026-05-04
+
+- feat: add Kiro IDE support
+- feat: add Claude Code command definitions for project workflows
+
+## [1.1.0] - 2026-05-01
+
+- fix: resolve Windows path handling in cache directory creation
+- feat: add architecture decision records for project documentation
+- fix: resolve TypeScript and vitest mocking issues in search-cache tests
+
+## [1.0.4] - 2026-04-29
+
+- refactor: unify cache system across all commands for consistent resume functionality
+- feat: add comprehensive query persistence and resume functionality for findTodoFixme
+- fix: handle file selection via arrow keys without search query in findFiles
+
+## [1.0.3] - 2026-04-27
+
+- fix: handle file paths with special characters and spaces
+
+## [1.0.2] - 2026-04-25
+
+- fix: improve git preview command for files with complex names and special characters
+
+## [1.0.1] - 2026-04-23
+
+- fix: improve git preview handling for untracked files and update settings
+
+## [1.0.0] - 2026-04-21
+
+- Initial release of the fzf-picker fork
+- File picker with fzf and rg
+- Search within files with fzf and rg
+- Git status file picker
+- TODO/FIXME comment finder
+- Custom tasks support
+- Customizable keybindings
 
 [For earlier versions, please refer to the original repository's release notes.]
 

@@ -3,7 +3,7 @@
 </p>
 <h1 align="center">Welcome to fzf-picker 👋</h1>
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-0.6.0-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-1.6.1-blue.svg?cacheSeconds=2592000" />
   <img src="https://img.shields.io/badge/vscode-%5E1.93.0-blue.svg" />
   <a href="https://github.com/jellydn/vscode-fzf-picker#readme" target="_blank">
     <img alt="Documentation" src="https://img.shields.io/badge/documentation-yes-brightgreen.svg" />
@@ -71,16 +71,18 @@ You can change these using VS Code's keyboard shortcuts.
 
 ```json
 {
-  // Setup fzf-picker extension
+  // Select your editor CLI (supports code, code-insiders, cursor, codium, windsurf, trae, kiro, agy-ide, surf)
+  "fzf-picker.general.openCommand": "code -g",
+  // Prefer Bun runtime for faster startup in large projects
+  "fzf-picker.general.runtime": "auto",
+  // Custom tasks
   "fzf-picker.customTasks": [
     // Choose folder to open on new window
     {
       "name": "zoxide",
       "command": "cursor $(zoxide query --interactive)"
     }
-  ],
-  // Allow top open a file with line number
-  "fzf-picker.general.openCommand": "code -g"
+  ]
 }
 ```
 
@@ -91,15 +93,17 @@ This plugin is useful for:
 - Very large projects with lots of files (which makes VS Code's search functionality quite slow)
 - Users who love using `fzf` and `rg` and would like to bring those tools inside VS Code
 
-The extension provides five main commands:
+The extension provides eight commands:
 
-1. Search for files and open them
-2. Search within files for text and open them
+1. Search for files and open them (`cmd+shift+j`)
+2. Search within files for text and open them (`cmd+shift+u`)
 3. Search within files with file type pre-filtering
-4. Pick file from git status
-5. Find TODO/FIXME comments
+4. Pick file from git status (`cmd+shift+alt+f`)
+5. Find TODO/FIXME/HACK comments (`cmd+shift+alt+t`)
+6. Resume last search (re-runs your previous search with the same query)
+7. Run custom tasks (user-defined scripts configured in settings)
 
-All commands now support toggling the preview window using `Ctrl+G` while in the fzf interface.
+All commands support toggling the preview window using `Ctrl+G` while in the fzf interface.
 
 ## Cache Configuration
 
@@ -140,8 +144,17 @@ On systems with immutable extension directories (like NixOS), set a writable cac
 
 Or disable caching entirely:
 
+### Runtime Configuration
 
-## Demo
+The extension can use either Node.js or Bun as the JavaScript runtime for command execution. Configured via `fzf-picker.general.runtime`:
+
+- **`auto`** (default): Automatically detects and uses Bun if available, falls back to Node.js
+- **`bun`**: Force use of Bun runtime
+- **`node`**: Force use of Node.js runtime
+
+Bun provides faster startup times which improves performance, especially in large projects.
+
+### Demo
 
 <details>
 <summary>Search files</summary>
@@ -232,7 +245,7 @@ The debug log is invaluable for:
 | `fzf-picker.findTodoFixme.previewEnabled`              | Enable preview for TODO/FIXME search results                                                                                                                                                                                                                                                                                                      | `boolean` | `true`                                                                                   |
 | `fzf-picker.findTodoFixme.previewCommand`              | Preview command for TODO/FIXME search results                                                                                                                                                                                                                                                                                                     | `string`  | `"bat --decorations=always --color=always {1} --highlight-line {2} --style=header,grid"` |
 | `fzf-picker.findTodoFixme.previewWindowConfig`         | Preview window configuration for TODO/FIXME search results                                                                                                                                                                                                                                                                                        | `string`  | `"right:border-left:50%:+{2}+3/3:~3"`                                                    |
-| `fzf-picker.findTodoFixme.searchPattern`               | Regular expression pattern for searching TODO/FIXME/HACK comments. Matches keywords followed by a colon and optional space.                                                                                                                                                                                                                       | `string`  | `"(TODO|FIXME|HACK|FIX):\\s"`                                                            |
+| `fzf-picker.findTodoFixme.searchPattern`               | Regular expression pattern for searching TODO/FIXME/HACK comments. Matches keywords followed by a colon and optional space.                                                                                                                                                                                                                       | `string`  | `"(TODO\|FIXME\|HACK\|FIX):\\s"`                                                         |
 | `fzf-picker.customTasks`                               | Custom tasks that can be executed by the extension                                                                                                                                                                                                                                                                                                | `array`   | `[]`                                                                                     |
 | `fzf-picker.general.openCommand`                       | Select the command to open files base on your current editor                                                                                                                                                                                                                                                                                      | `string`  | `"code -g"`                                                                              |
 | `fzf-picker.cache.directory`                           | Custom directory for cache storage. If empty, uses OS-specific default: Windows: %APPDATA%\fzf-picker, macOS: ~/Library/Caches/fzf-picker, Linux: ~/.cache/fzf-picker (or $XDG_CACHE_HOME/fzf-picker). Set this for systems with immutable extension directories (e.g., NixOS). Environment variable FZF_PICKER_CACHE_DIR overrides this setting. | `string`  | `""`                                                                                     |
