@@ -31,6 +31,7 @@ export interface Config {
 	openCommand: string;
 	cacheDirectory: string;
 	runtime: RuntimeType;
+	terminalLocation: "editor" | "panel";
 }
 
 export const CFG: Config = {
@@ -54,4 +55,5 @@ export const CFG: Config = {
 	openCommand: "code -g",
 	cacheDirectory: "",
 	runtime: "auto",
+	terminalLocation: "editor",
 };

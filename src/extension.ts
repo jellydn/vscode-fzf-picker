@@ -227,8 +227,11 @@ function getOrCreateTerminal() {
 
 	const terminalOptions: vscode.TerminalOptions = {
 		name: TERMINAL_NAME,
-		hideFromUser: false,
-		location: vscode.TerminalLocation.Editor,
+		hideFromUser: CFG.terminalLocation !== "editor",
+		location:
+			CFG.terminalLocation === "editor"
+				? vscode.TerminalLocation.Editor
+				: vscode.TerminalLocation.Panel,
 		env: {
 			EXTENSION_PATH: CFG.extensionPath,
 			// Hide history on terminal

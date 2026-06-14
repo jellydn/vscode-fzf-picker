@@ -21,7 +21,7 @@
 		"search",
 		"within"
 	],
-	"version": "1.6.1",
+	"version": "1.7.0",
 	"engines": {
 		"vscode": "^1.93.0"
 	},
@@ -252,6 +252,19 @@
 					],
 					"default": "auto",
 					"description": "Select the JavaScript runtime to use for command execution. Bun provides faster startup times which improves performance in large projects."
+				},
+				"fzf-picker.general.terminalLocation": {
+					"type": "string",
+					"enum": [
+						"editor",
+						"panel"
+					],
+					"enumDescriptions": [
+						"Open terminal in the editor area as a tab",
+						"Open terminal in the bottom panel"
+					],
+					"default": "editor",
+					"description": "Where to show the terminal when running fzf commands."
 				}
 			}
 		}
