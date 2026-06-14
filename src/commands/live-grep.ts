@@ -68,7 +68,7 @@ export async function liveGrep(
 		const rgArgsString = args
 			.map((arg) => `'${arg.replace(/'/g, "'\\''")}'`)
 			.join(" ");
-		return `rg ${rgArgsString} '{q}' || true`;
+		return `rg ${rgArgsString} --fixed-strings '{q}' || true`;
 	};
 
 	const searchCommandWithIgnore = createSearchCommand(rgArgsWithIgnore);
