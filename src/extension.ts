@@ -17,79 +17,59 @@ const TERMINAL_NAME = Meta.displayName;
 let currentTerminal: vscode.Terminal;
 
 interface Command {
-	command?: string;
-	preRunCallback: undefined | (() => boolean | Promise<boolean>);
-	postRunCallback: undefined | (() => void);
+	preRunCallback?: () => boolean | Promise<boolean>;
+	postRunCallback?: () => void;
 	terminalName: string;
 	withTextSelection: boolean;
 	hasFilter: boolean;
 }
 const commands: { [key: string]: Command } = {
 	findFiles: {
-		command: "findFiles",
-		preRunCallback: undefined,
-		postRunCallback: undefined,
 		terminalName: "findFiles",
 		withTextSelection: false,
 		hasFilter: false,
 	},
 	findFilesWithType: {
-		command: "findFiles",
+		terminalName: "findFiles",
 		preRunCallback: selectTypeFilter,
 		postRunCallback: () => {
 			CFG.useTypeFilter = false;
 		},
-		terminalName: "findFiles",
 		withTextSelection: false,
 		hasFilter: true,
 	},
 	findWithinFiles: {
-		command: "findWithinFiles",
-		preRunCallback: undefined,
-		postRunCallback: undefined,
 		terminalName: "findWithinFiles",
 		withTextSelection: true,
 		hasFilter: false,
 	},
 	findWithinFilesWithType: {
-		command: "findWithinFiles",
+		terminalName: "findWithinFiles",
 		preRunCallback: selectTypeFilter,
 		postRunCallback: () => {
 			CFG.useTypeFilter = false;
 		},
-		terminalName: "findWithinFiles",
 		withTextSelection: true,
 		hasFilter: true,
 	},
 	resumeSearch: {
-		command: "resumeSearch",
-		preRunCallback: undefined,
-		postRunCallback: undefined,
 		terminalName: "resumeSearch",
 		withTextSelection: true,
 		hasFilter: false,
 	},
 	pickFileFromGitStatus: {
-		command: "pickFileFromGitStatus",
-		preRunCallback: undefined,
-		postRunCallback: undefined,
 		terminalName: "pickFileFromGitStatus",
 		withTextSelection: false,
 		hasFilter: false,
 	},
 	findTodoFixme: {
-		command: "findTodoFixme",
-		preRunCallback: undefined,
-		postRunCallback: undefined,
 		terminalName: "findTodoFixme",
 		withTextSelection: false,
 		hasFilter: false,
 	},
 	runCustomTask: {
-		command: "runCustomTask",
-		preRunCallback: chooseCustomTask,
-		postRunCallback: undefined,
 		terminalName: "",
+		preRunCallback: chooseCustomTask,
 		withTextSelection: false,
 		hasFilter: false,
 	},
@@ -311,29 +291,24 @@ async function executeTerminalCommand(cmd: string) {
 		CFG.lastCommand = cmd;
 	}
 
-	const cb = commands[cmd].preRunCallback;
-	let cbResult = true;
-	if (cb !== undefined) {
-		cbResult = await cb();
+	const entry = commands[cmd];
+
+	if (entry.preRunCallback) {
+		const cbResult = await entry.preRunCallback();
+		if (!cbResult) return;
 	}
 
 	logger.info(`Executing ${cmd} command`);
 	currentTerminal = getOrCreateTerminal();
-	if (cbResult === true) {
-		const cmdConfig = commands[cmd];
-		if (cmdConfig.terminalName) {
-			await executeCommand({
-				name: cmdConfig.terminalName,
-				withTextSelection: cmdConfig.withTextSelection,
-				hasFilter: cmdConfig.hasFilter,
-			});
-		}
-
-		const postRunCallback = commands[cmd].postRunCallback;
-		if (postRunCallback !== undefined) {
-			postRunCallback();
-		}
+	if (entry.terminalName) {
+		await executeCommand({
+			name: entry.terminalName,
+			withTextSelection: entry.withTextSelection,
+			hasFilter: entry.hasFilter,
+		});
 	}
+
+	entry.postRunCallback?.();
 }
 
 /**
