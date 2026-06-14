@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import * as os from "node:os";
 import { DEBUG } from "../utils/debug";
 import { resolveFilePath } from "../utils/path";
 import { getLastQuery, saveLastQuery } from "../utils/search-cache";
@@ -64,7 +65,7 @@ export async function liveGrep(
 			const rgArgsString = args
 				.map((arg) => `'${arg.replace(/'/g, "'\\''")}'`)
 				.join(" ");
-			return `rg ${rgArgsString} {q} || true`;
+			return `rg ${rgArgsString} '{q}' || true`;
 		};
 
 		const searchCommandWithIgnore = createSearchCommand(rgArgsWithIgnore);
@@ -89,18 +90,18 @@ export async function liveGrep(
 			initialQuery || "",
 			"--print-query",
 			"--bind",
-			`change:reload:[ ! -z {q} ] && sleep 0.1 && ${searchCommand}`, // Only run if query is not empty
+			`change:reload:[ ! -z '{q}' ] && sleep 0.1 && ${searchCommand}`, // Only run if query is not empty
 			"--layout=reverse",
 			"--bind",
 			"ctrl-g:toggle-preview",
 		];
 
 		// Add ctrl-t toggle for gitignore using execute to manage state and reload
-		const toggleFile = `/tmp/fzf_gitignore_${process.pid}`;
+		const toggleFile = `${os.tmpdir()}/fzf_gitignore_${process.pid}`;
 
 		fzfArgs.push(
 			"--bind",
-			`ctrl-t:execute-silent([ -f ${toggleFile} ] && rm ${toggleFile} || touch ${toggleFile})+reload([ -f ${toggleFile} ] && [ ! -z {q} ] && ${searchCommandWithoutIgnore} || [ ! -z {q} ] && ${searchCommandWithIgnore} || true)`,
+			`ctrl-t:execute-silent([ -f ${toggleFile} ] && rm ${toggleFile} || touch ${toggleFile})+reload([ -f ${toggleFile} ] && [ ! -z '{q}' ] && ${searchCommandWithoutIgnore} || [ ! -z '{q}' ] && ${searchCommandWithIgnore} || true)`,
 		);
 
 		if (initialQuery) {
@@ -123,7 +124,8 @@ export async function liveGrep(
 			}
 			const initialSearch = spawn("sh", [
 				"-c",
-				searchCommand.replace("{q}", initialQuery),
+				// initialQuery goes inside '{q}' — single-quote escape it
+				searchCommand.replace("{q}", initialQuery.replace(/'/g, "'\\''")),
 			]);
 			initialSearch.stdout.pipe(fzf.stdin);
 			initialSearch.stderr.pipe(process.stderr);
