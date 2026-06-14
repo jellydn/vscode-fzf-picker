@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import * as os from "node:os";
 import { DEBUG } from "../utils/debug";
 import { resolveFilePath } from "../utils/path";
 import { getLastQuery, saveLastQuery } from "../utils/search-cache";
@@ -105,7 +106,7 @@ export async function findTodoFixme(
 		];
 
 		// Add ctrl-t toggle for gitignore using execute to manage state and reload
-		const toggleFile = `/tmp/fzf_gitignore_${process.pid}`;
+		const toggleFile = `${os.tmpdir()}/fzf_gitignore_${process.pid}`;
 
 		fzfArgs.push(
 			"--bind",
