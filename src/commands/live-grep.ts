@@ -1,8 +1,12 @@
 import { spawn } from "node:child_process";
-import * as os from "node:os";
 import { DEBUG } from "../utils/debug";
-import { resolveFilePath } from "../utils/path";
-import { getLastQuery, saveLastQuery } from "../utils/search-cache";
+import { getLastQuery } from "../utils/search-cache";
+import {
+	getToggleFilePath,
+	resolveResults,
+	runFzf,
+	trySaveQuery,
+} from "./fzf-utils";
 
 /**
  * Interactive search for text within files using rg and fzf.
@@ -19,177 +23,129 @@ export async function liveGrep(
 	initialQuery?: string,
 	saveQuery: boolean = true,
 ): Promise<string[]> {
-	return new Promise((resolve, reject) => {
-		const previewCommand =
-			process.env.FIND_WITHIN_FILES_PREVIEW_COMMAND ||
-			"bat --decorations=always --color=always {1} --highlight-line {2} --style=header,grid";
-		const previewWindow =
-			process.env.FIND_WITHIN_FILES_PREVIEW_WINDOW_CONFIG ||
-			"right:border-left:50%:+{2}+3/3:~3";
-		const useGitignore = process.env.USE_GITIGNORE !== "0";
-		const fileTypes = process.env.TYPE_FILTER || "";
+	const previewCommand =
+		process.env.FIND_WITHIN_FILES_PREVIEW_COMMAND ||
+		"bat --decorations=always --color=always {1} --highlight-line {2} --style=header,grid";
+	const previewWindow =
+		process.env.FIND_WITHIN_FILES_PREVIEW_WINDOW_CONFIG ||
+		"right:border-left:50%:+{2}+3/3:~3";
+	const useGitignore = process.env.USE_GITIGNORE !== "0";
+	const fileTypes = process.env.TYPE_FILTER || "";
 
-		// Navigate to the first path if it's the only one
-		let singleDirRoot = "";
-		if (paths.length === 1) {
-			singleDirRoot = paths[0];
-			process.chdir(singleDirRoot);
-			paths = [];
+	// Navigate to the first path if it's the only one
+	let singleDirRoot = "";
+	if (paths.length === 1) {
+		singleDirRoot = paths[0];
+		process.chdir(singleDirRoot);
+		paths = [];
+	}
+
+	// Base rg args that are always used
+	const baseRgArgs = [
+		"--column",
+		"--line-number",
+		"--no-heading",
+		"--color=always",
+		"--smart-case",
+		"--glob",
+		"!**/.git/",
+	];
+
+	if (fileTypes) {
+		const fileTypesArray = fileTypes.split(":");
+		for (const fileType of fileTypesArray) {
+			baseRgArgs.push("--type", fileType);
 		}
+	}
 
-		// Base rg args that are always used
-		const baseRgArgs = [
-			"--column",
-			"--line-number",
-			"--no-heading",
-			"--color=always",
-			"--smart-case",
-			"--glob",
-			"!**/.git/",
-		];
+	baseRgArgs.push(...paths);
 
-		if (fileTypes) {
-			const fileTypesArray = fileTypes.split(":");
-			for (const fileType of fileTypesArray) {
-				baseRgArgs.push("--type", fileType);
-			}
+	// Create search commands for both gitignore states
+	const rgArgsWithIgnore = [...baseRgArgs];
+	const rgArgsWithoutIgnore = [...baseRgArgs, "--no-ignore"];
+
+	const createSearchCommand = (args: string[]) => {
+		const rgArgsString = args
+			.map((arg) => `'${arg.replace(/'/g, "'\\''")}'`)
+			.join(" ");
+		return `rg ${rgArgsString} '{q}' || true`;
+	};
+
+	const searchCommandWithIgnore = createSearchCommand(rgArgsWithIgnore);
+	const searchCommandWithoutIgnore = createSearchCommand(rgArgsWithoutIgnore);
+
+	const searchCommand = useGitignore
+		? searchCommandWithIgnore
+		: searchCommandWithoutIgnore;
+
+	const toggleFile = getToggleFilePath();
+
+	const fzfArgs = [
+		"--ansi",
+		"--multi",
+		"--delimiter",
+		":",
+		"--preview",
+		previewCommand,
+		"--preview-window",
+		previewWindow,
+		"--disabled",
+		"--query",
+		initialQuery || "",
+		"--print-query",
+		"--bind",
+		`change:reload:[ ! -z '{q}' ] && sleep 0.1 && ${searchCommand}`,
+		"--layout=reverse",
+		"--bind",
+		"ctrl-g:toggle-preview",
+	];
+
+	fzfArgs.push(
+		"--bind",
+		`ctrl-t:execute-silent([ -f ${toggleFile} ] && rm ${toggleFile} || touch ${toggleFile})+reload([ -f ${toggleFile} ] && [ ! -z '{q}' ] && ${searchCommandWithoutIgnore} || [ ! -z '{q}' ] && ${searchCommandWithIgnore} || true)`,
+	);
+
+	if (initialQuery) {
+		fzfArgs.push("--bind", `start:reload:${searchCommand}`);
+	}
+
+	if (DEBUG) {
+		console.log("FZF command:", "fzf", fzfArgs.join(" "));
+		console.log("Search command:", searchCommand);
+	}
+
+	const { fzf, promise } = runFzf(fzfArgs);
+
+	// Pipe initial rg results to fzf's stdin
+	if (initialQuery) {
+		if (DEBUG) {
+			console.log("Executing initial search with query:", initialQuery);
 		}
-
-		baseRgArgs.push(...paths);
-
-		// Create search commands for both gitignore states
-		const rgArgsWithIgnore = [...baseRgArgs];
-		const rgArgsWithoutIgnore = [...baseRgArgs, "--no-ignore"];
-
-		const createSearchCommand = (args: string[]) => {
-			const rgArgsString = args
-				.map((arg) => `'${arg.replace(/'/g, "'\\''")}'`)
-				.join(" ");
-			return `rg ${rgArgsString} '{q}' || true`;
-		};
-
-		const searchCommandWithIgnore = createSearchCommand(rgArgsWithIgnore);
-		const searchCommandWithoutIgnore = createSearchCommand(rgArgsWithoutIgnore);
-
-		// Use current gitignore setting for initial search
-		const searchCommand = useGitignore
-			? searchCommandWithIgnore
-			: searchCommandWithoutIgnore;
-
-		const fzfArgs = [
-			"--ansi",
-			"--multi",
-			"--delimiter",
-			":",
-			"--preview",
-			previewCommand,
-			"--preview-window",
-			previewWindow,
-			"--disabled",
-			"--query",
-			initialQuery || "",
-			"--print-query",
-			"--bind",
-			`change:reload:[ ! -z '{q}' ] && sleep 0.1 && ${searchCommand}`, // Only run if query is not empty
-			"--layout=reverse",
-			"--bind",
-			"ctrl-g:toggle-preview",
-		];
-
-		// Add ctrl-t toggle for gitignore using execute to manage state and reload
-		const toggleFile = `${os.tmpdir()}/fzf_gitignore_${process.pid}`;
-
-		fzfArgs.push(
-			"--bind",
-			`ctrl-t:execute-silent([ -f ${toggleFile} ] && rm ${toggleFile} || touch ${toggleFile})+reload([ -f ${toggleFile} ] && [ ! -z '{q}' ] && ${searchCommandWithoutIgnore} || [ ! -z '{q}' ] && ${searchCommandWithIgnore} || true)`,
-		);
-
-		if (initialQuery) {
-			fzfArgs.push("--bind", `start:reload:${searchCommand}`);
-		}
+		const initialSearch = spawn("sh", [
+			"-c",
+			searchCommand.replace("{q}", initialQuery.replace(/'/g, "'\\''")),
+		]);
+		// biome-ignore lint/style/noNonNullAssertion: guaranteed by stdio:["pipe",...]
+		initialSearch.stdout.pipe(fzf.stdin!);
+		initialSearch.stderr.pipe(process.stderr);
 
 		if (DEBUG) {
-			console.log("FZF command:", "fzf", fzfArgs.join(" "));
-			console.log("Search command:", searchCommand);
+			initialSearch.stderr.on("data", (data) => {
+				console.error("Initial search stderr:", data.toString());
+			});
 		}
+	} else {
+		if (DEBUG) console.log("No initial query, waiting for user input");
+		// biome-ignore lint/style/noNonNullAssertion: guaranteed by stdio:["pipe",...]
+		fzf.stdin!.end();
+	}
 
-		const fzf = spawn("fzf", fzfArgs, {
-			stdio: ["pipe", "pipe", process.stderr],
-		});
+	const { query, results } = await promise;
+	const selectedFiles = resolveResults(results, singleDirRoot);
 
-		// If there's an initial query, perform the search immediately
-		if (initialQuery) {
-			if (DEBUG) {
-				console.log("Executing initial search with query:", initialQuery);
-			}
-			const initialSearch = spawn("sh", [
-				"-c",
-				// initialQuery goes inside '{q}' — single-quote escape it
-				searchCommand.replace("{q}", initialQuery.replace(/'/g, "'\\''")),
-			]);
-			initialSearch.stdout.pipe(fzf.stdin);
-			initialSearch.stderr.pipe(process.stderr);
+	trySaveQuery(query, selectedFiles, saveQuery);
 
-			if (DEBUG) {
-				initialSearch.stderr.on("data", (data) => {
-					console.error("Initial search stderr:", data.toString());
-				});
-			}
-		} else {
-			// Don't run initial rg command when there's no query
-			if (DEBUG) console.log("No initial query, waiting for user input");
-			fzf.stdin.end();
-		}
-
-		let output = "";
-		fzf.stdout.on("data", (data) => {
-			output += data.toString();
-			if (DEBUG) console.log("FZF stdout:", data.toString());
-		});
-
-		fzf.on("close", async (code) => {
-			if (DEBUG) console.log("FZF process closed with code:", code);
-			if (code === 0) {
-				const lines = output.trim().split("\n");
-
-				// With --print-query, first line is the query, rest are results
-				const actualQuery = lines[0] || ""; // The first line is the query
-				let selectedFiles = lines.slice(1).filter((line) => line.trim() !== ""); // Filter out empty lines
-
-				if (singleDirRoot) {
-					selectedFiles = selectedFiles.map((file) =>
-						resolveFilePath(file, singleDirRoot),
-					);
-				}
-
-				// Save the actual query entered by user for future resume
-				if (
-					saveQuery &&
-					actualQuery.trim() !== "" &&
-					selectedFiles.length > 0
-				) {
-					try {
-						await saveLastQuery(actualQuery.trim());
-					} catch (error) {
-						if (DEBUG) console.error("Failed to save last query:", error);
-						// Don't fail the search if cache save fails
-					}
-				}
-
-				resolve(selectedFiles);
-			} else {
-				// Even when the user cancels, we need to resolve with an empty array
-				// to ensure the terminal is properly hidden
-				if (DEBUG) console.log("FZF process was canceled by user");
-				resolve([]);
-			}
-		});
-
-		fzf.on("error", (error) => {
-			if (DEBUG) console.error("FZF error:", error);
-			reject(new Error(`Failed to start fzf: ${error.message}`));
-		});
-	});
+	return selectedFiles;
 }
 
 /**

@@ -189,9 +189,16 @@ describe("findTodoFixme", () => {
 					if (event === "error") callback(new Error("rg not found"));
 				}),
 			};
+			// Provide a valid fzf mock because runFzf() now validates stdout/on
+			const mockFzf = {
+				stdout: { on: vi.fn() },
+				on: vi.fn(),
+			};
 			mockSpawn.mockImplementation((command) => {
 				if (command === "rg")
 					return mockRg as unknown as childProcess.ChildProcess;
+				if (command === "fzf")
+					return mockFzf as unknown as childProcess.ChildProcess;
 				return {} as childProcess.ChildProcess;
 			});
 			await expect(findTodoFixme([testDir])).rejects.toThrow(

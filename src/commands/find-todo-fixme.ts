@@ -1,8 +1,12 @@
 import { spawn } from "node:child_process";
-import * as os from "node:os";
 import { DEBUG } from "../utils/debug";
-import { resolveFilePath } from "../utils/path";
-import { getLastQuery, saveLastQuery } from "../utils/search-cache";
+import { getLastQuery } from "../utils/search-cache";
+import {
+	getToggleFilePath,
+	resolveResults,
+	runFzf,
+	trySaveQuery,
+} from "./fzf-utils";
 
 /**
  * Searches for TODO/FIXME comments in files using rg and fzf.
@@ -19,158 +23,118 @@ export async function findTodoFixme(
 	initialQuery?: string,
 	saveQuery: boolean = true,
 ): Promise<string[]> {
-	return new Promise((resolve, reject) => {
-		// Handle empty paths array
-		if (paths.length === 0) {
-			resolve([]);
-			return;
+	// Handle empty paths array
+	if (paths.length === 0) {
+		return [];
+	}
+
+	// Navigate to the first path if it's the only one (for relative paths)
+	let singleDirRoot = "";
+	if (paths.length === 1) {
+		singleDirRoot = paths[0];
+		process.chdir(singleDirRoot);
+		paths = ["."];
+	}
+
+	const useGitignore = process.env.USE_GITIGNORE !== "0";
+	const fileTypes = process.env.TYPE_FILTER || "";
+	const searchPattern =
+		process.env.FIND_TODO_FIXME_SEARCH_PATTERN || "(TODO|FIXME|HACK|FIX):\\s";
+
+	// Base rg args that are always used
+	const baseRgArgs = [
+		"--column",
+		"--line-number",
+		"--no-heading",
+		"--color=always",
+		"--smart-case",
+		"--glob",
+		"!**/.git/",
+		searchPattern,
+	];
+
+	if (fileTypes) {
+		const fileTypesArray = fileTypes.split(":");
+		for (const fileType of fileTypesArray) {
+			baseRgArgs.push("--type", fileType);
 		}
+	}
 
-		// Navigate to the first path if it's the only one (for relative paths)
-		let singleDirRoot = "";
-		if (paths.length === 1) {
-			singleDirRoot = paths[0];
-			process.chdir(singleDirRoot);
-			// Keep the current directory as search target instead of clearing paths
-			paths = ["."];
-		}
+	baseRgArgs.push(...paths);
 
-		const useGitignore = process.env.USE_GITIGNORE !== "0";
-		const fileTypes = process.env.TYPE_FILTER || "";
-		const searchPattern =
-			process.env.FIND_TODO_FIXME_SEARCH_PATTERN || "(TODO|FIXME|HACK|FIX):\\s";
+	// Create initial rg args with current gitignore setting
+	const rgArgs = [...baseRgArgs, useGitignore ? "" : "--no-ignore"].filter(
+		Boolean,
+	);
 
-		// Base rg args that are always used
-		const baseRgArgs = [
-			"--column",
-			"--line-number",
-			"--no-heading",
-			"--color=always",
-			"--smart-case",
-			"--glob",
-			"!**/.git/",
-			searchPattern,
-		];
+	const rg = spawn("rg", rgArgs);
 
-		if (fileTypes) {
-			const fileTypesArray = fileTypes.split(":");
-			for (const fileType of fileTypesArray) {
-				baseRgArgs.push("--type", fileType);
-			}
-		}
+	const previewCommand =
+		process.env.FIND_TODO_FIXME_PREVIEW_COMMAND ||
+		"bat --decorations=always --color=always {1} --highlight-line {2} --style=header,grid";
+	const previewWindow =
+		process.env.FIND_TODO_FIXME_PREVIEW_WINDOW_CONFIG ||
+		"right:border-left:50%:+{2}+3/3:~3";
 
-		baseRgArgs.push(...paths);
+	// Create reload commands for toggling gitignore
+	const rgArgsWithIgnore = [...baseRgArgs];
+	const rgArgsWithoutIgnore = [...baseRgArgs, "--no-ignore"];
 
-		// Create initial rg args with current gitignore setting
-		const rgArgs = [...baseRgArgs, useGitignore ? "" : "--no-ignore"].filter(
-			Boolean,
-		);
+	const escapeArg = (arg: string) => `'${arg.replace(/'/g, "'\"'\"'")}'`;
+	const reloadCommandWithIgnore = `rg ${rgArgsWithIgnore.map(escapeArg).join(" ")}`;
+	const reloadCommandWithoutIgnore = `rg ${rgArgsWithoutIgnore.map(escapeArg).join(" ")}`;
 
-		const rg = spawn("rg", rgArgs);
+	const toggleFile = getToggleFilePath();
 
-		// Handle rg process errors
+	const fzfArgs = [
+		"--ansi",
+		"--multi",
+		"--delimiter",
+		":",
+		"--preview",
+		previewCommand,
+		"--preview-window",
+		previewWindow,
+		"--layout=reverse",
+		"--bind",
+		"ctrl-g:toggle-preview",
+		"--print-query",
+	];
+
+	fzfArgs.push(
+		"--bind",
+		`ctrl-t:execute-silent([ -f ${toggleFile} ] && rm ${toggleFile} || touch ${toggleFile})+reload([ -f ${toggleFile} ] && ${reloadCommandWithoutIgnore} || ${reloadCommandWithIgnore})`,
+	);
+
+	if (initialQuery && initialQuery !== "") {
+		fzfArgs.push("--query", initialQuery);
+	}
+
+	const { fzf, promise } = runFzf(fzfArgs);
+
+	// If rg fails to spawn, reject instead of hanging
+	const rgErrorPromise = new Promise<never>((_, reject) => {
 		rg.on("error", (error) => {
 			if (DEBUG) console.error("RG error:", error);
 			reject(new Error(`Failed to start rg: ${error.message}`));
 		});
-
-		const previewCommand =
-			process.env.FIND_TODO_FIXME_PREVIEW_COMMAND ||
-			"bat --decorations=always --color=always {1} --highlight-line {2} --style=header,grid";
-		const previewWindow =
-			process.env.FIND_TODO_FIXME_PREVIEW_WINDOW_CONFIG ||
-			"right:border-left:50%:+{2}+3/3:~3";
-
-		// Create reload commands for toggling gitignore
-		const rgArgsWithIgnore = [...baseRgArgs];
-		const rgArgsWithoutIgnore = [...baseRgArgs, "--no-ignore"];
-
-		// Escape args properly for shell execution
-		const escapeArg = (arg: string) => `'${arg.replace(/'/g, "'\"'\"'")}'`;
-		const reloadCommandWithIgnore = `rg ${rgArgsWithIgnore.map(escapeArg).join(" ")}`;
-		const reloadCommandWithoutIgnore = `rg ${rgArgsWithoutIgnore.map(escapeArg).join(" ")}`;
-
-		const fzfArgs = [
-			"--ansi",
-			"--multi",
-			"--delimiter",
-			":",
-			"--preview",
-			previewCommand,
-			"--preview-window",
-			previewWindow,
-			"--layout=reverse",
-			"--bind",
-			"ctrl-g:toggle-preview",
-			"--print-query",
-		];
-
-		// Add ctrl-t toggle for gitignore using execute to manage state and reload
-		const toggleFile = `${os.tmpdir()}/fzf_gitignore_${process.pid}`;
-
-		fzfArgs.push(
-			"--bind",
-			`ctrl-t:execute-silent([ -f ${toggleFile} ] && rm ${toggleFile} || touch ${toggleFile})+reload([ -f ${toggleFile} ] && ${reloadCommandWithoutIgnore} || ${reloadCommandWithIgnore})`,
-		);
-
-		if (initialQuery && initialQuery !== "") {
-			fzfArgs.push("--query", initialQuery);
-		}
-
-		const fzf = spawn("fzf", fzfArgs, {
-			stdio: ["pipe", "pipe", process.stderr],
-		});
-
-		// Handle fzf process errors
-		fzf.on("error", (error) => {
-			if (DEBUG) console.error("FZF error:", error);
-			reject(new Error(`Failed to start fzf: ${error.message}`));
-		});
-
-		rg.stdout.pipe(fzf.stdin);
-
-		let output = "";
-		fzf.stdout.on("data", (data) => {
-			output += data.toString();
-			if (DEBUG) console.log("FZF stdout:", data.toString());
-		});
-
-		fzf.on("close", async (code) => {
-			if (DEBUG) console.log("FZF process closed with code:", code);
-			if (code === 0) {
-				const lines = output.split("\n");
-
-				// With --print-query, first line is the query, rest are results
-				const query = lines[0] || "";
-				let results = lines.slice(1).filter((line) => line.trim() !== "");
-
-				if (singleDirRoot) {
-					results = results.map((file) => resolveFilePath(file, singleDirRoot));
-				}
-
-				// Save the actual query entered by user for future resume
-				if (saveQuery && query.trim() !== "" && results.length > 0) {
-					try {
-						await saveLastQuery(query.trim());
-					} catch (error) {
-						if (DEBUG) console.error("Failed to save last query:", error);
-						// Don't fail the search if cache save fails
-					}
-				}
-
-				resolve(results);
-			} else {
-				if (DEBUG) console.log("FZF process was canceled by user");
-				resolve([]);
-			}
-		});
-
-		if (DEBUG) {
-			rg.stderr.on("data", (data) => {
-				console.error("RG stderr:", data.toString());
-			});
-		}
 	});
+
+	// biome-ignore lint/style/noNonNullAssertion: stdin/stdout guaranteed by stdio:["pipe",...]
+	rg.stdout?.pipe(fzf.stdin!);
+
+	if (DEBUG) {
+		rg.stderr.on("data", (data) => {
+			console.error("RG stderr:", data.toString());
+		});
+	}
+
+	const { query, results } = await Promise.race([promise, rgErrorPromise]);
+	const selectedFiles = resolveResults(results, singleDirRoot);
+
+	trySaveQuery(query, selectedFiles, saveQuery);
+
+	return selectedFiles;
 }
 
 /**
