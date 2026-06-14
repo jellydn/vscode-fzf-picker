@@ -23,7 +23,7 @@
 	],
 	"version": "1.7.0",
 	"engines": {
-		"vscode": "^1.93.0"
+		"vscode": "^1.101.0"
 	},
 	"packageManager": "pnpm@10.22.0+sha512.bf049efe995b28f527fd2b41ae0474ce29186f7edcb3bf545087bd61fbbebb2bf75362d1307fda09c2d288e1e499787ac12d4fcb617a974718a6051f2eee741c",
 	"categories": [
@@ -286,7 +286,7 @@
 		"@antfu/ni": "30.1.0",
 		"@biomejs/biome": "2.5.0",
 		"@types/node": "25.9.3",
-		"@types/vscode": "1.93.0",
+		"@types/vscode": "^1.101.0",
 		"@vscode/vsce": "3.9.2",
 		"bumpp": "11.1.0",
 		"oxlint": "^1.69.0",

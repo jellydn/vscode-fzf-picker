@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { defineExtension, extensionContext, useCommand } from "reactive-vscode";
 import * as vscode from "vscode";
 
-import { CFG, config } from "./config";
+import { CFG, type CustomTask, config } from "./config";
 import * as Meta from "./generated/meta";
 import { logger } from "./logger";
 import type { RuntimeType } from "./utils/runtime";
@@ -20,13 +20,18 @@ interface Command {
 	command?: string;
 	preRunCallback: undefined | (() => boolean | Promise<boolean>);
 	postRunCallback: undefined | (() => void);
-	isCustomTask?: boolean;
+	terminalName: string;
+	withTextSelection: boolean;
+	hasFilter: boolean;
 }
 const commands: { [key: string]: Command } = {
 	findFiles: {
 		command: "findFiles",
 		preRunCallback: undefined,
 		postRunCallback: undefined,
+		terminalName: "findFiles",
+		withTextSelection: false,
+		hasFilter: false,
 	},
 	findFilesWithType: {
 		command: "findFiles",
@@ -34,11 +39,17 @@ const commands: { [key: string]: Command } = {
 		postRunCallback: () => {
 			CFG.useTypeFilter = false;
 		},
+		terminalName: "findFiles",
+		withTextSelection: false,
+		hasFilter: true,
 	},
 	findWithinFiles: {
 		command: "findWithinFiles",
 		preRunCallback: undefined,
 		postRunCallback: undefined,
+		terminalName: "findWithinFiles",
+		withTextSelection: true,
+		hasFilter: false,
 	},
 	findWithinFilesWithType: {
 		command: "findWithinFiles",
@@ -46,27 +57,41 @@ const commands: { [key: string]: Command } = {
 		postRunCallback: () => {
 			CFG.useTypeFilter = false;
 		},
+		terminalName: "findWithinFiles",
+		withTextSelection: true,
+		hasFilter: true,
 	},
 	resumeSearch: {
 		command: "resumeSearch",
 		preRunCallback: undefined,
 		postRunCallback: undefined,
+		terminalName: "resumeSearch",
+		withTextSelection: true,
+		hasFilter: false,
 	},
 	pickFileFromGitStatus: {
 		command: "pickFileFromGitStatus",
 		preRunCallback: undefined,
 		postRunCallback: undefined,
+		terminalName: "pickFileFromGitStatus",
+		withTextSelection: false,
+		hasFilter: false,
 	},
 	findTodoFixme: {
 		command: "findTodoFixme",
 		preRunCallback: undefined,
 		postRunCallback: undefined,
+		terminalName: "findTodoFixme",
+		withTextSelection: false,
+		hasFilter: false,
 	},
 	runCustomTask: {
 		command: "runCustomTask",
 		preRunCallback: chooseCustomTask,
 		postRunCallback: undefined,
-		isCustomTask: true,
+		terminalName: "",
+		withTextSelection: false,
+		hasFilter: false,
 	},
 };
 
@@ -259,37 +284,6 @@ function getOrCreateTerminal() {
 }
 
 /**
- * Get the command string for a given command
- * @param withTextSelection - Whether to include text selection
- * @returns The formatted command string
- */
-function getCommandString(withTextSelection = true) {
-	let result = "";
-
-	if (CFG.useEditorSelectionAsQuery && withTextSelection) {
-		const editor = vscode.window.activeTextEditor;
-		if (editor) {
-			const selection = editor.selection;
-			if (!selection.isEmpty) {
-				const selectionText = editor.document.getText(selection);
-				result += envVarToString("SELECTED_TEXT", selectionText);
-			}
-		}
-	}
-
-	// useTypeFilter should only be try if we activated the corresponding command
-	if (CFG.useTypeFilter && CFG.findWithinFilesFilter.size > 0) {
-		result += envVarToString(
-			"TYPE_FILTER",
-			`'${[...CFG.findWithinFilesFilter].reduce((x, y) => `${x}:${y}`)}'`,
-		);
-	}
-
-	logger.info("Get command", result);
-	return result;
-}
-
-/**
  * Execute a terminal command
  * @param cmd - The command to execute
  */
@@ -326,41 +320,13 @@ async function executeTerminalCommand(cmd: string) {
 	logger.info(`Executing ${cmd} command`);
 	currentTerminal = getOrCreateTerminal();
 	if (cbResult === true) {
-		switch (cmd) {
-			case "findFiles":
-			case "findFilesWithType":
-				await executeCommand({
-					name: "findFiles",
-					withTextSelection: false,
-					hasFilter: cmd === "findFilesWithType",
-				});
-				break;
-			case "findWithinFiles":
-			case "findWithinFilesWithType":
-				await executeCommand({
-					name: "findWithinFiles",
-					withTextSelection: true,
-					hasFilter: cmd === "findWithinFilesWithType",
-				});
-				break;
-			case "findTodoFixme":
-				await executeCommand({
-					name: "findTodoFixme",
-					withTextSelection: false,
-					hasFilter: false,
-				});
-				break;
-			case "pickFileFromGitStatus":
-				await executeCommand({
-					name: "pickFileFromGitStatus",
-					withTextSelection: false,
-					hasFilter: false,
-				});
-				break;
-			default:
-				currentTerminal.sendText(getCommandString(false));
-				currentTerminal.show();
-				break;
+		const cmdConfig = commands[cmd];
+		if (cmdConfig.terminalName) {
+			await executeCommand({
+				name: cmdConfig.terminalName,
+				withTextSelection: cmdConfig.withTextSelection,
+				hasFilter: cmdConfig.hasFilter,
+			});
 		}
 
 		const postRunCallback = commands[cmd].postRunCallback;
@@ -381,11 +347,6 @@ function envVarToString(name: string, value: string) {
 	return platform() === "win32"
 		? ` $Env:${name}=${value}; `
 		: ` ${name}=${value} `;
-}
-
-interface CustomTask {
-	name: string;
-	command: string;
 }
 
 /**
