@@ -159,7 +159,7 @@ export async function getLastQuery(
 ): Promise<string | null> {
 	const cache = await readCache();
 
-	if (!cache || !cache.findTodoFixme) {
+	if (!cache?.findTodoFixme) {
 		return null;
 	}
 

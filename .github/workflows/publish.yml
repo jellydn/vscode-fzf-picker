@@ -1,7 +1,7 @@
 on:
   push:
     tags:
-      - "*"
+      - "v*"
 
 name: Deploy Extension
 jobs:
@@ -9,10 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - run: npm install -g pnpm
+          node-version: lts/*
+          cache: pnpm
+
       - run: pnpm install
       - name: Publish to Open VSX Registry
         uses: HaaLeo/publish-vscode-extension@v2
