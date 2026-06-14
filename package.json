@@ -265,6 +265,14 @@
 					],
 					"default": "editor",
 					"description": "Where to show the terminal when running fzf commands."
+				},
+				"fzf-picker.general.shellArgsForTerminal": {
+					"markdownDescription": "Set the args for the shell (terminal type) to be used. Example: [\"-l\"] for a login shell.",
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"default": null
 				}
 			}
 		}
@@ -286,7 +294,7 @@
 		"@antfu/ni": "30.1.0",
 		"@biomejs/biome": "2.5.0",
 		"@types/node": "25.9.3",
-		"@types/vscode": "^1.101.0",
+		"@types/vscode": "^1.120.0",
 		"@vscode/vsce": "3.9.2",
 		"bumpp": "11.1.0",
 		"oxlint": "^1.69.0",

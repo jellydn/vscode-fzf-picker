@@ -32,6 +32,7 @@ export interface Config {
 	cacheDirectory: string;
 	runtime: RuntimeType;
 	terminalLocation: "editor" | "panel";
+	shellArgsForTerminal: string[] | undefined;
 }
 
 export const CFG: Config = {
@@ -56,4 +57,5 @@ export const CFG: Config = {
 	cacheDirectory: "",
 	runtime: "auto",
 	terminalLocation: "editor",
+	shellArgsForTerminal: undefined,
 };

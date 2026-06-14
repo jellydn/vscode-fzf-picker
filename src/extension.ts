@@ -208,6 +208,10 @@ function updateConfigWithUserSettings() {
 	CFG.customTasks = config.get("customTasks", []) as CustomTask[];
 	CFG.cacheDirectory = config.get("cache.directory", "") as string;
 	CFG.runtime = config.get("general.runtime", "auto") as RuntimeType;
+	CFG.shellArgsForTerminal = config.get(
+		"general.shellArgsForTerminal",
+		undefined,
+	) as string[] | undefined;
 }
 
 /**
@@ -259,6 +263,10 @@ function getOrCreateTerminal() {
 			FZF_PICKER_CACHE_DIR: getResolvedCacheDirectory(CFG.cacheDirectory),
 		},
 	};
+
+	if (CFG.shellArgsForTerminal !== undefined) {
+		terminalOptions.shellArgs = CFG.shellArgsForTerminal;
+	}
 
 	return vscode.window.createTerminal(terminalOptions);
 }
